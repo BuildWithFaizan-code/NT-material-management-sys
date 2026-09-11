@@ -5,7 +5,9 @@ import 'app_colors.dart';
 class AppTypography {
   AppTypography._();
 
-  static TextTheme get textTheme {
+  static final TextTheme textTheme = _buildTextTheme();
+
+  static TextTheme _buildTextTheme() {
     final base = GoogleFonts.interTextTheme();
     return base.copyWith(
       headlineLarge: base.headlineLarge?.copyWith(

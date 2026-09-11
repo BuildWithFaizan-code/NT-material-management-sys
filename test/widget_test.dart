@@ -13,6 +13,7 @@ void main() {
       statusState: statusState,
     ));
 
-    expect(find.text('NewTech MMS'), findsOneWidget);
+    expect(find.byType(App), findsOneWidget);
+    expect(find.text('Dashboard'), findsOneWidget);
   });
 }

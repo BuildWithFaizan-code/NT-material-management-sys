@@ -43,7 +43,12 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/build/
 
 # .NET / C#
 /backend/bin/
 /backend/obj/
+
+# Local preview / scratch images
+*.png
+!assets/**/*.png

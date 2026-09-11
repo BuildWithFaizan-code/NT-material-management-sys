@@ -3,8 +3,9 @@ class AppDimensions {
 
   static const double mobileBreakpoint = 900;
 
-  static const double sidebarWidth = 260;
-  static const double sidebarCollapsedWidth = 64;
+  static const double sidebarWidth = 216.0;
+  static const double sidebarCollapsedWidth = 56.0;
+  static const double sidebarFloatingMargin = 10.0;
   static const double headerHeight = 56;
   static const double statusBarHeight = 32;
   static const double drawerWidth = 300;

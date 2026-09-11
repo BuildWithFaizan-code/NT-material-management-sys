@@ -5,6 +5,9 @@ import 'widgets/navigation_drawer.dart';
 import '../state/layout_state.dart';
 import '../state/status_state.dart';
 import '../pages/dashboard_page.dart';
+import '../pages/project_master_page.dart';
+
+import '../pages/placeholder_module_pages.dart';
 
 class SmallScreenLayout extends StatelessWidget {
   final LayoutState layoutState;
@@ -41,6 +44,21 @@ class SmallScreenLayout extends StatelessWidget {
   Widget _buildPage(int index) {
     switch (index) {
       case 0:
+        return const DashboardPage();
+      case 1:
+        return const ProjectMasterPage();
+      case 2:
+        return const TransactionsPage();
+      case 3:
+        return const ReportsPage();
+      case 4:
+        return const BoxRegisterPage();
+      case 5:
+        return const ToolsPage();
+      case 6:
+        return const LiveUpdatesPage();
+      case 7:
+        return const DownloadPage();
       default:
         return const DashboardPage();
     }

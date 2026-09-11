@@ -1,219 +1,256 @@
 import 'package:flutter/material.dart';
-import '../../design/app_colors.dart';
 import '../../design/app_dimensions.dart';
+import 'master_nav_item.dart';
+import 'modern_navbar_theme.dart';
 
 class Sidebar extends StatelessWidget {
   final int currentIndex;
+  final String activeSubItem;
   final ValueChanged<int> onItemSelected;
+  final ValueChanged<String>? onSubItemSelected;
+  final VoidCallback onToggle;
+  final bool isOpen;
 
   const Sidebar({
     super.key,
     required this.currentIndex,
+    this.activeSubItem = '',
     required this.onItemSelected,
+    this.onSubItemSelected,
+    required this.onToggle,
+    required this.isOpen,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: AppDimensions.sidebarWidth,
-      color: AppColors.secondaryColor, // Set background color of sidebar to secondaryColor (#6D9773)
-      child: Column(
-        children: [
-          _buildHeader(),
-          const Spacer(flex: 2), // Vertical spacing between title and navigation pages
-          _buildMenuItems(),
-          const Spacer(flex: 3), // Vertical spacing between navigation pages and bottom footer
-          _buildFooter(),
-        ],
+    return Material(
+      elevation: 0,
+      color: Colors.transparent,
+      child: Container(
+        width: AppDimensions.sidebarWidth,
+        decoration: BoxDecoration(
+          color: ModernNavbarTheme.cardBg,
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(
+            color: ModernNavbarTheme.cardBorder,
+            width: 1,
+          ),
+          boxShadow: ModernNavbarTheme.cardShadow,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(26),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 4),
+              // Scrollable menu list with hidden scrollbar
+              Expanded(
+                child: ScrollConfiguration(
+                  behavior: ScrollConfiguration.of(context).copyWith(
+                    scrollbars: false,
+                  ),
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    child: _buildMenuItems(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.only(
-        top: 24,
-        left: AppDimensions.spacingMd,
-        right: AppDimensions.spacingMd,
-      ),
-      alignment: Alignment.centerLeft,
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 14, 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            'MMS ERP',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
+          // 4-pointed Sparkle Logo from reference
+          const SizedBox(
+            width: 14,
+            height: 14,
+            child: CustomPaint(
+              painter: FourPointSparklePainter(color: ModernNavbarTheme.sparkle),
             ),
           ),
-          SizedBox(height: 4),
-          Text(
-            'Material Management',
+          const SizedBox(width: 7),
+          const Text(
+            'Menu',
             style: TextStyle(
-              color: Color(0xFFE8F5E9), // Light mint text color
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
+              color: ModernNavbarTheme.sparkle,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.2,
             ),
           ),
+          const Spacer(),
+          // Collapse button
+          _ModernToggleBtn(onTap: onToggle),
         ],
       ),
     );
   }
 
   Widget _buildMenuItems() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.spacingSm),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: List.generate(_menuItems.length, (index) {
-          final item = _menuItems[index];
-          final selected = index == currentIndex;
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2.5),
-            child: _SidebarItem(
-              icon: item.icon,
-              label: item.label,
-              selected: selected,
-              onTap: () => onItemSelected(index),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  Widget _buildFooter() {
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppDimensions.spacingMd),
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.2),
-                width: 1,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Color(0xFF4CAF50), // Active green indicator dot
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Connected',
-                      style: TextStyle(
-                        color: Color(0xFFC7EBD0),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'MMS_SQL_GST.EXE',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'PROPERTIES',
-                      style: TextStyle(
-                        color: Color(0xFFC7EBD0),
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                    Icon(
-                      Icons.swap_horiz_rounded,
-                      color: Colors.white.withValues(alpha: 0.7),
-                      size: 16,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+        // Index 0: Dashboard (Home)
+        _ModernSidebarItem(
+          icon: Icons.home_outlined,
+          label: 'Dashboard',
+          selected: currentIndex == 0,
+          onTap: () {
+            onItemSelected(0);
+          },
         ),
-        const SizedBox(height: AppDimensions.spacingSm),
-        Padding(
-          padding: const EdgeInsets.only(
-            left: AppDimensions.spacingMd,
-            right: AppDimensions.spacingMd,
-            bottom: AppDimensions.spacingMd,
-          ),
-          child: Row(
-            children: [
-              const Icon(
-                Icons.check_circle_outline_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
-              const SizedBox(width: AppDimensions.spacingSm),
-              const Text(
-                'System Status',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+        const SizedBox(height: 2),
+
+        // Index 1: Master (Expandable Dropdown Accordion)
+        MasterNavItem(
+          isMasterSelected: currentIndex == 1,
+          activeSubItem: activeSubItem,
+          onMasterHeaderTap: () {
+            if (activeSubItem.isEmpty) {
+              onSubItemSelected?.call('Project Master');
+            }
+            onItemSelected(1);
+          },
+          onSubItemSelected: (subTitle) {
+            onSubItemSelected?.call(subTitle);
+            onItemSelected(1);
+          },
+        ),
+        const SizedBox(height: 2),
+
+        // Index 2: Transaction
+        _ModernSidebarItem(
+          icon: Icons.receipt_long_outlined,
+          label: 'Transaction',
+          selected: currentIndex == 2,
+          onTap: () {
+            onItemSelected(2);
+          },
+        ),
+        const SizedBox(height: 2),
+
+        // Index 3: Reports
+        _ModernSidebarItem(
+          icon: Icons.bar_chart_rounded,
+          label: 'Reports',
+          selected: currentIndex == 3,
+          onTap: () {
+            onItemSelected(3);
+          },
+        ),
+        const SizedBox(height: 2),
+
+        // Index 4: Box Register
+        _ModernSidebarItem(
+          icon: Icons.all_inbox_outlined,
+          label: 'Box Register',
+          selected: currentIndex == 4,
+          onTap: () {
+            onItemSelected(4);
+          },
+        ),
+        const SizedBox(height: 2),
+
+        // Index 5: Tools
+        _ModernSidebarItem(
+          icon: Icons.handyman_outlined,
+          label: 'Tools',
+          selected: currentIndex == 5,
+          onTap: () {
+            onItemSelected(5);
+          },
+        ),
+        const SizedBox(height: 2),
+
+        // Index 6: Live Updates
+        _ModernSidebarItem(
+          icon: Icons.update_rounded,
+          label: 'Live Updates',
+          selected: currentIndex == 6,
+          onTap: () {
+            onItemSelected(6);
+          },
+        ),
+        const SizedBox(height: 2),
+
+        // Index 7: Download
+        _ModernSidebarItem(
+          icon: Icons.download_outlined,
+          label: 'Download',
+          selected: currentIndex == 7,
+          onTap: () {
+            onItemSelected(7);
+          },
         ),
       ],
     );
   }
 }
 
-class _MenuItem {
-  final IconData icon;
-  final String label;
-  const _MenuItem({required this.icon, required this.label});
+// ============================================================================
+// MODERN TOGGLE BUTTON (MINIMALIST CHEVRON / CLOSE)
+// ============================================================================
+class _ModernToggleBtn extends StatefulWidget {
+  final VoidCallback onTap;
+  const _ModernToggleBtn({required this.onTap});
+
+  @override
+  State<_ModernToggleBtn> createState() => _ModernToggleBtnState();
 }
 
-const List<_MenuItem> _menuItems = [
-  _MenuItem(icon: Icons.dashboard_rounded, label: 'Dashboard'),
-  _MenuItem(icon: Icons.dns_rounded, label: 'Master'),
-  _MenuItem(icon: Icons.receipt_long_rounded, label: 'Transaction'),
-  _MenuItem(icon: Icons.bar_chart_rounded, label: 'Reports'),
-  _MenuItem(icon: Icons.inventory_2_rounded, label: 'Box Register'),
-  _MenuItem(icon: Icons.handyman_rounded, label: 'Tools'),
-  _MenuItem(icon: Icons.update_rounded, label: 'Live Updates'),
-  _MenuItem(icon: Icons.download_rounded, label: 'Download'),
-];
+class _ModernToggleBtnState extends State<_ModernToggleBtn> {
+  bool _hover = false;
 
-class _SidebarItem extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 140),
+          width: 26,
+          height: 26,
+          decoration: BoxDecoration(
+            color: _hover ? ModernNavbarTheme.hoverBg : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.chevron_left_rounded,
+              color: ModernNavbarTheme.inactiveFg,
+              size: 18,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// MODERN SIDEBAR ITEM (BLACK PILL ACTIVE, MUTED INACTIVE)
+// ============================================================================
+class _ModernSidebarItem extends StatefulWidget {
   final IconData icon;
   final String label;
   final bool selected;
   final VoidCallback onTap;
 
-  const _SidebarItem({
+  const _ModernSidebarItem({
     required this.icon,
     required this.label,
     required this.selected,
@@ -221,38 +258,56 @@ class _SidebarItem extends StatelessWidget {
   });
 
   @override
+  State<_ModernSidebarItem> createState() => _ModernSidebarItemState();
+}
+
+class _ModernSidebarItemState extends State<_ModernSidebarItem> {
+  bool _hover = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: selected
-            ? const Color(0xFFC7EBD0) // Soft light green capsule exactly matching 1st image
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(20), // 20 border radius for high curves matching 1st image
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.spacingMd,
-              vertical: 8), // slightly smaller vertical padding
+    final isSelected = widget.selected;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 140),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? ModernNavbarTheme.activePillBg
+                : (_hover
+                    ? ModernNavbarTheme.hoverBg
+                    : Colors.transparent),
+            borderRadius: BorderRadius.circular(18),
+          ),
           child: Row(
             children: [
-              Icon(icon,
-                  color: selected
-                      ? AppColors.primaryColor // Dark green icon for selected
-                      : Colors.white, // White icon for unselected (to contrast with sage green background)
-                  size: 18), // slightly smaller icon size
-              const SizedBox(width: AppDimensions.spacingMd),
-              Text(
-                label,
-                style: TextStyle(
-                  color: selected
-                      ? AppColors.primaryColor // Dark green text for selected
-                      : Colors.white, // White text for unselected (to contrast with sage green background)
-                  fontSize: 13, // slightly smaller font size
-                  fontWeight:
-                      selected ? FontWeight.w700 : FontWeight.w500, // Bold selected
+              Icon(
+                widget.icon,
+                color: isSelected
+                    ? ModernNavbarTheme.activePillFg
+                    : ModernNavbarTheme.inactiveIcon,
+                size: 16,
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Text(
+                  widget.label,
+                  style: TextStyle(
+                    color: isSelected
+                        ? ModernNavbarTheme.activePillFg
+                        : ModernNavbarTheme.inactiveFg,
+                    fontSize: 12.5,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    letterSpacing: -0.1,
+                  ),
                 ),
               ),
             ],

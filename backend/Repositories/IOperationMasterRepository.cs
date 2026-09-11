@@ -1,0 +1,14 @@
+using MMSERP.Api.Models;
+
+namespace MMSERP.Api.Repositories
+{
+    public interface IOperationMasterRepository
+    {
+        Task<IEnumerable<OperationMasterDto>> GetAllAsync();
+        Task<OperationMasterDto?> GetByCodeAsync(int code);
+        Task<int> GetNextCodeAsync();
+        Task<bool> CreateAsync(CreateOperationDto model);
+        Task<bool> UpdateAsync(int code, CreateOperationDto model);
+        Task<bool> DeleteAsync(int code);
+    }
+}

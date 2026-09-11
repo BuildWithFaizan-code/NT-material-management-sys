@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../design/app_colors.dart';
 import '../../design/app_dimensions.dart';
+import 'modern_navbar_theme.dart';
 
 class NavigationDrawerWidget extends StatelessWidget {
   final int currentIndex;
@@ -16,68 +16,87 @@ class NavigationDrawerWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Drawer(
       width: AppDimensions.drawerWidth,
-      child: Container(
-        color: AppColors.secondaryColor, // Drawer background set to secondaryColor (#6D9773)
-        child: Column(
-          children: [
-            _buildDrawerHeader(),
-            const SizedBox(height: AppDimensions.spacingMd),
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppDimensions.spacingSm,
-                    vertical: AppDimensions.spacingSm),
-                itemCount: _menuItems.length,
-                separatorBuilder: (_, index) => const SizedBox(height: 2),
-                itemBuilder: (context, index) {
-                  final item = _menuItems[index];
-                  final selected = index == currentIndex;
-                  return _DrawerItem(
-                    icon: item.icon,
-                    label: item.label,
-                    selected: selected,
-                    onTap: () {
-                      onItemSelected(index);
-                      Navigator.of(context).pop();
-                    },
-                  );
-                },
-              ),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: ModernNavbarTheme.cardBg,
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(
+              color: ModernNavbarTheme.cardBorder,
+              width: 1,
             ),
-            _buildFooter(),
-          ],
+            boxShadow: ModernNavbarTheme.cardShadow,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(32),
+            child: Column(
+              children: [
+                _buildDrawerHeader(context),
+                const SizedBox(height: 6),
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    itemCount: _menuItems.length,
+                    separatorBuilder: (_, index) => const SizedBox(height: 3),
+                    itemBuilder: (context, index) {
+                      final item = _menuItems[index];
+                      final selected = index == currentIndex;
+                      return _DrawerItem(
+                        icon: item.icon,
+                        label: item.label,
+                        selected: selected,
+                        onTap: () {
+                          onItemSelected(index);
+                          Navigator.of(context).pop();
+                        },
+                      );
+                    },
+                  ),
+                ),
+                _buildFooter(),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildDrawerHeader() {
-    return Container(
-      padding: const EdgeInsets.only(
-        top: 24,
-        left: AppDimensions.spacingMd,
-        right: AppDimensions.spacingMd,
-      ),
-      alignment: Alignment.centerLeft,
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildDrawerHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 20, 14, 10),
+      child: Row(
         children: [
-          Text(
-            'MMS ERP',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
+          SizedBox(
+            width: 16,
+            height: 16,
+            child: CustomPaint(
+              painter: const FourPointSparklePainter(color: ModernNavbarTheme.sparkle),
             ),
           ),
-          SizedBox(height: 4),
-          Text(
-            'Material Management',
+          const SizedBox(width: 8),
+          const Text(
+            'Menu',
             style: TextStyle(
-              color: Color(0xFFE8F5E9), // Light mint text color
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
+              color: ModernNavbarTheme.sparkle,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.2,
             ),
+          ),
+          const Spacer(),
+          IconButton(
+            icon: const Icon(
+              Icons.close_rounded,
+              color: ModernNavbarTheme.inactiveFg,
+              size: 20,
+            ),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+            onPressed: () => Navigator.of(context).pop(),
           ),
         ],
       ),
@@ -85,37 +104,42 @@ class NavigationDrawerWidget extends StatelessWidget {
   }
 
   Widget _buildFooter() {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppDimensions.spacingMd,
-          vertical: AppDimensions.spacingSm),
-      decoration: BoxDecoration(
-        border: Border(
-            top: BorderSide(color: Colors.white.withValues(alpha: 0.15), width: 0.5)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Color(0xFF4CAF50),
-            ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.7),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: ModernNavbarTheme.cardBorder,
+            width: 0.8,
           ),
-          const SizedBox(width: AppDimensions.spacingSm),
-          const Expanded(
-            child: Text(
-              'Connected: MMS_SQL_GST.EXE',
-              style: TextStyle(
-                color: Color(0xFFE8F5E9),
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 7,
+              height: 7,
+              decoration: const BoxDecoration(
+                color: Color(0xFF10B981),
+                shape: BoxShape.circle,
               ),
-              overflow: TextOverflow.ellipsis,
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'Connected: MMS_SQL_GST.EXE',
+                style: TextStyle(
+                  color: ModernNavbarTheme.inactiveFg,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -128,17 +152,17 @@ class _MenuItem {
 }
 
 const List<_MenuItem> _menuItems = [
-  _MenuItem(icon: Icons.dashboard_rounded, label: 'Dashboard'),
-  _MenuItem(icon: Icons.dns_rounded, label: 'Master'),
-  _MenuItem(icon: Icons.receipt_long_rounded, label: 'Transaction'),
+  _MenuItem(icon: Icons.home_outlined, label: 'Dashboard'),
+  _MenuItem(icon: Icons.inventory_2_outlined, label: 'Master'),
+  _MenuItem(icon: Icons.receipt_long_outlined, label: 'Transaction'),
   _MenuItem(icon: Icons.bar_chart_rounded, label: 'Reports'),
-  _MenuItem(icon: Icons.inventory_2_rounded, label: 'Box Register'),
-  _MenuItem(icon: Icons.handyman_rounded, label: 'Tools'),
+  _MenuItem(icon: Icons.all_inbox_outlined, label: 'Box Register'),
+  _MenuItem(icon: Icons.handyman_outlined, label: 'Tools'),
   _MenuItem(icon: Icons.update_rounded, label: 'Live Updates'),
-  _MenuItem(icon: Icons.download_rounded, label: 'Download'),
+  _MenuItem(icon: Icons.download_outlined, label: 'Download'),
 ];
 
-class _DrawerItem extends StatelessWidget {
+class _DrawerItem extends StatefulWidget {
   final IconData icon;
   final String label;
   final bool selected;
@@ -152,36 +176,54 @@ class _DrawerItem extends StatelessWidget {
   });
 
   @override
+  State<_DrawerItem> createState() => _DrawerItemState();
+}
+
+class _DrawerItemState extends State<_DrawerItem> {
+  bool _hover = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: selected
-            ? const Color(0xFFC7EBD0) // Soft light green capsule matching 1st image
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: ListTile(
-        leading: Icon(icon,
-            color: selected
-                ? AppColors.primaryColor
-                : Colors.white, // White for unselected items
-            size: 18), // smaller icon size
-        title: Text(
-          label,
-          style: TextStyle(
-            color: selected
-                ? AppColors.primaryColor
-                : Colors.white, // White for unselected items
-            fontSize: 13, // smaller font size
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+    final isSelected = widget.selected;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? ModernNavbarTheme.activePillBg
+                : (_hover ? ModernNavbarTheme.hoverBg : Colors.transparent),
+            borderRadius: BorderRadius.circular(22),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                widget.icon,
+                color: isSelected
+                    ? ModernNavbarTheme.activePillFg
+                    : ModernNavbarTheme.inactiveIcon,
+                size: 18,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  color: isSelected
+                      ? ModernNavbarTheme.activePillFg
+                      : ModernNavbarTheme.inactiveFg,
+                  fontSize: 13.5,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  letterSpacing: -0.1,
+                ),
+              ),
+            ],
           ),
         ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        onTap: onTap,
-        dense: true,
-        visualDensity: VisualDensity.compact,
       ),
     );
   }

@@ -5,12 +5,12 @@ import 'app_typography.dart';
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get light {
-    return ThemeData(
+  static final ThemeData light = ThemeData(
       useMaterial3: true,
       fontFamily: 'Inter',
       textTheme: AppTypography.textTheme,
       scaffoldBackgroundColor: AppColors.backgroundColor,
+      visualDensity: VisualDensity.compact,
       colorScheme: ColorScheme.light(
         primary: AppColors.primaryColor,
         secondary: AppColors.secondaryColor,
@@ -32,6 +32,11 @@ class AppTheme {
         color: AppColors.divider,
         thickness: 1,
       ),
+      scrollbarTheme: const ScrollbarThemeData(
+        thumbVisibility: WidgetStatePropertyAll(true),
+        thickness: WidgetStatePropertyAll(6.0),
+        radius: Radius.circular(3),
+      ),
       cardTheme: CardThemeData(
         color: AppColors.surfaceColor,
         elevation: 0,
@@ -43,6 +48,7 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceColor,
+        isDense: true,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: AppColors.divider),
@@ -57,8 +63,7 @@ class AppTheme {
               const BorderSide(color: AppColors.primaryColor, width: 1.5),
         ),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
     );
-  }
 }

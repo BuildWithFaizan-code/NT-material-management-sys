@@ -3,6 +3,8 @@ import 'design/app_theme.dart';
 import 'layout/app_shell.dart';
 import 'state/layout_state.dart';
 import 'state/status_state.dart';
+import 'pages/sub_department_master_page.dart';
+import 'pages/head_master_page.dart';
 
 class App extends StatelessWidget {
   final LayoutState layoutState;
@@ -24,6 +26,10 @@ class App extends StatelessWidget {
         layoutState: layoutState,
         statusState: statusState,
       ),
+      routes: {
+        '/sub-department-master': (context) => const SubDepartmentMasterPage(),
+        '/head-master': (context) => const HeadMasterPage(),
+      },
     );
   }
 }

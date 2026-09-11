@@ -38,8 +38,11 @@ public class ExceptionMiddleware
             _ => HttpStatusCode.InternalServerError,
         };
 
-        var response = ApiResponse<object>.Fail(
-            "An internal error occurred. Please contact system administrator.");
+        var message = string.IsNullOrWhiteSpace(exception.Message)
+            ? "An internal server error occurred."
+            : exception.Message;
+
+        var response = ApiResponse<object>.Fail(message);
 
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = (int)code;
