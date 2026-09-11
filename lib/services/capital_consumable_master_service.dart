@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 
 class CapitalConsumableItem {
   final int code;
@@ -30,7 +31,7 @@ class CapitalConsumableItem {
 }
 
 class CapitalConsumableMasterService {
-  static const String _baseUrl = 'http://localhost:5000/api/CapitalConsumableMaster';
+  static String get _baseUrl => '${ApiConfig.baseUrl}/CapitalConsumableMaster';
 
   // Persistent in-memory fallback store for offline dev resilience
   static final List<CapitalConsumableItem> _inMemoryItems = [

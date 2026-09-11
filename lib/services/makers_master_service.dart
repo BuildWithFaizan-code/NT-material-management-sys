@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 
 class MakersMasterItem {
   final int makerCode;
@@ -30,7 +31,7 @@ class MakersMasterItem {
 }
 
 class MakersMasterService {
-  static const String _baseUrl = 'http://localhost:5000/api/MakersMaster';
+  static String get _baseUrl => '${ApiConfig.baseUrl}/MakersMaster';
 
   // Persistent in-memory fallback store for offline dev resilience
   static final List<MakersMasterItem> _inMemoryMakers = [

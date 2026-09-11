@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 
 class Department {
   final int labCode;
@@ -98,7 +99,7 @@ class OperatorService {
   OperatorService({
     String? baseUrl,
     http.Client? client,
-  })  : baseUrl = baseUrl ?? 'http://localhost:5000/api/OperatorMaster',
+  })  : baseUrl = baseUrl ?? '${ApiConfig.baseUrl}/OperatorMaster',
         _client = client ?? http.Client();
 
   /// GET /api/OperatorMaster/GetDepartments

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 
 class FabricSizeItem {
   final int sizeCode;
@@ -26,7 +27,7 @@ class FabricSizeItem {
 }
 
 class FabricSizeMasterService {
-  static const String _baseUrl = 'http://localhost:5000/api/FabricSizeMaster';
+  static String get _baseUrl => '${ApiConfig.baseUrl}/FabricSizeMaster';
 
   static final List<FabricSizeItem> _inMemorySizes = [
     FabricSizeItem(sizeCode: 1, sizeName: 'SMALL'),

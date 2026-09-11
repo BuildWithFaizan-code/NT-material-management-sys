@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 
 /// Sub-Department Master Data Model (SUBDEPMST)
 class SubDepartmentMasterItem {
@@ -62,7 +63,7 @@ class SubDepartmentMasterItem {
 
 /// Service provider for Sub-Department Master API operations
 class SubDepartmentService {
-  static const String baseUrl = 'http://localhost:5000/api';
+  static String get baseUrl => ApiConfig.baseUrl;
   static const Duration _timeout = Duration(seconds: 10);
 
   // In-memory cache for ultra-fast local responsiveness

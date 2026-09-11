@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 
 class OperationMaster {
   final int omCode;
@@ -44,7 +45,7 @@ class OperationService {
   final http.Client _client;
 
   OperationService({String? baseUrl, http.Client? client})
-      : baseUrl = baseUrl ?? 'http://localhost:5000/api',
+      : baseUrl = baseUrl ?? ApiConfig.baseUrl,
         _client = client ?? http.Client();
 
   // In-memory fallback mock list for initial demo / offline resilience

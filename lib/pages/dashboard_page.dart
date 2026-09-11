@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../config/api_config.dart';
 import '../design/app_colors.dart';
 import '../design/app_dimensions.dart';
 import '../services/api_service.dart';
@@ -15,7 +16,7 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   final ApiService _api =
-      ApiService(baseUrl: 'http://localhost:5000/api/dashboard');
+      ApiService(baseUrl: '${ApiConfig.baseUrl}/dashboard');
 
   bool _isLoading = true;
   bool _isOffline = false;

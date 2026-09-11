@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 
 class ChargesMasterItem {
   final int chgId;
@@ -114,7 +115,7 @@ class ChargesMasterItem {
 }
 
 class ChargesMasterService {
-  static const String _baseUrl = 'http://localhost:5000/api/ChargesMaster';
+  static String get _baseUrl => '${ApiConfig.baseUrl}/ChargesMaster';
 
   Future<List<ChargesMasterItem>> getChargesList({String? module, String? mode}) async {
     try {

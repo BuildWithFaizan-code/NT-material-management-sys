@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 
 class MainGroupMasterItem {
   final String wipCode;
@@ -30,7 +31,7 @@ class MainGroupMasterItem {
 }
 
 class MainGroupMasterService {
-  static const String baseUrl = 'http://localhost:5000/api/MainGroupMaster';
+  static String get baseUrl => '${ApiConfig.baseUrl}/MainGroupMaster';
 
   Future<List<MainGroupMasterItem>> getAllItems({String? search}) async {
     final uri = Uri.parse(

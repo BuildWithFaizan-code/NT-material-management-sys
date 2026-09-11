@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 
 /// Head Master Data Model (LOCATIONMST WHERE MODE = 'COSTING HEAD')
 class HeadMasterItem {
@@ -84,7 +85,7 @@ class HeadMasterItem {
 
 /// Service provider for Head Master (Costing Head) API operations
 class HeadMasterService {
-  static const String baseUrl = 'http://localhost:5000/api';
+  static String get baseUrl => ApiConfig.baseUrl;
   static const Duration _timeout = Duration(seconds: 10);
 
   // In-memory cache for ultra-fast responsiveness

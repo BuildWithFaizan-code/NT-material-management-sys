@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import '../pages/project_master_page.dart';
 
 class ProjectService {
@@ -11,7 +12,7 @@ class ProjectService {
   ProjectService({
     String? baseUrl,
     http.Client? client,
-  })  : baseUrl = baseUrl ?? 'http://localhost:5000/api/projectmaster',
+  })  : baseUrl = baseUrl ?? '${ApiConfig.baseUrl}/projectmaster',
         _client = client ?? http.Client();
 
   /// GET /api/projectmaster

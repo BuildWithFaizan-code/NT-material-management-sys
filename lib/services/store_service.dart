@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import '../pages/store_master_page.dart';
 
 class StoreService {
@@ -11,7 +12,7 @@ class StoreService {
   StoreService({
     String? baseUrl,
     http.Client? client,
-  })  : baseUrl = baseUrl ?? 'http://localhost:5000/api/storemaster',
+  })  : baseUrl = baseUrl ?? '${ApiConfig.baseUrl}/storemaster',
         _client = client ?? http.Client();
 
   /// GET /api/storemaster

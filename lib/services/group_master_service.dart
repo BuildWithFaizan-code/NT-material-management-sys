@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 
 class GroupMasterItem {
   final String catCode;
@@ -81,7 +82,7 @@ class TaxSlabItem {
 }
 
 class GroupMasterService {
-  static const String baseUrl = 'http://localhost:5000/api/GroupMaster';
+  static String get baseUrl => '${ApiConfig.baseUrl}/GroupMaster';
 
   Future<List<GroupMasterItem>> getAllItems({String? search}) async {
     final uri = Uri.parse(

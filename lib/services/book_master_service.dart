@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 
 /// Category item model (from CATEGORYMST)
 class CategoryItem {
@@ -138,7 +139,7 @@ class BookMasterService {
   static final BookMasterService _instance = BookMasterService._internal();
   factory BookMasterService() => _instance;
 
-  final String _baseUrl = 'http://localhost:5000/api/BookMaster';
+  String get _baseUrl => '${ApiConfig.baseUrl}/BookMaster';
   static const Duration _timeout = Duration(seconds: 10);
 
   /// Get all distinct books summary

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 
 class DepartmentMasterItem {
   final int labCode;
@@ -131,7 +132,7 @@ class PartyAccountLookupItem {
 }
 
 class DepartmentService {
-  static const String baseUrl = 'http://localhost:5000/api';
+  static String get baseUrl => ApiConfig.baseUrl;
 
   // In-Memory Global Cache for Instant Account Directory Lookup (0ms Loading Time)
   static List<PartyAccountLookupItem>? _cachedLookupAccounts;

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 
 class GroupMasterDefinitionItem {
   final String ismMsCode;
@@ -74,7 +75,7 @@ class MainGroupLookupItem {
 }
 
 class GroupMasterDefinitionService {
-  static const String baseUrl = 'http://localhost:5000/api/GroupMasterDefinition';
+  static String get baseUrl => '${ApiConfig.baseUrl}/GroupMasterDefinition';
 
   Future<List<GroupMasterDefinitionItem>> getMappedDefinitions({String? mCode}) async {
     try {

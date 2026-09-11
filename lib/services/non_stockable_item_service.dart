@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 
 /// Non-Stockable Item model (from NONSTKITM)
 class NonStockableItem {
@@ -154,7 +155,7 @@ class NonStockableItemService {
   static final NonStockableItemService _instance = NonStockableItemService._internal();
   factory NonStockableItemService() => _instance;
 
-  final String _baseUrl = 'http://localhost:5000/api/NonStockableItem';
+  String get _baseUrl => '${ApiConfig.baseUrl}/NonStockableItem';
   static const Duration _timeout = Duration(seconds: 10);
 
   /// Fetch Unit & Tax Slab dropdown options

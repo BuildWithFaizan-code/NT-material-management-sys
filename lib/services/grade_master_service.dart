@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 
 class GradeItem {
   final int gradeSrl;
@@ -26,7 +27,7 @@ class GradeItem {
 }
 
 class GradeMasterService {
-  static const String _baseUrl = 'http://localhost:5000/api/GradeMaster';
+  static String get _baseUrl => '${ApiConfig.baseUrl}/GradeMaster';
 
   // Persistent in-memory fallback store for offline dev resilience
   static final List<GradeItem> _inMemoryItems = [

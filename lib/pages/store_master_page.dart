@@ -933,7 +933,7 @@ class _StoreMasterPageState extends State<StoreMasterPage> {
             ),
             const SizedBox(height: 6),
             Text(
-              _errorMessage ?? 'Unable to connect to http://localhost:5000/api/storemaster',
+              _errorMessage ?? 'Unable to connect to Store Master API',
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 12, color: AppColors.neutralDark),
             ),

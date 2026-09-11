@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 import '../pages/location_master_page.dart';
 
 class LocationService {
@@ -11,7 +12,7 @@ class LocationService {
   LocationService({
     String? baseUrl,
     http.Client? client,
-  })  : baseUrl = baseUrl ?? 'http://localhost:5000/api/locationmaster',
+  })  : baseUrl = baseUrl ?? '${ApiConfig.baseUrl}/locationmaster',
         _client = client ?? http.Client();
 
   /// GET /api/locationmaster
