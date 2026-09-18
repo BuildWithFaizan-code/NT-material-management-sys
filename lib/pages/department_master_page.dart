@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io';
+import '../utils/file_export_helper.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -2719,22 +2719,18 @@ class _DepartmentExportModalDialogState extends State<_DepartmentExportModalDial
           .where((d) => _selectedCodes.contains(d.labCode))
           .toList();
 
-      final String userProfile = Platform.environment['USERPROFILE'] ?? 'C:\\Users\\Default';
-      final String downloadsPath = '$userProfile\\Downloads';
-      final Directory dir = Directory(downloadsPath);
-      if (!dir.existsSync()) {
-        dir.createSync(recursive: true);
-      }
-
       final String timeStamp = DateTime.now().millisecondsSinceEpoch.toString().substring(7);
-      String filePath = '';
 
       if (_selectedFormat == ExportFormat.excel) {
-        filePath = '$downloadsPath\\Department_Master_Export_$timeStamp.xlsx';
-        await _generateExcelFile(filePath, selectedList);
+        final fileName = 'Department_Master_Export_$timeStamp.xlsx';
+        final bytes = _generateExcelBytes(selectedList);
+        if (bytes != null) {
+          await FileExportHelper.saveAndLaunchFile(bytes: bytes, fileName: fileName);
+        }
       } else {
-        filePath = '$downloadsPath\\Department_Master_Export_$timeStamp.pdf';
-        await _generatePdfFile(filePath, selectedList);
+        final fileName = 'Department_Master_Export_$timeStamp.pdf';
+        final bytes = await _generatePdfBytes(selectedList);
+        await FileExportHelper.saveAndLaunchFile(bytes: bytes, fileName: fileName);
       }
 
       if (mounted) {
@@ -2747,10 +2743,6 @@ class _DepartmentExportModalDialogState extends State<_DepartmentExportModalDial
 
         if (!mounted) return;
         Navigator.of(context).pop();
-
-        try {
-          await Process.run('explorer.exe', ['/select,', filePath]);
-        } catch (_) {}
       }
     } catch (e) {
       if (mounted) {
@@ -2761,7 +2753,7 @@ class _DepartmentExportModalDialogState extends State<_DepartmentExportModalDial
     }
   }
 
-  Future<void> _generateExcelFile(String filePath, List<DepartmentMasterItem> records) async {
+  List<int>? _generateExcelBytes(List<DepartmentMasterItem> records) {
     final excel = excel_pkg.Excel.createExcel();
     final String defaultSheet = excel.getDefaultSheet() ?? 'Sheet1';
     excel.rename(defaultSheet, 'Department Master');
@@ -2845,14 +2837,10 @@ class _DepartmentExportModalDialogState extends State<_DepartmentExportModalDial
       }
     }
 
-    final fileBytes = excel.save();
-    if (fileBytes != null) {
-      final File file = File(filePath);
-      await file.writeAsBytes(fileBytes);
-    }
+    return excel.save();
   }
 
-  Future<void> _generatePdfFile(String filePath, List<DepartmentMasterItem> records) async {
+  Future<List<int>> _generatePdfBytes(List<DepartmentMasterItem> records) async {
     final pdfDoc = pw.Document();
 
     pdfDoc.addPage(
@@ -2957,9 +2945,7 @@ class _DepartmentExportModalDialogState extends State<_DepartmentExportModalDial
       ),
     );
 
-    final pdfBytes = await pdfDoc.save();
-    final File file = File(filePath);
-    await file.writeAsBytes(pdfBytes);
+    return pdfDoc.save();
   }
 
   @override
@@ -3796,22 +3782,18 @@ class _AccountDirectoryExportModalDialogState extends State<_AccountDirectoryExp
           .where((a) => _selectedCodes.contains(a.pCode))
           .toList();
 
-      final String userProfile = Platform.environment['USERPROFILE'] ?? 'C:\\Users\\Default';
-      final String downloadsPath = '$userProfile\\Downloads';
-      final Directory dir = Directory(downloadsPath);
-      if (!dir.existsSync()) {
-        dir.createSync(recursive: true);
-      }
-
       final String timeStamp = DateTime.now().millisecondsSinceEpoch.toString().substring(7);
-      String filePath = '';
 
       if (_selectedFormat == ExportFormat.excel) {
-        filePath = '$downloadsPath\\Account_Directory_Export_$timeStamp.xlsx';
-        await _generateExcelFile(filePath, selectedList);
+        final fileName = 'Account_Directory_Export_$timeStamp.xlsx';
+        final bytes = _generateAccountExcelBytes(selectedList);
+        if (bytes != null) {
+          await FileExportHelper.saveAndLaunchFile(bytes: bytes, fileName: fileName);
+        }
       } else {
-        filePath = '$downloadsPath\\Account_Directory_Export_$timeStamp.pdf';
-        await _generatePdfFile(filePath, selectedList);
+        final fileName = 'Account_Directory_Export_$timeStamp.pdf';
+        final bytes = await _generateAccountPdfBytes(selectedList);
+        await FileExportHelper.saveAndLaunchFile(bytes: bytes, fileName: fileName);
       }
 
       if (mounted) {
@@ -3824,10 +3806,6 @@ class _AccountDirectoryExportModalDialogState extends State<_AccountDirectoryExp
 
         if (!mounted) return;
         Navigator.of(context).pop();
-
-        try {
-          await Process.run('explorer.exe', ['/select,', filePath]);
-        } catch (_) {}
       }
     } catch (e) {
       if (mounted) {
@@ -3838,7 +3816,7 @@ class _AccountDirectoryExportModalDialogState extends State<_AccountDirectoryExp
     }
   }
 
-  Future<void> _generateExcelFile(String filePath, List<PartyAccountLookupItem> records) async {
+  List<int>? _generateAccountExcelBytes(List<PartyAccountLookupItem> records) {
     final excel = excel_pkg.Excel.createExcel();
     final String defaultSheet = excel.getDefaultSheet() ?? 'Sheet1';
     excel.rename(defaultSheet, 'Account Directory');
@@ -3919,14 +3897,10 @@ class _AccountDirectoryExportModalDialogState extends State<_AccountDirectoryExp
       }
     }
 
-    final fileBytes = excel.save();
-    if (fileBytes != null) {
-      final file = File(filePath);
-      file.writeAsBytesSync(fileBytes);
-    }
+    return excel.save();
   }
 
-  Future<void> _generatePdfFile(String filePath, List<PartyAccountLookupItem> records) async {
+  Future<List<int>> _generateAccountPdfBytes(List<PartyAccountLookupItem> records) async {
     final pdf = pw.Document();
     pdf.addPage(
       pw.MultiPage(
@@ -3989,8 +3963,7 @@ class _AccountDirectoryExportModalDialogState extends State<_AccountDirectoryExp
       ),
     );
 
-    final file = File(filePath);
-    await file.writeAsBytes(await pdf.save());
+    return pdf.save();
   }
 
   @override

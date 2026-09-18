@@ -1,12 +1,11 @@
 import 'dart:async';
-import 'dart:io';
+import '../utils/file_export_helper.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:excel/excel.dart' as excel_pkg;
 import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:url_launcher/url_launcher.dart';
 import '../design/app_colors.dart';
 import '../services/fabric_size_master_service.dart';
 
@@ -1540,39 +1539,24 @@ class _FabricSizeExportModalDialogState extends State<_FabricSizeExportModalDial
     });
   }
 
-  Future<void> _openFileInSystemExplorer(String filePath) async {
-    if (Platform.isWindows) {
-      try {
-        await Process.run('explorer.exe', ['/select,', filePath]);
-        return;
-      } catch (_) {}
-    }
-    try {
-      final fileUri = Uri.file(filePath);
-      await launchUrl(fileUri);
-    } catch (_) {}
-  }
-
   Future<void> _finalizeFileAndComplete() async {
     final selectedList = widget.items
         .where((i) => _selectedCodes.contains(i.sizeCode))
         .toList();
 
     try {
-      final String userProfile = Platform.environment['USERPROFILE'] ?? 'C:\\Users\\Default';
-      final String downloadsPath = '$userProfile\\Downloads';
-      final Directory dir = Directory(downloadsPath);
-      if (!dir.existsSync()) dir.createSync(recursive: true);
-
       final String timeStamp = DateTime.now().millisecondsSinceEpoch.toString().substring(7);
-      String filePath = '';
 
       if (_selectedFormat == 'XLSX') {
-        filePath = '$downloadsPath\\Fabric_Size_Master_$timeStamp.xlsx';
-        await _generateExcelFile(filePath, selectedList);
+        final fileName = 'Fabric_Size_Master_$timeStamp.xlsx';
+        final bytes = _generateExcelBytes(selectedList);
+        if (bytes != null) {
+          await FileExportHelper.saveAndLaunchFile(bytes: bytes, fileName: fileName);
+        }
       } else {
-        filePath = '$downloadsPath\\Fabric_Size_Master_$timeStamp.pdf';
-        await _generatePdfFile(filePath, selectedList);
+        final fileName = 'Fabric_Size_Master_$timeStamp.pdf';
+        final bytes = await _generatePdfBytes(selectedList);
+        await FileExportHelper.saveAndLaunchFile(bytes: bytes, fileName: fileName);
       }
 
       if (!mounted) return;
@@ -1584,7 +1568,6 @@ class _FabricSizeExportModalDialogState extends State<_FabricSizeExportModalDial
       await Future.delayed(const Duration(milliseconds: 650));
       if (!mounted) return;
       Navigator.of(context).pop();
-      await _openFileInSystemExplorer(filePath);
     } catch (e) {
       if (mounted) {
         setState(() => _isExporting = false);
@@ -1598,7 +1581,7 @@ class _FabricSizeExportModalDialogState extends State<_FabricSizeExportModalDial
     }
   }
 
-  Future<void> _generateExcelFile(String filePath, List<FabricSizeItem> records) async {
+  List<int>? _generateExcelBytes(List<FabricSizeItem> records) {
     final excel = excel_pkg.Excel.createExcel();
     final String defaultSheet = excel.getDefaultSheet() ?? 'Sheet1';
     excel.rename(defaultSheet, 'Fabric Size Master');
@@ -1670,14 +1653,10 @@ class _FabricSizeExportModalDialogState extends State<_FabricSizeExportModalDial
       }
     }
 
-    final fileBytes = excel.save();
-    if (fileBytes != null) {
-      final file = File(filePath);
-      await file.writeAsBytes(fileBytes);
-    }
+    return excel.save();
   }
 
-  Future<void> _generatePdfFile(String filePath, List<FabricSizeItem> records) async {
+  Future<List<int>> _generatePdfBytes(List<FabricSizeItem> records) async {
     final pdf = pw.Document();
 
     pdf.addPage(
@@ -1731,8 +1710,7 @@ class _FabricSizeExportModalDialogState extends State<_FabricSizeExportModalDial
       ),
     );
 
-    final file = File(filePath);
-    await file.writeAsBytes(await pdf.save());
+    return pdf.save();
   }
 
   @override

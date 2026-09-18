@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io';
+import '../utils/file_export_helper.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:excel/excel.dart' as excel_pkg;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:url_launcher/url_launcher.dart';
 
 import '../design/app_colors.dart';
 import '../services/sub_department_service.dart';
@@ -3493,36 +3492,15 @@ class _SubDepartmentExportModalDialogState extends State<_SubDepartmentExportMod
     });
   }
 
-  Future<void> _openFileInSystemExplorer(String filePath) async {
-    if (Platform.isWindows) {
-      try {
-        await Process.run('explorer.exe', ['/select,', filePath]);
-        return;
-      } catch (_) {}
-    }
-    try {
-      final fileUri = Uri.file(filePath);
-      await launchUrl(fileUri);
-    } catch (_) {}
-  }
-
   Future<void> _finalizeFileAndComplete() async {
     try {
       final selectedList = widget.subDepartments
           .where((p) => _selectedSubDeptCodes.contains(p.sdmCode))
           .toList();
 
-      final String userProfile = Platform.environment['USERPROFILE'] ?? 'C:\\Users\\Default';
-      final String downloadsPath = '$userProfile\\Downloads';
-      final Directory dir = Directory(downloadsPath);
-      if (!dir.existsSync()) dir.createSync(recursive: true);
-
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final extension = _selectedFormat == 'XLSX' ? 'xlsx' : 'pdf';
       final fileName = 'SubDepartmentMaster_Export_$timestamp.$extension';
-      final filePath = '$downloadsPath\\$fileName';
-
-      final file = File(filePath);
 
       if (_selectedFormat == 'XLSX') {
         final excel = excel_pkg.Excel.createExcel();
@@ -3598,7 +3576,7 @@ class _SubDepartmentExportModalDialogState extends State<_SubDepartmentExportMod
 
         final fileBytes = excel.save();
         if (fileBytes != null) {
-          await file.writeAsBytes(fileBytes);
+          await FileExportHelper.saveAndLaunchFile(bytes: fileBytes, fileName: fileName);
         }
       } else {
         final pdfDoc = pw.Document();
@@ -3693,7 +3671,7 @@ class _SubDepartmentExportModalDialogState extends State<_SubDepartmentExportMod
           ),
         );
         final pdfBytes = await pdfDoc.save();
-        await file.writeAsBytes(pdfBytes);
+        await FileExportHelper.saveAndLaunchFile(bytes: pdfBytes, fileName: fileName);
       }
 
       if (mounted) {
@@ -3706,8 +3684,6 @@ class _SubDepartmentExportModalDialogState extends State<_SubDepartmentExportMod
 
         if (!mounted) return;
         Navigator.of(context).pop();
-
-        await _openFileInSystemExplorer(filePath);
       }
     } catch (e, stack) {
       debugPrint('Export sub-department master failed: $e\n$stack');

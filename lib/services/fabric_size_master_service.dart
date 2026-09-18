@@ -42,7 +42,7 @@ class FabricSizeMasterService {
   Future<List<FabricSizeItem>> getFabricSizes() async {
     try {
       final uri = Uri.parse('$_baseUrl/GetAll');
-      final response = await http.get(uri).timeout(const Duration(seconds: 4));
+      final response = await http.get(uri).timeout(ApiConfig.defaultTimeout);
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -62,7 +62,7 @@ class FabricSizeMasterService {
   Future<int> getNextSizeCode() async {
     try {
       final uri = Uri.parse('$_baseUrl/GetNextCode');
-      final response = await http.get(uri).timeout(const Duration(seconds: 3));
+      final response = await http.get(uri).timeout(ApiConfig.defaultTimeout);
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -84,7 +84,7 @@ class FabricSizeMasterService {
         uri,
         headers: {'Content-Type': 'application/json'},
         body: json.encode(item.toJson()),
-      ).timeout(const Duration(seconds: 5));
+      ).timeout(ApiConfig.defaultTimeout);
 
       if (response.statusCode == 200) {
         json.decode(response.body);
@@ -103,7 +103,7 @@ class FabricSizeMasterService {
         uri,
         headers: {'Content-Type': 'application/json'},
         body: json.encode(item.toJson()),
-      ).timeout(const Duration(seconds: 5));
+      ).timeout(ApiConfig.defaultTimeout);
 
       if (response.statusCode == 200) {
         json.decode(response.body);
@@ -122,7 +122,7 @@ class FabricSizeMasterService {
   Future<bool> deleteFabricSize(int sizeCode) async {
     try {
       final uri = Uri.parse('$_baseUrl/Delete/$sizeCode');
-      final response = await http.delete(uri).timeout(const Duration(seconds: 5));
+      final response = await http.delete(uri).timeout(ApiConfig.defaultTimeout);
 
       if (response.statusCode == 200) {
         json.decode(response.body);

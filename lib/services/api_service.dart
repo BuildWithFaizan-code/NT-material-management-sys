@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
+import '../config/api_config.dart';
 
 class MetricsDto {
   final int activeStocks;
@@ -133,7 +133,7 @@ class ApiException implements Exception {
 class ApiService {
   final String baseUrl;
   final http.Client _client;
-  static const _timeout = Duration(seconds: 10);
+  static const _timeout = ApiConfig.defaultTimeout;
 
   ApiService({required this.baseUrl, http.Client? client})
       : _client = client ?? http.Client();
@@ -201,10 +201,10 @@ class ApiService {
     try {
       final response = await _client.get(uri).timeout(_timeout);
       return response;
-    } on SocketException {
+    } on http.ClientException {
       throw ApiException(
           'Connection failed — server may be offline. Tap Retry.');
-    } on http.ClientException {
+    } catch (_) {
       throw ApiException(
           'Connection failed — server may be offline. Tap Retry.');
     }

@@ -46,7 +46,7 @@ class MakersMasterService {
   Future<List<MakersMasterItem>> getMakers() async {
     try {
       final uri = Uri.parse('$_baseUrl/GetAll');
-      final response = await http.get(uri).timeout(const Duration(seconds: 4));
+      final response = await http.get(uri).timeout(ApiConfig.defaultTimeout);
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -66,7 +66,7 @@ class MakersMasterService {
   Future<int> getNextMakerCode() async {
     try {
       final uri = Uri.parse('$_baseUrl/GetNextCode');
-      final response = await http.get(uri).timeout(const Duration(seconds: 3));
+      final response = await http.get(uri).timeout(ApiConfig.defaultTimeout);
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -88,7 +88,7 @@ class MakersMasterService {
         uri,
         headers: {'Content-Type': 'application/json'},
         body: json.encode(item.toJson()),
-      ).timeout(const Duration(seconds: 5));
+      ).timeout(ApiConfig.defaultTimeout);
 
       if (response.statusCode == 200) {
         json.decode(response.body);
@@ -107,7 +107,7 @@ class MakersMasterService {
         uri,
         headers: {'Content-Type': 'application/json'},
         body: json.encode(item.toJson()),
-      ).timeout(const Duration(seconds: 5));
+      ).timeout(ApiConfig.defaultTimeout);
 
       if (response.statusCode == 200) {
         json.decode(response.body);
@@ -126,7 +126,7 @@ class MakersMasterService {
   Future<bool> deleteMaker(int makerCode) async {
     try {
       final uri = Uri.parse('$_baseUrl/Delete/$makerCode');
-      final response = await http.delete(uri).timeout(const Duration(seconds: 5));
+      final response = await http.delete(uri).timeout(ApiConfig.defaultTimeout);
 
       if (response.statusCode == 200) {
         json.decode(response.body);

@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import '../../design/app_dimensions.dart';
 import 'master_nav_item.dart';
+import 'transaction_nav_item.dart';
 import 'modern_navbar_theme.dart';
 
 class Sidebar extends StatelessWidget {
   final int currentIndex;
   final String activeSubItem;
+  final String activeTransactionSubItem;
   final ValueChanged<int> onItemSelected;
   final ValueChanged<String>? onSubItemSelected;
+  final ValueChanged<String>? onTransactionSubItemSelected;
   final VoidCallback onToggle;
   final bool isOpen;
 
@@ -15,8 +18,10 @@ class Sidebar extends StatelessWidget {
     super.key,
     required this.currentIndex,
     this.activeSubItem = '',
+    this.activeTransactionSubItem = '',
     required this.onItemSelected,
     this.onSubItemSelected,
+    this.onTransactionSubItemSelected,
     required this.onToggle,
     required this.isOpen,
   });
@@ -130,12 +135,18 @@ class Sidebar extends StatelessWidget {
         ),
         const SizedBox(height: 2),
 
-        // Index 2: Transaction
-        _ModernSidebarItem(
-          icon: Icons.receipt_long_outlined,
-          label: 'Transaction',
-          selected: currentIndex == 2,
-          onTap: () {
+        // Index 2: Transaction (Expandable Dropdown Accordion)
+        TransactionNavItem(
+          isTransactionSelected: currentIndex == 2,
+          activeSubItem: activeTransactionSubItem,
+          onTransactionHeaderTap: () {
+            if (activeTransactionSubItem.isEmpty) {
+              onTransactionSubItemSelected?.call('Bill of Material (BOM)');
+            }
+            onItemSelected(2);
+          },
+          onSubItemSelected: (subTitle) {
+            onTransactionSubItemSelected?.call(subTitle);
             onItemSelected(2);
           },
         ),

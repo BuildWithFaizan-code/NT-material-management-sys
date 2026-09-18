@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io';
+import '../utils/file_export_helper.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:excel/excel.dart' as excel_pkg;
@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:url_launcher/url_launcher.dart';
 import '../design/app_colors.dart';
 import '../services/store_service.dart';
 
@@ -5167,33 +5166,12 @@ class _StoreExportModalDialogState extends State<_StoreExportModalDialog> {
     });
   }
 
-  Future<void> _openFileInSystemExplorer(String filePath) async {
-    if (Platform.isWindows) {
-      try {
-        await Process.run('explorer.exe', ['/select,', filePath]);
-        return;
-      } catch (_) {}
-    }
-    try {
-      final fileUri = Uri.file(filePath);
-      await launchUrl(fileUri);
-    } catch (_) {}
-  }
-
   Future<void> _finalizeFileAndComplete() async {
     try {
       final selectedList = widget.stores.where((s) => _selectedStoreCodes.contains(s.strCode)).toList();
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final extension = _selectedFormat == 'XLSX' ? 'xlsx' : 'pdf';
       final fileName = 'StoreMaster_Export_$timestamp.$extension';
-
-      final String userProfile = Platform.environment['USERPROFILE'] ?? 'C:\\Users\\Default';
-      final String downloadsPath = '$userProfile\\Downloads';
-      final Directory dir = Directory(downloadsPath);
-      if (!dir.existsSync()) dir.createSync(recursive: true);
-
-      final filePath = '$downloadsPath\\$fileName';
-      final file = File(filePath);
 
       if (_selectedFormat == 'XLSX') {
         final excel = excel_pkg.Excel.createExcel();
@@ -5252,8 +5230,8 @@ class _StoreExportModalDialogState extends State<_StoreExportModalDialog> {
         sheet.appendRow([
           excel_pkg.TextCellValue('STORE CODE'),
           excel_pkg.TextCellValue('STORE NAME'),
-          excel_pkg.TextCellValue('SERIES'),
-          excel_pkg.TextCellValue('FIX CHAR'),
+          excel_pkg.TextCellValue('PREFIX SERIES'),
+          excel_pkg.TextCellValue('FIX CHARACTER'),
           excel_pkg.TextCellValue('LOCATION CODE'),
           excel_pkg.TextCellValue('LOCATION NAME'),
         ]);
@@ -5285,7 +5263,7 @@ class _StoreExportModalDialogState extends State<_StoreExportModalDialog> {
 
         final fileBytes = excel.save();
         if (fileBytes != null) {
-          await file.writeAsBytes(fileBytes);
+          await FileExportHelper.saveAndLaunchFile(bytes: fileBytes, fileName: fileName);
         }
       } else {
         final pdfDoc = pw.Document();
@@ -5389,7 +5367,7 @@ class _StoreExportModalDialogState extends State<_StoreExportModalDialog> {
           ),
         );
         final pdfBytes = await pdfDoc.save();
-        await file.writeAsBytes(pdfBytes);
+        await FileExportHelper.saveAndLaunchFile(bytes: pdfBytes, fileName: fileName);
       }
 
       // Save file & complete export process
@@ -5404,9 +5382,6 @@ class _StoreExportModalDialogState extends State<_StoreExportModalDialog> {
 
         if (!mounted) return;
         Navigator.of(context).pop();
-
-        // Reveal the downloaded file in Windows File Explorer
-        await _openFileInSystemExplorer(filePath);
       }
     } catch (e, stack) {
       debugPrint('Export store master failed: $e\n$stack');

@@ -124,7 +124,7 @@ class ChargesMasterService {
       if (mode != null && mode.isNotEmpty) queryParams['mode'] = mode;
 
       final uri = Uri.parse('$_baseUrl/GetAll').replace(queryParameters: queryParams);
-      final response = await http.get(uri).timeout(const Duration(seconds: 4));
+      final response = await http.get(uri).timeout(ApiConfig.defaultTimeout);
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -147,7 +147,7 @@ class ChargesMasterService {
         uri,
         headers: {'Content-Type': 'application/json'},
         body: json.encode(items.map((i) => i.toJson()).toList()),
-      ).timeout(const Duration(seconds: 5));
+      ).timeout(ApiConfig.defaultTimeout);
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:excel/excel.dart' as excel_pkg;
@@ -7,9 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:url_launcher/url_launcher.dart';
 import '../design/app_colors.dart';
 import '../services/non_stockable_item_service.dart';
+import '../utils/file_export_helper.dart';
 
 enum ExportFormat { excel, pdf }
 enum ButtonStatus { idle, loading, success }
@@ -2065,211 +2064,29 @@ class _UnassignedItemExportModalDialogState extends State<_UnassignedItemExportM
     });
   }
 
-  Future<void> _openFileInSystemExplorer(String filePath) async {
-    if (Platform.isWindows) {
-      try {
-        await Process.run('explorer.exe', ['/select,', filePath]);
-        return;
-      } catch (_) {}
-    }
-    try {
-      final fileUri = Uri.file(filePath);
-      await launchUrl(fileUri);
-    } catch (_) {}
-  }
-
   Future<void> _finalizeFileAndComplete() async {
     try {
       final selectedList = widget.items.where((i) => _selectedCodes.contains(i.iCode)).toList();
 
-      final String userProfile = Platform.environment['USERPROFILE'] ?? 'C:\\Users\\Default';
-      final String downloadsPath = '$userProfile\\Downloads';
-      final Directory dir = Directory(downloadsPath);
-      if (!dir.existsSync()) dir.createSync(recursive: true);
-
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final extension = _selectedFormat == 'XLSX' ? 'xlsx' : 'pdf';
       final fileName = 'UnassignedItems_Export_$timestamp.$extension';
-      final filePath = '$downloadsPath\\$fileName';
 
-      final file = File(filePath);
-
+      final List<int>? fileBytes;
       if (_selectedFormat == 'XLSX') {
-        final excel = excel_pkg.Excel.createExcel();
-        final String defaultSheet = excel.getDefaultSheet() ?? 'Sheet1';
-        excel.rename(defaultSheet, 'Unassigned Items');
-        final excel_pkg.Sheet sheet = excel['Unassigned Items'];
-
-        sheet.setColumnWidth(0, 20.0); // ITEM CODE
-        sheet.setColumnWidth(1, 40.0); // ITEM NAME
-        sheet.setColumnWidth(2, 16.0); // RATE (₹)
-        sheet.setColumnWidth(3, 16.0); // UNIT
-        sheet.setColumnWidth(4, 18.0); // HSN/SAC CODE
-
-        final cellBorder = excel_pkg.Border(
-          borderStyle: excel_pkg.BorderStyle.Thin,
-          borderColorHex: excel_pkg.ExcelColor.fromHexString('#CBD5E1'),
-        );
-
-        final excel_pkg.CellStyle headerStyle = excel_pkg.CellStyle(
-          backgroundColorHex: excel_pkg.ExcelColor.fromHexString('#0C3B2E'),
-          fontColorHex: excel_pkg.ExcelColor.fromHexString('#FFFFFF'),
-          bold: true,
-          horizontalAlign: excel_pkg.HorizontalAlign.Center,
-          verticalAlign: excel_pkg.VerticalAlign.Center,
-          leftBorder: cellBorder, rightBorder: cellBorder, topBorder: cellBorder, bottomBorder: cellBorder,
-        );
-
-        final excel_pkg.CellStyle evenStyle = excel_pkg.CellStyle(
-          backgroundColorHex: excel_pkg.ExcelColor.fromHexString('#F8FAFC'),
-          horizontalAlign: excel_pkg.HorizontalAlign.Center,
-          verticalAlign: excel_pkg.VerticalAlign.Center,
-          leftBorder: cellBorder, rightBorder: cellBorder, topBorder: cellBorder, bottomBorder: cellBorder,
-        );
-
-        final excel_pkg.CellStyle oddStyle = excel_pkg.CellStyle(
-          backgroundColorHex: excel_pkg.ExcelColor.fromHexString('#FFFFFF'),
-          horizontalAlign: excel_pkg.HorizontalAlign.Center,
-          verticalAlign: excel_pkg.VerticalAlign.Center,
-          leftBorder: cellBorder, rightBorder: cellBorder, topBorder: cellBorder, bottomBorder: cellBorder,
-        );
-
-        sheet.setRowHeight(0, 26.0);
-        sheet.appendRow([
-          excel_pkg.TextCellValue('ITEM CODE'),
-          excel_pkg.TextCellValue('ITEM NAME'),
-          excel_pkg.TextCellValue('RATE (₹)'),
-          excel_pkg.TextCellValue('UNIT'),
-          excel_pkg.TextCellValue('HSN/SAC CODE'),
-        ]);
-
-        for (int col = 0; col < 5; col++) {
-          sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: col, rowIndex: 0)).cellStyle = headerStyle;
-        }
-
-        for (int i = 0; i < selectedList.length; i++) {
-          final item = selectedList[i];
-          final style = (i % 2 == 0) ? evenStyle : oddStyle;
-          final int rIdx = i + 1;
-
-          sheet.setRowHeight(rIdx, 22.0);
-          sheet.appendRow([
-            excel_pkg.TextCellValue(item.iCode),
-            excel_pkg.TextCellValue(item.iName1),
-            excel_pkg.DoubleCellValue(item.rate),
-            excel_pkg.TextCellValue(item.unitCode),
-            excel_pkg.TextCellValue(item.sacCode),
-          ]);
-
-          for (int col = 0; col < 5; col++) {
-            sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: col, rowIndex: rIdx)).cellStyle = style;
-          }
-        }
-
-        final fileBytes = excel.save();
-        if (fileBytes != null) {
-          await file.writeAsBytes(fileBytes);
-        }
+        fileBytes = _generateExcelBytes(selectedList);
       } else {
-        final pdfDoc = pw.Document();
-
-        pdfDoc.addPage(
-          pw.MultiPage(
-            pageFormat: PdfPageFormat.a4.landscape,
-            margin: const pw.EdgeInsets.all(24),
-            maxPages: 1000,
-            header: (context) => pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text(
-                      'UNASSIGNED ITEMS REGISTER REPORT (ITEMMST)',
-                      style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: const PdfColor.fromInt(0xFF0C3B2E)),
-                    ),
-                    pw.Text(
-                      'NEW TECH INFOSOL MMS',
-                      style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
-                    ),
-                  ],
-                ),
-                pw.SizedBox(height: 4),
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text(
-                      'Total Records: ${selectedList.length}',
-                      style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
-                    ),
-                    pw.Text(
-                      'Exported on: ${DateTime.now().toString().split('.')[0]}',
-                      style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey600),
-                    ),
-                  ],
-                ),
-                pw.SizedBox(height: 4),
-                pw.Divider(thickness: 1, color: const PdfColor.fromInt(0xFF0C3B2E)),
-                pw.SizedBox(height: 8),
-              ],
-            ),
-            footer: (context) => pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Text('Generated by New Tech MMS', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
-                pw.Text('Page ${context.pageNumber} of ${context.pagesCount}', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
-              ],
-            ),
-            build: (context) => [
-              pw.TableHelper.fromTextArray(
-                headers: ['SR NO', 'ITEM CODE', 'ITEM NAME', 'RATE (RS.)', 'UNIT', 'HSN/SAC'],
-                data: selectedList.asMap().entries.map((entry) {
-                  final idx = entry.key;
-                  final item = entry.value;
-                  return [
-                    '${idx + 1}',
-                    item.iCode,
-                    item.iName1,
-                    item.rate > 0 ? item.rate.toStringAsFixed(2) : '-',
-                    item.unitCode.isNotEmpty ? item.unitCode : '-',
-                    item.sacCode.isNotEmpty ? item.sacCode : '-',
-                  ];
-                }).toList(),
-                headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 8.5),
-                headerDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFF0C3B2E)),
-                cellStyle: const pw.TextStyle(fontSize: 8),
-                cellAlignments: {
-                  0: pw.Alignment.center,
-                  1: pw.Alignment.centerLeft,
-                  2: pw.Alignment.centerLeft,
-                  3: pw.Alignment.centerRight,
-                  4: pw.Alignment.center,
-                  5: pw.Alignment.center,
-                },
-                columnWidths: {
-                  0: const pw.FlexColumnWidth(0.8),
-                  1: const pw.FlexColumnWidth(2.5),
-                  2: const pw.FlexColumnWidth(4.5),
-                  3: const pw.FlexColumnWidth(1.5),
-                  4: const pw.FlexColumnWidth(1.2),
-                  5: const pw.FlexColumnWidth(1.5),
-                },
-                cellPadding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4.5),
-                rowDecoration: const pw.BoxDecoration(
-                  border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
-                ),
-                oddRowDecoration: const pw.BoxDecoration(
-                  color: PdfColor.fromInt(0xFFF8FAFC),
-                  border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
-                ),
-                border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-              ),
-            ],
-          ),
-        );
-        final pdfBytes = await pdfDoc.save();
-        await file.writeAsBytes(pdfBytes);
+        fileBytes = await _generatePdfBytes(selectedList);
       }
+
+      if (fileBytes == null) {
+        throw Exception('Failed to generate export file bytes.');
+      }
+
+      await FileExportHelper.saveAndLaunchFile(
+        bytes: fileBytes,
+        fileName: fileName,
+      );
 
       if (mounted) {
         setState(() {
@@ -2281,8 +2098,6 @@ class _UnassignedItemExportModalDialogState extends State<_UnassignedItemExportM
 
         if (!mounted) return;
         Navigator.of(context).pop();
-
-        await _openFileInSystemExplorer(filePath);
       }
     } catch (e, stack) {
       debugPrint('Export unassigned items failed: $e\n$stack');
@@ -2298,6 +2113,181 @@ class _UnassignedItemExportModalDialogState extends State<_UnassignedItemExportM
         );
       }
     }
+  }
+
+  List<int>? _generateExcelBytes(List<UnassignedItem> selectedList) {
+    final excel = excel_pkg.Excel.createExcel();
+    final String defaultSheet = excel.getDefaultSheet() ?? 'Sheet1';
+    excel.rename(defaultSheet, 'Unassigned Items');
+    final excel_pkg.Sheet sheet = excel['Unassigned Items'];
+
+    sheet.setColumnWidth(0, 20.0); // ITEM CODE
+    sheet.setColumnWidth(1, 40.0); // ITEM NAME
+    sheet.setColumnWidth(2, 16.0); // RATE (₹)
+    sheet.setColumnWidth(3, 16.0); // UNIT
+    sheet.setColumnWidth(4, 18.0); // HSN/SAC CODE
+
+    final cellBorder = excel_pkg.Border(
+      borderStyle: excel_pkg.BorderStyle.Thin,
+      borderColorHex: excel_pkg.ExcelColor.fromHexString('#CBD5E1'),
+    );
+
+    final excel_pkg.CellStyle headerStyle = excel_pkg.CellStyle(
+      backgroundColorHex: excel_pkg.ExcelColor.fromHexString('#0C3B2E'),
+      fontColorHex: excel_pkg.ExcelColor.fromHexString('#FFFFFF'),
+      bold: true,
+      horizontalAlign: excel_pkg.HorizontalAlign.Center,
+      verticalAlign: excel_pkg.VerticalAlign.Center,
+      leftBorder: cellBorder, rightBorder: cellBorder, topBorder: cellBorder, bottomBorder: cellBorder,
+    );
+
+    final excel_pkg.CellStyle evenStyle = excel_pkg.CellStyle(
+      backgroundColorHex: excel_pkg.ExcelColor.fromHexString('#F8FAFC'),
+      horizontalAlign: excel_pkg.HorizontalAlign.Center,
+      verticalAlign: excel_pkg.VerticalAlign.Center,
+      leftBorder: cellBorder, rightBorder: cellBorder, topBorder: cellBorder, bottomBorder: cellBorder,
+    );
+
+    final excel_pkg.CellStyle oddStyle = excel_pkg.CellStyle(
+      backgroundColorHex: excel_pkg.ExcelColor.fromHexString('#FFFFFF'),
+      horizontalAlign: excel_pkg.HorizontalAlign.Center,
+      verticalAlign: excel_pkg.VerticalAlign.Center,
+      leftBorder: cellBorder, rightBorder: cellBorder, topBorder: cellBorder, bottomBorder: cellBorder,
+    );
+
+    sheet.setRowHeight(0, 26.0);
+    sheet.appendRow([
+      excel_pkg.TextCellValue('ITEM CODE'),
+      excel_pkg.TextCellValue('ITEM NAME'),
+      excel_pkg.TextCellValue('RATE (₹)'),
+      excel_pkg.TextCellValue('UNIT'),
+      excel_pkg.TextCellValue('HSN/SAC CODE'),
+    ]);
+
+    for (int col = 0; col < 5; col++) {
+      sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: col, rowIndex: 0)).cellStyle = headerStyle;
+    }
+
+    for (int i = 0; i < selectedList.length; i++) {
+      final item = selectedList[i];
+      final style = (i % 2 == 0) ? evenStyle : oddStyle;
+      final int rIdx = i + 1;
+
+      sheet.setRowHeight(rIdx, 22.0);
+      sheet.appendRow([
+        excel_pkg.TextCellValue(item.iCode),
+        excel_pkg.TextCellValue(item.iName1),
+        excel_pkg.DoubleCellValue(item.rate),
+        excel_pkg.TextCellValue(item.unitCode),
+        excel_pkg.TextCellValue(item.sacCode),
+      ]);
+
+      for (int col = 0; col < 5; col++) {
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: col, rowIndex: rIdx)).cellStyle = style;
+      }
+    }
+
+    return excel.save();
+  }
+
+  Future<List<int>> _generatePdfBytes(List<UnassignedItem> selectedList) async {
+    final pdfDoc = pw.Document();
+
+    pdfDoc.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4.landscape,
+        margin: const pw.EdgeInsets.all(24),
+        maxPages: 1000,
+        header: (context) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text(
+                  'UNASSIGNED ITEMS REGISTER REPORT (ITEMMST)',
+                  style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: const PdfColor.fromInt(0xFF0C3B2E)),
+                ),
+                pw.Text(
+                  'NEW TECH INFOSOL MMS',
+                  style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+                ),
+              ],
+            ),
+            pw.SizedBox(height: 4),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text(
+                  'Total Records: ${selectedList.length}',
+                  style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
+                ),
+                pw.Text(
+                  'Exported on: ${DateTime.now().toString().split('.')[0]}',
+                  style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey600),
+                ),
+              ],
+            ),
+            pw.SizedBox(height: 4),
+            pw.Divider(thickness: 1, color: const PdfColor.fromInt(0xFF0C3B2E)),
+            pw.SizedBox(height: 8),
+          ],
+        ),
+        footer: (context) => pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            pw.Text('Generated by New Tech MMS', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
+            pw.Text('Page ${context.pageNumber} of ${context.pagesCount}', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
+          ],
+        ),
+        build: (context) => [
+          pw.TableHelper.fromTextArray(
+            headers: ['SR NO', 'ITEM CODE', 'ITEM NAME', 'RATE (RS.)', 'UNIT', 'HSN/SAC'],
+            data: selectedList.asMap().entries.map((entry) {
+              final idx = entry.key;
+              final item = entry.value;
+              return [
+                '${idx + 1}',
+                item.iCode,
+                item.iName1,
+                item.rate > 0 ? item.rate.toStringAsFixed(2) : '-',
+                item.unitCode.isNotEmpty ? item.unitCode : '-',
+                item.sacCode.isNotEmpty ? item.sacCode : '-',
+              ];
+            }).toList(),
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 8.5),
+            headerDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFF0C3B2E)),
+            cellStyle: const pw.TextStyle(fontSize: 8),
+            cellAlignments: {
+              0: pw.Alignment.center,
+              1: pw.Alignment.centerLeft,
+              2: pw.Alignment.centerLeft,
+              3: pw.Alignment.centerRight,
+              4: pw.Alignment.center,
+              5: pw.Alignment.center,
+            },
+            columnWidths: {
+              0: const pw.FlexColumnWidth(0.8),
+              1: const pw.FlexColumnWidth(2.5),
+              2: const pw.FlexColumnWidth(4.5),
+              3: const pw.FlexColumnWidth(1.5),
+              4: const pw.FlexColumnWidth(1.2),
+              5: const pw.FlexColumnWidth(1.5),
+            },
+            cellPadding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4.5),
+            rowDecoration: const pw.BoxDecoration(
+              border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
+            ),
+            oddRowDecoration: const pw.BoxDecoration(
+              color: PdfColor.fromInt(0xFFF8FAFC),
+              border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
+            ),
+            border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+          ),
+        ],
+      ),
+    );
+    return pdfDoc.save();
   }
 
   @override
@@ -3545,217 +3535,29 @@ class _NonStockableExportModalDialogState extends State<_NonStockableExportModal
     });
   }
 
-  Future<void> _openFileInSystemExplorer(String filePath) async {
-    if (Platform.isWindows) {
-      try {
-        await Process.run('explorer.exe', ['/select,', filePath]);
-        return;
-      } catch (_) {}
-    }
-    try {
-      final fileUri = Uri.file(filePath);
-      await launchUrl(fileUri);
-    } catch (_) {}
-  }
-
   Future<void> _finalizeFileAndComplete() async {
     try {
       final selectedList = widget.items.where((i) => _selectedCodes.contains(i.iCode)).toList();
 
-      final String userProfile = Platform.environment['USERPROFILE'] ?? 'C:\\Users\\Default';
-      final String downloadsPath = '$userProfile\\Downloads';
-      final Directory dir = Directory(downloadsPath);
-      if (!dir.existsSync()) dir.createSync(recursive: true);
-
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final extension = _selectedFormat == 'XLSX' ? 'xlsx' : 'pdf';
       final fileName = 'NonStockableItems_Export_$timestamp.$extension';
-      final filePath = '$downloadsPath\\$fileName';
 
-      final file = File(filePath);
-
+      final List<int>? fileBytes;
       if (_selectedFormat == 'XLSX') {
-        final excel = excel_pkg.Excel.createExcel();
-        final String defaultSheet = excel.getDefaultSheet() ?? 'Sheet1';
-        excel.rename(defaultSheet, 'Non-Stockable Items');
-        final excel_pkg.Sheet sheet = excel['Non-Stockable Items'];
-
-        sheet.setColumnWidth(0, 18.0); // ITEM CODE
-        sheet.setColumnWidth(1, 38.0); // ITEM NAME
-        sheet.setColumnWidth(2, 16.0); // RATE (₹)
-        sheet.setColumnWidth(3, 16.0); // UNIT
-        sheet.setColumnWidth(4, 18.0); // SAC/HSN
-        sheet.setColumnWidth(5, 22.0); // TAX SLAB
-
-        final cellBorder = excel_pkg.Border(
-          borderStyle: excel_pkg.BorderStyle.Thin,
-          borderColorHex: excel_pkg.ExcelColor.fromHexString('#CBD5E1'),
-        );
-
-        final excel_pkg.CellStyle headerStyle = excel_pkg.CellStyle(
-          backgroundColorHex: excel_pkg.ExcelColor.fromHexString('#0C3B2E'),
-          fontColorHex: excel_pkg.ExcelColor.fromHexString('#FFFFFF'),
-          bold: true,
-          horizontalAlign: excel_pkg.HorizontalAlign.Center,
-          verticalAlign: excel_pkg.VerticalAlign.Center,
-          leftBorder: cellBorder, rightBorder: cellBorder, topBorder: cellBorder, bottomBorder: cellBorder,
-        );
-
-        final excel_pkg.CellStyle evenStyle = excel_pkg.CellStyle(
-          backgroundColorHex: excel_pkg.ExcelColor.fromHexString('#F8FAFC'),
-          horizontalAlign: excel_pkg.HorizontalAlign.Center,
-          verticalAlign: excel_pkg.VerticalAlign.Center,
-          leftBorder: cellBorder, rightBorder: cellBorder, topBorder: cellBorder, bottomBorder: cellBorder,
-        );
-
-        final excel_pkg.CellStyle oddStyle = excel_pkg.CellStyle(
-          backgroundColorHex: excel_pkg.ExcelColor.fromHexString('#FFFFFF'),
-          horizontalAlign: excel_pkg.HorizontalAlign.Center,
-          verticalAlign: excel_pkg.VerticalAlign.Center,
-          leftBorder: cellBorder, rightBorder: cellBorder, topBorder: cellBorder, bottomBorder: cellBorder,
-        );
-
-        sheet.setRowHeight(0, 26.0);
-        sheet.appendRow([
-          excel_pkg.TextCellValue('ITEM CODE'),
-          excel_pkg.TextCellValue('ITEM NAME'),
-          excel_pkg.TextCellValue('RATE (₹)'),
-          excel_pkg.TextCellValue('UNIT'),
-          excel_pkg.TextCellValue('SAC/HSN'),
-          excel_pkg.TextCellValue('TAX SLAB'),
-        ]);
-
-        for (int col = 0; col < 6; col++) {
-          sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: col, rowIndex: 0)).cellStyle = headerStyle;
-        }
-
-        for (int i = 0; i < selectedList.length; i++) {
-          final item = selectedList[i];
-          final style = (i % 2 == 0) ? evenStyle : oddStyle;
-          final int rIdx = i + 1;
-
-          sheet.setRowHeight(rIdx, 22.0);
-          sheet.appendRow([
-            excel_pkg.TextCellValue(item.iCode),
-            excel_pkg.TextCellValue(item.iName1),
-            excel_pkg.DoubleCellValue(item.rate),
-            excel_pkg.TextCellValue(item.unitName),
-            excel_pkg.TextCellValue(item.sacCode),
-            excel_pkg.TextCellValue(item.taxName),
-          ]);
-
-          for (int col = 0; col < 6; col++) {
-            sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: col, rowIndex: rIdx)).cellStyle = style;
-          }
-        }
-
-        final fileBytes = excel.save();
-        if (fileBytes != null) {
-          await file.writeAsBytes(fileBytes);
-        }
+        fileBytes = _generateExcelBytes(selectedList);
       } else {
-        final pdfDoc = pw.Document();
-
-        pdfDoc.addPage(
-          pw.MultiPage(
-            pageFormat: PdfPageFormat.a4.landscape,
-            margin: const pw.EdgeInsets.all(24),
-            maxPages: 1000,
-            header: (context) => pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text(
-                      'NON-STOCKABLE ITEMS MASTER REGISTER REPORT',
-                      style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: const PdfColor.fromInt(0xFF0C3B2E)),
-                    ),
-                    pw.Text(
-                      'NEW TECH INFOSOL MMS',
-                      style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
-                    ),
-                  ],
-                ),
-                pw.SizedBox(height: 4),
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text(
-                      'Total Records: ${selectedList.length}',
-                      style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
-                    ),
-                    pw.Text(
-                      'Exported on: ${DateTime.now().toString().split('.')[0]}',
-                      style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey600),
-                    ),
-                  ],
-                ),
-                pw.SizedBox(height: 4),
-                pw.Divider(thickness: 1, color: const PdfColor.fromInt(0xFF0C3B2E)),
-                pw.SizedBox(height: 8),
-              ],
-            ),
-            footer: (context) => pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Text('Generated by New Tech MMS', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
-                pw.Text('Page ${context.pageNumber} of ${context.pagesCount}', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
-              ],
-            ),
-            build: (context) => [
-              pw.TableHelper.fromTextArray(
-                headers: ['SR NO', 'ITEM CODE', 'ITEM NAME', 'RATE (RS.)', 'UNIT', 'SAC CODE', 'TAX SLAB'],
-                data: selectedList.asMap().entries.map((entry) {
-                  final idx = entry.key;
-                  final item = entry.value;
-                  return [
-                    '${idx + 1}',
-                    item.iCode,
-                    item.iName1,
-                    item.rate > 0 ? item.rate.toStringAsFixed(2) : '-',
-                    item.unitName.isNotEmpty ? item.unitName : '-',
-                    item.sacCode.isNotEmpty ? item.sacCode : '-',
-                    item.taxName.isNotEmpty ? item.taxName : '-',
-                  ];
-                }).toList(),
-                headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 8.5),
-                headerDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFF0C3B2E)),
-                cellStyle: const pw.TextStyle(fontSize: 8),
-                cellAlignments: {
-                  0: pw.Alignment.center,
-                  1: pw.Alignment.centerLeft,
-                  2: pw.Alignment.centerLeft,
-                  3: pw.Alignment.centerRight,
-                  4: pw.Alignment.center,
-                  5: pw.Alignment.center,
-                  6: pw.Alignment.center,
-                },
-                columnWidths: {
-                  0: const pw.FlexColumnWidth(0.8),
-                  1: const pw.FlexColumnWidth(2.3),
-                  2: const pw.FlexColumnWidth(4.2),
-                  3: const pw.FlexColumnWidth(1.4),
-                  4: const pw.FlexColumnWidth(1.2),
-                  5: const pw.FlexColumnWidth(1.4),
-                  6: const pw.FlexColumnWidth(1.4),
-                },
-                cellPadding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4.5),
-                rowDecoration: const pw.BoxDecoration(
-                  border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
-                ),
-                oddRowDecoration: const pw.BoxDecoration(
-                  color: PdfColor.fromInt(0xFFF8FAFC),
-                  border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
-                ),
-                border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-              ),
-            ],
-          ),
-        );
-        final pdfBytes = await pdfDoc.save();
-        await file.writeAsBytes(pdfBytes);
+        fileBytes = await _generatePdfBytes(selectedList);
       }
+
+      if (fileBytes == null) {
+        throw Exception('Failed to generate export file bytes.');
+      }
+
+      await FileExportHelper.saveAndLaunchFile(
+        bytes: fileBytes,
+        fileName: fileName,
+      );
 
       if (mounted) {
         setState(() {
@@ -3767,8 +3569,6 @@ class _NonStockableExportModalDialogState extends State<_NonStockableExportModal
 
         if (!mounted) return;
         Navigator.of(context).pop();
-
-        await _openFileInSystemExplorer(filePath);
       }
     } catch (e, stack) {
       debugPrint('Export non-stockable items failed: $e\n$stack');
@@ -3784,6 +3584,187 @@ class _NonStockableExportModalDialogState extends State<_NonStockableExportModal
         );
       }
     }
+  }
+
+  List<int>? _generateExcelBytes(List<NonStockableItem> selectedList) {
+    final excel = excel_pkg.Excel.createExcel();
+    final String defaultSheet = excel.getDefaultSheet() ?? 'Sheet1';
+    excel.rename(defaultSheet, 'Non-Stockable Items');
+    final excel_pkg.Sheet sheet = excel['Non-Stockable Items'];
+
+    sheet.setColumnWidth(0, 18.0); // ITEM CODE
+    sheet.setColumnWidth(1, 38.0); // ITEM NAME
+    sheet.setColumnWidth(2, 16.0); // RATE (₹)
+    sheet.setColumnWidth(3, 16.0); // UNIT
+    sheet.setColumnWidth(4, 18.0); // SAC/HSN
+    sheet.setColumnWidth(5, 22.0); // TAX SLAB
+
+    final cellBorder = excel_pkg.Border(
+      borderStyle: excel_pkg.BorderStyle.Thin,
+      borderColorHex: excel_pkg.ExcelColor.fromHexString('#CBD5E1'),
+    );
+
+    final excel_pkg.CellStyle headerStyle = excel_pkg.CellStyle(
+      backgroundColorHex: excel_pkg.ExcelColor.fromHexString('#0C3B2E'),
+      fontColorHex: excel_pkg.ExcelColor.fromHexString('#FFFFFF'),
+      bold: true,
+      horizontalAlign: excel_pkg.HorizontalAlign.Center,
+      verticalAlign: excel_pkg.VerticalAlign.Center,
+      leftBorder: cellBorder, rightBorder: cellBorder, topBorder: cellBorder, bottomBorder: cellBorder,
+    );
+
+    final excel_pkg.CellStyle evenStyle = excel_pkg.CellStyle(
+      backgroundColorHex: excel_pkg.ExcelColor.fromHexString('#F8FAFC'),
+      horizontalAlign: excel_pkg.HorizontalAlign.Center,
+      verticalAlign: excel_pkg.VerticalAlign.Center,
+      leftBorder: cellBorder, rightBorder: cellBorder, topBorder: cellBorder, bottomBorder: cellBorder,
+    );
+
+    final excel_pkg.CellStyle oddStyle = excel_pkg.CellStyle(
+      backgroundColorHex: excel_pkg.ExcelColor.fromHexString('#FFFFFF'),
+      horizontalAlign: excel_pkg.HorizontalAlign.Center,
+      verticalAlign: excel_pkg.VerticalAlign.Center,
+      leftBorder: cellBorder, rightBorder: cellBorder, topBorder: cellBorder, bottomBorder: cellBorder,
+    );
+
+    sheet.setRowHeight(0, 26.0);
+    sheet.appendRow([
+      excel_pkg.TextCellValue('ITEM CODE'),
+      excel_pkg.TextCellValue('ITEM NAME'),
+      excel_pkg.TextCellValue('RATE (₹)'),
+      excel_pkg.TextCellValue('UNIT'),
+      excel_pkg.TextCellValue('SAC CODE'),
+      excel_pkg.TextCellValue('TAX SLAB'),
+    ]);
+
+    for (int col = 0; col < 6; col++) {
+      sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: col, rowIndex: 0)).cellStyle = headerStyle;
+    }
+
+    for (int i = 0; i < selectedList.length; i++) {
+      final item = selectedList[i];
+      final style = (i % 2 == 0) ? evenStyle : oddStyle;
+      final int rIdx = i + 1;
+
+      sheet.setRowHeight(rIdx, 22.0);
+      sheet.appendRow([
+        excel_pkg.TextCellValue(item.iCode),
+        excel_pkg.TextCellValue(item.iName1),
+        excel_pkg.DoubleCellValue(item.rate),
+        excel_pkg.TextCellValue(item.unitName),
+        excel_pkg.TextCellValue(item.sacCode),
+        excel_pkg.TextCellValue(item.taxName),
+      ]);
+
+      for (int col = 0; col < 6; col++) {
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: col, rowIndex: rIdx)).cellStyle = style;
+      }
+    }
+
+    return excel.save();
+  }
+
+  Future<List<int>> _generatePdfBytes(List<NonStockableItem> selectedList) async {
+    final pdfDoc = pw.Document();
+
+    pdfDoc.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4.landscape,
+        margin: const pw.EdgeInsets.all(24),
+        maxPages: 1000,
+        header: (context) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text(
+                  'NON-STOCKABLE ITEMS MASTER REGISTER REPORT',
+                  style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: const PdfColor.fromInt(0xFF0C3B2E)),
+                ),
+                pw.Text(
+                  'NEW TECH INFOSOL MMS',
+                  style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+                ),
+              ],
+            ),
+            pw.SizedBox(height: 4),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text(
+                  'Total Records: ${selectedList.length}',
+                  style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
+                ),
+                pw.Text(
+                  'Exported on: ${DateTime.now().toString().split('.')[0]}',
+                  style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey600),
+                ),
+              ],
+            ),
+            pw.SizedBox(height: 4),
+            pw.Divider(thickness: 1, color: const PdfColor.fromInt(0xFF0C3B2E)),
+            pw.SizedBox(height: 8),
+          ],
+        ),
+        footer: (context) => pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            pw.Text('Generated by New Tech MMS', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
+            pw.Text('Page ${context.pageNumber} of ${context.pagesCount}', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
+          ],
+        ),
+        build: (context) => [
+          pw.TableHelper.fromTextArray(
+            headers: ['SR NO', 'ITEM CODE', 'ITEM NAME', 'RATE (RS.)', 'UNIT', 'SAC CODE', 'TAX SLAB'],
+            data: selectedList.asMap().entries.map((entry) {
+              final idx = entry.key;
+              final item = entry.value;
+              return [
+                '${idx + 1}',
+                item.iCode,
+                item.iName1,
+                item.rate > 0 ? item.rate.toStringAsFixed(2) : '-',
+                item.unitName.isNotEmpty ? item.unitName : '-',
+                item.sacCode.isNotEmpty ? item.sacCode : '-',
+                item.taxName.isNotEmpty ? item.taxName : '-',
+              ];
+            }).toList(),
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 8.5),
+            headerDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFF0C3B2E)),
+            cellStyle: const pw.TextStyle(fontSize: 8),
+            cellAlignments: {
+              0: pw.Alignment.center,
+              1: pw.Alignment.centerLeft,
+              2: pw.Alignment.centerLeft,
+              3: pw.Alignment.centerRight,
+              4: pw.Alignment.center,
+              5: pw.Alignment.center,
+              6: pw.Alignment.center,
+            },
+            columnWidths: {
+              0: const pw.FlexColumnWidth(0.8),
+              1: const pw.FlexColumnWidth(2.3),
+              2: const pw.FlexColumnWidth(4.2),
+              3: const pw.FlexColumnWidth(1.4),
+              4: const pw.FlexColumnWidth(1.2),
+              5: const pw.FlexColumnWidth(1.4),
+              6: const pw.FlexColumnWidth(1.4),
+            },
+            cellPadding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4.5),
+            rowDecoration: const pw.BoxDecoration(
+              border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
+            ),
+            oddRowDecoration: const pw.BoxDecoration(
+              color: PdfColor.fromInt(0xFFF8FAFC),
+              border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
+            ),
+            border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+          ),
+        ],
+      ),
+    );
+    return pdfDoc.save();
   }
 
   @override

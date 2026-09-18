@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io';
+import '../utils/file_export_helper.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:excel/excel.dart' as excel_pkg;
@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:url_launcher/url_launcher.dart';
 import '../design/app_colors.dart';
 import '../services/project_service.dart';
 
@@ -4232,36 +4231,15 @@ class _ProjectExportModalDialogState extends State<_ProjectExportModalDialog> {
     });
   }
 
-  Future<void> _openFileInSystemExplorer(String filePath) async {
-    if (Platform.isWindows) {
-      try {
-        await Process.run('explorer.exe', ['/select,', filePath]);
-        return;
-      } catch (_) {}
-    }
-    try {
-      final fileUri = Uri.file(filePath);
-      await launchUrl(fileUri);
-    } catch (_) {}
-  }
-
   Future<void> _finalizeFileAndComplete() async {
     try {
       final selectedList = widget.projects
           .where((p) => _selectedProjectCodes.contains(p.prjCode))
           .toList();
 
-      final String userProfile = Platform.environment['USERPROFILE'] ?? 'C:\\Users\\Default';
-      final String downloadsPath = '$userProfile\\Downloads';
-      final Directory dir = Directory(downloadsPath);
-      if (!dir.existsSync()) dir.createSync(recursive: true);
-
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final extension = _selectedFormat == 'XLSX' ? 'xlsx' : 'pdf';
       final fileName = 'ProjectMaster_Export_$timestamp.$extension';
-      final filePath = '$downloadsPath\\$fileName';
-
-      final file = File(filePath);
 
       if (_selectedFormat == 'XLSX') {
         final excel = excel_pkg.Excel.createExcel();
@@ -4344,7 +4322,7 @@ class _ProjectExportModalDialogState extends State<_ProjectExportModalDialog> {
 
         final fileBytes = excel.save();
         if (fileBytes != null) {
-          await file.writeAsBytes(fileBytes);
+          await FileExportHelper.saveAndLaunchFile(bytes: fileBytes, fileName: fileName);
         }
       } else {
         final pdfDoc = pw.Document();
@@ -4442,7 +4420,7 @@ class _ProjectExportModalDialogState extends State<_ProjectExportModalDialog> {
           ),
         );
         final pdfBytes = await pdfDoc.save();
-        await file.writeAsBytes(pdfBytes);
+        await FileExportHelper.saveAndLaunchFile(bytes: pdfBytes, fileName: fileName);
       }
 
       if (mounted) {
@@ -4456,8 +4434,6 @@ class _ProjectExportModalDialogState extends State<_ProjectExportModalDialog> {
 
         if (!mounted) return;
         Navigator.of(context).pop();
-
-        await _openFileInSystemExplorer(filePath);
       }
     } catch (e, stack) {
       debugPrint('Export project master failed: $e\n$stack');

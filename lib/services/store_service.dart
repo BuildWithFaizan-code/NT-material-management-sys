@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../pages/store_master_page.dart';
@@ -7,7 +6,7 @@ import '../pages/store_master_page.dart';
 class StoreService {
   final String baseUrl;
   final http.Client _client;
-  static const _timeout = Duration(seconds: 8);
+  static const _timeout = ApiConfig.defaultTimeout;
 
   StoreService({
     String? baseUrl,
@@ -29,10 +28,10 @@ class StoreService {
             .toList();
       }
       throw Exception('Failed to fetch store records (HTTP ${response.statusCode})');
-    } on SocketException {
-      throw Exception('Server connection failed. Verify backend API is running.');
     } on http.ClientException {
       throw Exception('Client HTTP exception connecting to backend API.');
+    } catch (_) {
+      throw Exception('Server connection failed. Verify backend API is running.');
     }
   }
 
@@ -104,8 +103,6 @@ class StoreService {
         if (e is Exception && !e.toString().contains('FormatException')) rethrow;
         throw Exception('Failed to create store record (HTTP ${response.statusCode})');
       }
-    } on SocketException {
-      throw Exception('Server connection failed. Verify backend API is running.');
     } catch (e) {
       rethrow;
     }
@@ -142,8 +139,6 @@ class StoreService {
         if (e is Exception && !e.toString().contains('FormatException')) rethrow;
         throw Exception('Failed to update store record (HTTP ${response.statusCode})');
       }
-    } on SocketException {
-      throw Exception('Server connection failed. Verify backend API is running.');
     } catch (e) {
       rethrow;
     }
@@ -163,8 +158,6 @@ class StoreService {
       } catch (_) {
         throw Exception('Failed to delete store record (HTTP ${response.statusCode})');
       }
-    } on SocketException {
-      throw Exception('Server connection failed. Verify backend API is running.');
     } catch (e) {
       rethrow;
     }

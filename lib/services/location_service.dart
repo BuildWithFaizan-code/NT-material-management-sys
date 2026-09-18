@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../pages/location_master_page.dart';
@@ -7,7 +6,7 @@ import '../pages/location_master_page.dart';
 class LocationService {
   final String baseUrl;
   final http.Client _client;
-  static const _timeout = Duration(seconds: 8);
+  static const _timeout = ApiConfig.defaultTimeout;
 
   LocationService({
     String? baseUrl,
@@ -29,10 +28,10 @@ class LocationService {
             .toList();
       }
       throw Exception('Failed to fetch location records (HTTP ${response.statusCode})');
-    } on SocketException {
-      throw Exception('Server connection failed. Verify backend API is running.');
     } on http.ClientException {
       throw Exception('Client HTTP exception connecting to backend API.');
+    } catch (_) {
+      throw Exception('Server connection failed. Verify backend API is running.');
     }
   }
 

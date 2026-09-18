@@ -1,17 +1,15 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:excel/excel.dart' as excel_pkg;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:url_launcher/url_launcher.dart';
 
 import '../design/app_colors.dart';
 import '../services/head_master_service.dart';
+import '../utils/file_export_helper.dart';
 
 enum ExportFormat { excel, pdf }
 enum ButtonStatus { idle, loading, success }
@@ -2159,207 +2157,31 @@ class _HeadExportModalDialogState extends State<_HeadExportModalDialog> {
     });
   }
 
-  Future<void> _openFileInSystemExplorer(String filePath) async {
-    if (Platform.isWindows) {
-      try {
-        await Process.run('explorer.exe', ['/select,', filePath]);
-        return;
-      } catch (_) {}
-    }
-    try {
-      final fileUri = Uri.file(filePath);
-      await launchUrl(fileUri);
-    } catch (_) {}
-  }
-
   Future<void> _finalizeFileAndComplete() async {
     try {
       final selectedList = widget.heads
           .where((h) => _selectedHeadCodes.contains(h.locCode))
           .toList();
 
-      Directory? downloadsDir;
-      if (Platform.isWindows) {
-        final userProfile = Platform.environment['USERPROFILE'];
-        if (userProfile != null) {
-          downloadsDir = Directory('$userProfile\\Downloads');
-        }
-      }
-      downloadsDir ??= await getDownloadsDirectory();
-      downloadsDir ??= await getApplicationDocumentsDirectory();
-
-      if (!downloadsDir.existsSync()) {
-        downloadsDir.createSync(recursive: true);
-      }
-
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final extension = _selectedFormat == 'XLSX' ? 'xlsx' : 'pdf';
       final fileName = 'HeadMaster_Export_$timestamp.$extension';
-      final filePath = '${downloadsDir.path}${Platform.pathSeparator}$fileName';
 
-      final file = File(filePath);
-
+      final List<int>? fileBytes;
       if (_selectedFormat == 'XLSX') {
-        final excel = excel_pkg.Excel.createExcel();
-        final String defaultSheet = excel.getDefaultSheet() ?? 'Sheet1';
-        excel.rename(defaultSheet, 'Costing Head Master');
-        final excel_pkg.Sheet sheet = excel['Costing Head Master'];
-
-        sheet.setColumnWidth(0, 20.0);
-        sheet.setColumnWidth(1, 42.0);
-        sheet.setColumnWidth(2, 22.0);
-        sheet.setColumnWidth(3, 22.0);
-
-        final cellBorder = excel_pkg.Border(
-          borderStyle: excel_pkg.BorderStyle.Thin,
-          borderColorHex: excel_pkg.ExcelColor.fromHexString('#CBD5E1'),
-        );
-
-        final excel_pkg.CellStyle headerStyle = excel_pkg.CellStyle(
-          backgroundColorHex: excel_pkg.ExcelColor.fromHexString('#0C3B2E'),
-          fontColorHex: excel_pkg.ExcelColor.fromHexString('#FFFFFF'),
-          bold: true,
-          horizontalAlign: excel_pkg.HorizontalAlign.Center,
-          verticalAlign: excel_pkg.VerticalAlign.Center,
-          leftBorder: cellBorder,
-          rightBorder: cellBorder,
-          topBorder: cellBorder,
-          bottomBorder: cellBorder,
-        );
-
-        final excel_pkg.CellStyle evenStyle = excel_pkg.CellStyle(
-          backgroundColorHex: excel_pkg.ExcelColor.fromHexString('#F8FAFC'),
-          horizontalAlign: excel_pkg.HorizontalAlign.Center,
-          verticalAlign: excel_pkg.VerticalAlign.Center,
-          leftBorder: cellBorder,
-          rightBorder: cellBorder,
-          topBorder: cellBorder,
-          bottomBorder: cellBorder,
-        );
-
-        final excel_pkg.CellStyle oddStyle = excel_pkg.CellStyle(
-          backgroundColorHex: excel_pkg.ExcelColor.fromHexString('#FFFFFF'),
-          horizontalAlign: excel_pkg.HorizontalAlign.Center,
-          verticalAlign: excel_pkg.VerticalAlign.Center,
-          leftBorder: cellBorder,
-          rightBorder: cellBorder,
-          topBorder: cellBorder,
-          bottomBorder: cellBorder,
-        );
-
-        sheet.setRowHeight(0, 26.0);
-        sheet.appendRow([
-          excel_pkg.TextCellValue('HEAD CODE'),
-          excel_pkg.TextCellValue('COSTING HEAD NAME'),
-          excel_pkg.TextCellValue('PREFIX SERIES'),
-          excel_pkg.TextCellValue('MODE'),
-        ]);
-
-        for (int col = 0; col < 4; col++) {
-          sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: col, rowIndex: 0)).cellStyle = headerStyle;
-        }
-
-        for (int i = 0; i < selectedList.length; i++) {
-          final item = selectedList[i];
-          final style = (i % 2 == 0) ? evenStyle : oddStyle;
-          final int rIdx = i + 1;
-
-          sheet.setRowHeight(rIdx, 22.0);
-          sheet.appendRow([
-            excel_pkg.IntCellValue(item.locCode),
-            excel_pkg.TextCellValue(item.location),
-            excel_pkg.TextCellValue(item.locSeries.isEmpty ? '-' : item.locSeries),
-            excel_pkg.TextCellValue(item.mode),
-          ]);
-
-          for (int col = 0; col < 4; col++) {
-            sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: col, rowIndex: rIdx)).cellStyle = style;
-          }
-        }
-
-        final fileBytes = excel.save();
-        if (fileBytes != null) {
-          await file.writeAsBytes(fileBytes);
-        }
+        fileBytes = _generateExcelBytes(selectedList);
       } else {
-        final pdfDoc = pw.Document();
-        final fontData = await rootBundle.load('assets/fonts/Inter-Regular.ttf').catchError((_) => ByteData(0));
-        final ttf = fontData.lengthInBytes > 0 ? pw.Font.ttf(fontData) : null;
-
-        final headers = ['Head Code', 'Costing Head Name', 'Prefix Series', 'Mode'];
-        final data = selectedList.map((item) => [
-          '#${item.locCode}',
-          item.location,
-          item.locSeries.isEmpty ? '-' : item.locSeries,
-          item.mode,
-        ]).toList();
-
-        pdfDoc.addPage(
-          pw.MultiPage(
-            pageFormat: PdfPageFormat.a4,
-            margin: const pw.EdgeInsets.all(32),
-            maxPages: 1000,
-            header: (pw.Context ctx) => pw.Container(
-              margin: const pw.EdgeInsets.only(bottom: 12),
-              child: pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(
-                    'Costing Head Master Register Report',
-                    style: pw.TextStyle(
-                      font: ttf,
-                      fontSize: 16,
-                      fontWeight: pw.FontWeight.bold,
-                      color: const PdfColor.fromInt(0xFF0C3B2E),
-                    ),
-                  ),
-                  pw.Text(
-                    'Total Records: ${selectedList.length}',
-                    style: pw.TextStyle(font: ttf, fontSize: 10, color: PdfColors.grey700),
-                  ),
-                ],
-              ),
-            ),
-            footer: (pw.Context ctx) => pw.Container(
-              margin: const pw.EdgeInsets.only(top: 12),
-              alignment: pw.Alignment.centerRight,
-              child: pw.Text(
-                'Page ${ctx.pageNumber} of ${ctx.pagesCount}',
-                style: pw.TextStyle(font: ttf, fontSize: 9, color: PdfColors.grey600),
-              ),
-            ),
-            build: (pw.Context ctx) => [
-              pw.TableHelper.fromTextArray(
-                headers: headers,
-                data: data,
-                border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-                headerStyle: pw.TextStyle(
-                  font: ttf,
-                  fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.white,
-                  fontSize: 9,
-                ),
-                headerDecoration: const pw.BoxDecoration(
-                  color: PdfColor.fromInt(0xFF0C3B2E),
-                ),
-                headerAlignment: pw.Alignment.center,
-                cellAlignment: pw.Alignment.center,
-                cellStyle: pw.TextStyle(font: ttf, fontSize: 8.5),
-                cellPadding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-                rowDecoration: const pw.BoxDecoration(
-                  border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
-                ),
-                oddRowDecoration: const pw.BoxDecoration(
-                  color: PdfColor.fromInt(0xFFF8FAFC),
-                  border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
-                ),
-              ),
-            ],
-          ),
-        );
-        final pdfBytes = await pdfDoc.save();
-        await file.writeAsBytes(pdfBytes);
+        fileBytes = await _generatePdfBytes(selectedList);
       }
+
+      if (fileBytes == null) {
+        throw Exception('Failed to generate export file bytes.');
+      }
+
+      await FileExportHelper.saveAndLaunchFile(
+        bytes: fileBytes,
+        fileName: fileName,
+      );
 
       if (mounted) {
         setState(() {
@@ -2371,8 +2193,6 @@ class _HeadExportModalDialogState extends State<_HeadExportModalDialog> {
 
         if (!mounted) return;
         Navigator.of(context).pop();
-
-        await _openFileInSystemExplorer(filePath);
       }
     } catch (e) {
       if (mounted) {
@@ -2387,6 +2207,166 @@ class _HeadExportModalDialogState extends State<_HeadExportModalDialog> {
         );
       }
     }
+  }
+
+  List<int>? _generateExcelBytes(List<HeadMasterItem> selectedList) {
+    final excel = excel_pkg.Excel.createExcel();
+    final String defaultSheet = excel.getDefaultSheet() ?? 'Sheet1';
+    excel.rename(defaultSheet, 'Costing Head Master');
+    final excel_pkg.Sheet sheet = excel['Costing Head Master'];
+
+    sheet.setColumnWidth(0, 20.0);
+    sheet.setColumnWidth(1, 42.0);
+    sheet.setColumnWidth(2, 22.0);
+    sheet.setColumnWidth(3, 22.0);
+
+    final cellBorder = excel_pkg.Border(
+      borderStyle: excel_pkg.BorderStyle.Thin,
+      borderColorHex: excel_pkg.ExcelColor.fromHexString('#CBD5E1'),
+    );
+
+    final excel_pkg.CellStyle headerStyle = excel_pkg.CellStyle(
+      backgroundColorHex: excel_pkg.ExcelColor.fromHexString('#0C3B2E'),
+      fontColorHex: excel_pkg.ExcelColor.fromHexString('#FFFFFF'),
+      bold: true,
+      horizontalAlign: excel_pkg.HorizontalAlign.Center,
+      verticalAlign: excel_pkg.VerticalAlign.Center,
+      leftBorder: cellBorder,
+      rightBorder: cellBorder,
+      topBorder: cellBorder,
+      bottomBorder: cellBorder,
+    );
+
+    final excel_pkg.CellStyle evenStyle = excel_pkg.CellStyle(
+      backgroundColorHex: excel_pkg.ExcelColor.fromHexString('#F8FAFC'),
+      horizontalAlign: excel_pkg.HorizontalAlign.Center,
+      verticalAlign: excel_pkg.VerticalAlign.Center,
+      leftBorder: cellBorder,
+      rightBorder: cellBorder,
+      topBorder: cellBorder,
+      bottomBorder: cellBorder,
+    );
+
+    final excel_pkg.CellStyle oddStyle = excel_pkg.CellStyle(
+      backgroundColorHex: excel_pkg.ExcelColor.fromHexString('#FFFFFF'),
+      horizontalAlign: excel_pkg.HorizontalAlign.Center,
+      verticalAlign: excel_pkg.VerticalAlign.Center,
+      leftBorder: cellBorder,
+      rightBorder: cellBorder,
+      topBorder: cellBorder,
+      bottomBorder: cellBorder,
+    );
+
+    sheet.setRowHeight(0, 26.0);
+    sheet.appendRow([
+      excel_pkg.TextCellValue('HEAD CODE'),
+      excel_pkg.TextCellValue('COSTING HEAD NAME'),
+      excel_pkg.TextCellValue('PREFIX SERIES'),
+      excel_pkg.TextCellValue('MODE'),
+    ]);
+
+    for (int col = 0; col < 4; col++) {
+      sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: col, rowIndex: 0)).cellStyle = headerStyle;
+    }
+
+    for (int i = 0; i < selectedList.length; i++) {
+      final item = selectedList[i];
+      final style = (i % 2 == 0) ? evenStyle : oddStyle;
+      final int rIdx = i + 1;
+
+      sheet.setRowHeight(rIdx, 22.0);
+      sheet.appendRow([
+        excel_pkg.IntCellValue(item.locCode),
+        excel_pkg.TextCellValue(item.location),
+        excel_pkg.TextCellValue(item.locSeries.isEmpty ? '-' : item.locSeries),
+        excel_pkg.TextCellValue(item.mode),
+      ]);
+
+      for (int col = 0; col < 4; col++) {
+        sheet.cell(excel_pkg.CellIndex.indexByColumnRow(columnIndex: col, rowIndex: rIdx)).cellStyle = style;
+      }
+    }
+
+    return excel.save();
+  }
+
+  Future<List<int>> _generatePdfBytes(List<HeadMasterItem> selectedList) async {
+    final pdfDoc = pw.Document();
+    final fontData = await rootBundle.load('assets/fonts/Inter-Regular.ttf').catchError((_) => ByteData(0));
+    final ttf = fontData.lengthInBytes > 0 ? pw.Font.ttf(fontData) : null;
+
+    final headers = ['Head Code', 'Costing Head Name', 'Prefix Series', 'Mode'];
+    final List<List<dynamic>> data = selectedList.map<List<dynamic>>((item) => [
+      '#${item.locCode}',
+      item.location,
+      item.locSeries.isEmpty ? '-' : item.locSeries,
+      item.mode,
+    ]).toList();
+
+    pdfDoc.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        maxPages: 1000,
+        header: (pw.Context ctx) => pw.Container(
+          margin: const pw.EdgeInsets.only(bottom: 12),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                'Costing Head Master Register Report',
+                style: pw.TextStyle(
+                  font: ttf,
+                  fontSize: 16,
+                  fontWeight: pw.FontWeight.bold,
+                  color: const PdfColor.fromInt(0xFF0C3B2E),
+                ),
+              ),
+              pw.Text(
+                'Total Records: ${selectedList.length}',
+                style: pw.TextStyle(font: ttf, fontSize: 10, color: PdfColors.grey700),
+              ),
+            ],
+          ),
+        ),
+        footer: (pw.Context ctx) => pw.Container(
+          margin: const pw.EdgeInsets.only(top: 12),
+          alignment: pw.Alignment.centerRight,
+          child: pw.Text(
+            'Page ${ctx.pageNumber} of ${ctx.pagesCount}',
+            style: pw.TextStyle(font: ttf, fontSize: 9, color: PdfColors.grey600),
+          ),
+        ),
+        build: (pw.Context ctx) => [
+          pw.TableHelper.fromTextArray(
+            headers: headers,
+            data: data,
+            border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+            headerStyle: pw.TextStyle(
+              font: ttf,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.white,
+              fontSize: 9,
+            ),
+            headerDecoration: const pw.BoxDecoration(
+              color: PdfColor.fromInt(0xFF0C3B2E),
+            ),
+            headerAlignment: pw.Alignment.center,
+            cellAlignment: pw.Alignment.center,
+            cellStyle: pw.TextStyle(font: ttf, fontSize: 8.5),
+            cellPadding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+            rowDecoration: const pw.BoxDecoration(
+              border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
+            ),
+            oddRowDecoration: const pw.BoxDecoration(
+              color: PdfColor.fromInt(0xFFF8FAFC),
+              border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
+            ),
+          ),
+        ],
+      ),
+    );
+    return pdfDoc.save();
   }
 
   @override

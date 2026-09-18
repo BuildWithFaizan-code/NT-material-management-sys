@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../pages/project_master_page.dart';
@@ -7,7 +6,7 @@ import '../pages/project_master_page.dart';
 class ProjectService {
   final String baseUrl;
   final http.Client _client;
-  static const _timeout = Duration(seconds: 8);
+  static const _timeout = ApiConfig.defaultTimeout;
 
   ProjectService({
     String? baseUrl,
@@ -29,10 +28,10 @@ class ProjectService {
             .toList();
       }
       throw Exception('Failed to fetch projects (HTTP ${response.statusCode})');
-    } on SocketException {
-      throw Exception('Server connection failed. Verify backend API is running.');
     } on http.ClientException {
       throw Exception('Client HTTP exception connecting to backend API.');
+    } catch (_) {
+      throw Exception('Server connection failed. Verify backend API is running.');
     }
   }
 

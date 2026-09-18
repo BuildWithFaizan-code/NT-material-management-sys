@@ -26,6 +26,7 @@ import '../pages/group_master_page.dart';
 import '../pages/group_master_definition_page.dart';
 // import '../pages/charges_master_page.dart';
 import '../pages/placeholder_module_pages.dart';
+import '../pages/transactions/transaction_placeholder_page.dart';
 
 import 'widgets/modern_collapsed_rail.dart';
 
@@ -68,7 +69,8 @@ class LargeScreenLayout extends StatelessWidget {
                 ),
                 Expanded(
                   child: KeyedSubtree(
-                    key: ValueKey('page_${layoutState.currentPageIndex}_${layoutState.currentPageIndex == 1 ? layoutState.selectedMasterSubItem : ""}'),
+                    key: ValueKey(
+                        'page_${layoutState.currentPageIndex}_${layoutState.currentPageIndex == 1 ? layoutState.selectedMasterSubItem : (layoutState.currentPageIndex == 2 ? layoutState.selectedTransactionSubItem : "")}'),
                     child: _buildPage(layoutState.currentPageIndex),
                   ),
                 ),
@@ -93,6 +95,12 @@ class LargeScreenLayout extends StatelessWidget {
                   onItemSelected: (idx) {
                     if (idx == 1) {
                       layoutState.setMasterSubItem('Project Master');
+                    } else if (idx == 2) {
+                      layoutState.setTransactionSubItem(
+                        layoutState.selectedTransactionSubItem.isNotEmpty
+                            ? layoutState.selectedTransactionSubItem
+                            : 'Bill of Material (BOM)',
+                      );
                     } else {
                       layoutState.setPage(idx);
                     }
@@ -111,8 +119,10 @@ class LargeScreenLayout extends StatelessWidget {
             child: Sidebar(
               currentIndex: layoutState.currentPageIndex,
               activeSubItem: layoutState.selectedMasterSubItem,
+              activeTransactionSubItem: layoutState.selectedTransactionSubItem,
               onItemSelected: layoutState.setPage,
               onSubItemSelected: layoutState.setMasterSubItem,
+              onTransactionSubItemSelected: layoutState.setTransactionSubItem,
               onToggle: layoutState.toggleNavbar,
               isOpen: isOpen,
             ),
@@ -131,7 +141,9 @@ class LargeScreenLayout extends StatelessWidget {
             ? layoutState.selectedMasterSubItem
             : 'Project Master';
       case 2:
-        return 'Transactions';
+        return layoutState.selectedTransactionSubItem.isNotEmpty
+            ? layoutState.selectedTransactionSubItem
+            : 'Bill of Material (BOM)';
       case 3:
         return 'Reports';
       case 4:
@@ -157,7 +169,10 @@ class LargeScreenLayout extends StatelessWidget {
           child: _buildMasterPage(),
         );
       case 2:
-        return const TransactionsPage(key: ValueKey('transactions_page'));
+        return KeyedSubtree(
+          key: ValueKey('transaction_${layoutState.selectedTransactionSubItem}'),
+          child: _buildTransactionPage(),
+        );
       case 3:
         return const ReportsPage(key: ValueKey('reports_page'));
       case 4:
@@ -170,6 +185,263 @@ class LargeScreenLayout extends StatelessWidget {
         return const DownloadPage(key: ValueKey('download_page'));
       default:
         return const DashboardPage(key: ValueKey('default_dashboard'));
+    }
+  }
+
+  Widget _buildTransactionPage() {
+    final sub = layoutState.selectedTransactionSubItem.isNotEmpty
+        ? layoutState.selectedTransactionSubItem
+        : 'Bill of Material (BOM)';
+
+    switch (sub) {
+      // Top group
+      case 'Bill of Material (BOM)':
+        return const TransactionPlaceholderPage(
+          title: 'Bill of Material (BOM)',
+          icon: Icons.account_tree_outlined,
+        );
+      case 'Production Order':
+        return const TransactionPlaceholderPage(
+          title: 'Production Order',
+          icon: Icons.precision_manufacturing_outlined,
+        );
+      case 'BOM Followup':
+        return const TransactionPlaceholderPage(
+          title: 'BOM Followup',
+          icon: Icons.timeline_outlined,
+        );
+      case 'Production Order Close':
+        return const TransactionPlaceholderPage(
+          title: 'Production Order Close',
+          icon: Icons.task_alt_outlined,
+        );
+      case 'Repack Production Order':
+        return const TransactionPlaceholderPage(
+          title: 'Repack Production Order',
+          icon: Icons.inventory_2_outlined,
+        );
+      case 'WIP Followup':
+        return const TransactionPlaceholderPage(
+          title: 'WIP Followup',
+          icon: Icons.pending_actions_outlined,
+        );
+      case 'Estimate Requirements':
+        return const TransactionPlaceholderPage(
+          title: 'Estimate Requirements',
+          icon: Icons.calculate_outlined,
+        );
+      case 'Requisition':
+        return const TransactionPlaceholderPage(
+          title: 'Requisition',
+          icon: Icons.post_add_outlined,
+        );
+      case 'Requisition Status':
+        return const TransactionPlaceholderPage(
+          title: 'Requisition Status',
+          icon: Icons.assignment_turned_in_outlined,
+        );
+
+      // Indent
+      case 'Create Indent':
+        return const TransactionPlaceholderPage(
+          title: 'Create Indent',
+          icon: Icons.note_add_outlined,
+        );
+      case 'Indent Approval':
+        return const TransactionPlaceholderPage(
+          title: 'Indent Approval',
+          icon: Icons.approval_outlined,
+        );
+      case 'Enquiry Creation':
+        return const TransactionPlaceholderPage(
+          title: 'Enquiry Creation',
+          icon: Icons.contact_support_outlined,
+        );
+      case 'Quotation Manager':
+        return const TransactionPlaceholderPage(
+          title: 'Quotation Manager',
+          icon: Icons.request_quote_outlined,
+        );
+
+      // Sales Order
+      case 'Generate Sales Order':
+        return const TransactionPlaceholderPage(
+          title: 'Generate Sales Order',
+          icon: Icons.add_shopping_cart_outlined,
+        );
+      case 'Release Sales Order':
+        return const TransactionPlaceholderPage(
+          title: 'Release Sales Order',
+          icon: Icons.shopping_cart_checkout_outlined,
+        );
+
+      // Purchase Order
+      case 'Generate Purchase Order':
+        return const TransactionPlaceholderPage(
+          title: 'Generate Purchase Order',
+          icon: Icons.shopping_basket_outlined,
+        );
+      case 'Release Purchase Order':
+        return const TransactionPlaceholderPage(
+          title: 'Release Purchase Order',
+          icon: Icons.mark_email_read_outlined,
+        );
+      case 'PO Advance Entry':
+        return const TransactionPlaceholderPage(
+          title: 'PO Advance Entry',
+          icon: Icons.payments_outlined,
+        );
+      case 'Freight Memo':
+        return const TransactionPlaceholderPage(
+          title: 'Freight Memo',
+          icon: Icons.local_shipping_outlined,
+        );
+
+      // Material Inward
+      case 'Gate Entry Manager':
+        return const TransactionPlaceholderPage(
+          title: 'Gate Entry Manager',
+          icon: Icons.sensor_door_outlined,
+        );
+      case 'Material Receipt':
+        return const TransactionPlaceholderPage(
+          title: 'Material Receipt',
+          icon: Icons.receipt_outlined,
+        );
+      case 'Inter Company Inward':
+        return const TransactionPlaceholderPage(
+          title: 'Inter Company Inward',
+          icon: Icons.sync_alt_outlined,
+        );
+      case 'Material Inspection':
+        return const TransactionPlaceholderPage(
+          title: 'Material Inspection',
+          icon: Icons.verified_outlined,
+        );
+      case 'Party Payment':
+        return const TransactionPlaceholderPage(
+          title: 'Party Payment',
+          icon: Icons.paid_outlined,
+        );
+
+      // Issue
+      case 'Stock Transfer':
+        return const TransactionPlaceholderPage(
+          title: 'Stock Transfer',
+          icon: Icons.swap_horiz_outlined,
+        );
+      case 'Issue Manager':
+        return const TransactionPlaceholderPage(
+          title: 'Issue Manager',
+          icon: Icons.output_outlined,
+        );
+      case 'WIP Approval':
+        return const TransactionPlaceholderPage(
+          title: 'WIP Approval',
+          icon: Icons.thumb_up_alt_outlined,
+        );
+      case 'Material Return From/To':
+        return const TransactionPlaceholderPage(
+          title: 'Material Return From/To',
+          icon: Icons.replay_outlined,
+        );
+      case 'Input Screen':
+        return const TransactionPlaceholderPage(
+          title: 'Input Screen',
+          icon: Icons.input_outlined,
+        );
+
+      // Consumption Module
+      case 'Cost of Maintenance':
+        return const TransactionPlaceholderPage(
+          title: 'Cost of Maintenance',
+          icon: Icons.build_outlined,
+        );
+      case 'Operation Master':
+        return const TransactionPlaceholderPage(
+          title: 'Operation Master',
+          icon: Icons.settings_suggest_outlined,
+        );
+      case 'Cost Of Material':
+        return const TransactionPlaceholderPage(
+          title: 'Cost Of Material',
+          icon: Icons.monetization_on_outlined,
+        );
+      case 'Pallet Returnable Entry':
+        return const TransactionPlaceholderPage(
+          title: 'Pallet Returnable Entry',
+          icon: Icons.move_down_outlined,
+        );
+      case 'Gate Pass':
+        return const TransactionPlaceholderPage(
+          title: 'Gate Pass',
+          icon: Icons.badge_outlined,
+        );
+      case 'Stock Adjustment':
+        return const TransactionPlaceholderPage(
+          title: 'Stock Adjustment',
+          icon: Icons.tune_outlined,
+        );
+      case 'Roll Cutting Entry':
+        return const TransactionPlaceholderPage(
+          title: 'Roll Cutting Entry',
+          icon: Icons.content_cut_outlined,
+        );
+
+      // Job Work
+      case 'Jobwork Manager':
+        return const TransactionPlaceholderPage(
+          title: 'Jobwork Manager',
+          icon: Icons.engineering_outlined,
+        );
+      case 'Job Order':
+        return const TransactionPlaceholderPage(
+          title: 'Job Order',
+          icon: Icons.work_outline_rounded,
+        );
+      case 'Jobwork Receipt':
+        return const TransactionPlaceholderPage(
+          title: 'Jobwork Receipt',
+          icon: Icons.assignment_turned_in_outlined,
+        );
+
+      // Work Order
+      case 'RGP':
+        return const TransactionPlaceholderPage(
+          title: 'RGP',
+          icon: Icons.outbox_outlined,
+        );
+      case 'Create Work Order':
+        return const TransactionPlaceholderPage(
+          title: 'Create Work Order',
+          icon: Icons.note_alt_outlined,
+        );
+      case 'Work Order Approval':
+        return const TransactionPlaceholderPage(
+          title: 'Work Order Approval',
+          icon: Icons.how_to_reg_outlined,
+        );
+      case 'Work Order Gate Entry':
+        return const TransactionPlaceholderPage(
+          title: 'Work Order Gate Entry',
+          icon: Icons.meeting_room_outlined,
+        );
+      case 'Work Order GRN':
+        return const TransactionPlaceholderPage(
+          title: 'Work Order GRN',
+          icon: Icons.markunread_mailbox_outlined,
+        );
+      case 'RGP RECEIVED':
+        return const TransactionPlaceholderPage(
+          title: 'RGP RECEIVED',
+          icon: Icons.move_to_inbox_outlined,
+        );
+
+      default:
+        return TransactionPlaceholderPage(
+          title: sub,
+          icon: Icons.receipt_long_outlined,
+        );
     }
   }
 

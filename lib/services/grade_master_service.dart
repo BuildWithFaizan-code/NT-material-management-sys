@@ -41,7 +41,7 @@ class GradeMasterService {
   Future<List<GradeItem>> getGrades() async {
     try {
       final uri = Uri.parse('$_baseUrl/GetAll');
-      final response = await http.get(uri).timeout(const Duration(seconds: 4));
+      final response = await http.get(uri).timeout(ApiConfig.defaultTimeout);
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -61,7 +61,7 @@ class GradeMasterService {
   Future<int> getNextGradeSrl() async {
     try {
       final uri = Uri.parse('$_baseUrl/GetNextSrl');
-      final response = await http.get(uri).timeout(const Duration(seconds: 3));
+      final response = await http.get(uri).timeout(ApiConfig.defaultTimeout);
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -83,7 +83,7 @@ class GradeMasterService {
         uri,
         headers: {'Content-Type': 'application/json'},
         body: json.encode(item.toJson()),
-      ).timeout(const Duration(seconds: 5));
+      ).timeout(ApiConfig.defaultTimeout);
 
       if (response.statusCode == 200) {
         json.decode(response.body);
@@ -102,7 +102,7 @@ class GradeMasterService {
         uri,
         headers: {'Content-Type': 'application/json'},
         body: json.encode(item.toJson()),
-      ).timeout(const Duration(seconds: 5));
+      ).timeout(ApiConfig.defaultTimeout);
 
       if (response.statusCode == 200) {
         json.decode(response.body);
@@ -121,7 +121,7 @@ class GradeMasterService {
   Future<bool> deleteGrade(int gradeSrl) async {
     try {
       final uri = Uri.parse('$_baseUrl/Delete/$gradeSrl');
-      final response = await http.delete(uri).timeout(const Duration(seconds: 5));
+      final response = await http.delete(uri).timeout(ApiConfig.defaultTimeout);
 
       if (response.statusCode == 200) {
         json.decode(response.body);

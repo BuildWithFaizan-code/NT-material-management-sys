@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:excel/excel.dart' as excel_pkg;
@@ -7,10 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:url_launcher/url_launcher.dart';
 
 import '../design/app_colors.dart';
 import '../services/group_master_definition_service.dart';
+import '../utils/file_export_helper.dart';
 
 enum ExportFormat { excel, pdf }
 enum ButtonStatus { idle, loading, success }
@@ -1779,40 +1778,29 @@ class _GroupMasterDefinitionExportModalDialogState extends State<_GroupMasterDef
     });
   }
 
-  Future<void> _openFileInSystemExplorer(String filePath) async {
-    if (Platform.isWindows) {
-      try {
-        await Process.run('explorer.exe', ['/select,', filePath]);
-        return;
-      } catch (_) {}
-    }
-    try {
-      final fileUri = Uri.file(filePath);
-      await launchUrl(fileUri);
-    } catch (_) {}
-  }
-
   Future<void> _finalizeFileAndComplete() async {
     final selectedList = widget.items
         .where((i) => _selectedCodes.contains(i.ismMsCode))
         .toList();
 
     try {
-      final String userProfile = Platform.environment['USERPROFILE'] ?? 'C:\\Users\\Default';
-      final String downloadsPath = '$userProfile\\Downloads';
-      final Directory dir = Directory(downloadsPath);
-      if (!dir.existsSync()) dir.createSync(recursive: true);
-
       final String timeStamp = DateTime.now().millisecondsSinceEpoch.toString().substring(7);
-      String filePath = '';
+      final String fileName = _selectedFormat == 'XLSX'
+          ? 'Group_Master_Definition_$timeStamp.xlsx'
+          : 'Group_Master_Definition_$timeStamp.pdf';
 
-      if (_selectedFormat == 'XLSX') {
-        filePath = '$downloadsPath\\Group_Master_Definition_$timeStamp.xlsx';
-        await _generateExcelFile(filePath, selectedList);
-      } else {
-        filePath = '$downloadsPath\\Group_Master_Definition_$timeStamp.pdf';
-        await _generatePdfFile(filePath, selectedList);
+      final List<int>? fileBytes = _selectedFormat == 'XLSX'
+          ? _generateExcelBytes(selectedList)
+          : await _generatePdfBytes(selectedList);
+
+      if (fileBytes == null) {
+        throw Exception('Failed to generate export file bytes.');
       }
+
+      await FileExportHelper.saveAndLaunchFile(
+        bytes: fileBytes,
+        fileName: fileName,
+      );
 
       if (!mounted) return;
       setState(() {
@@ -1823,7 +1811,6 @@ class _GroupMasterDefinitionExportModalDialogState extends State<_GroupMasterDef
       await Future.delayed(const Duration(milliseconds: 650));
       if (!mounted) return;
       Navigator.of(context).pop();
-      await _openFileInSystemExplorer(filePath);
     } catch (e) {
       if (mounted) {
         setState(() => _isExporting = false);
@@ -1837,7 +1824,7 @@ class _GroupMasterDefinitionExportModalDialogState extends State<_GroupMasterDef
     }
   }
 
-  Future<void> _generateExcelFile(String filePath, List<GroupMasterDefinitionItem> records) async {
+  List<int>? _generateExcelBytes(List<GroupMasterDefinitionItem> records) {
     final excel = excel_pkg.Excel.createExcel();
     final String defaultSheet = excel.getDefaultSheet() ?? 'Sheet1';
     excel.rename(defaultSheet, 'Group Definitions');
@@ -1915,14 +1902,10 @@ class _GroupMasterDefinitionExportModalDialogState extends State<_GroupMasterDef
       }
     }
 
-    final fileBytes = excel.save();
-    if (fileBytes != null) {
-      final file = File(filePath);
-      await file.writeAsBytes(fileBytes);
-    }
+    return excel.save();
   }
 
-  Future<void> _generatePdfFile(String filePath, List<GroupMasterDefinitionItem> records) async {
+  Future<List<int>> _generatePdfBytes(List<GroupMasterDefinitionItem> records) async {
     final pdf = pw.Document();
 
     pdf.addPage(
@@ -1978,8 +1961,7 @@ class _GroupMasterDefinitionExportModalDialogState extends State<_GroupMasterDef
       ),
     );
 
-    final file = File(filePath);
-    await file.writeAsBytes(await pdf.save());
+    return pdf.save();
   }
 
   @override

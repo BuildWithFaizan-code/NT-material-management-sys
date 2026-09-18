@@ -1,4 +1,4 @@
-import 'dart:io';
+import '../utils/file_export_helper.dart';
 import 'package:excel/excel.dart' as excel_pkg;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -282,25 +282,13 @@ class _ChargesMasterPageState extends State<ChargesMasterPage>
 
       final fileBytes = excel.save();
       if (fileBytes != null) {
-        final String userProfile = Platform.environment['USERPROFILE'] ?? 'C:\\Users\\Default';
-        final String downloadsPath = '$userProfile\\Downloads';
-        final Directory dir = Directory(downloadsPath);
-        if (!dir.existsSync()) {
-          dir.createSync(recursive: true);
-        }
-
         final String timeStamp = DateTime.now().millisecondsSinceEpoch.toString().substring(7);
-        final String filePath = '$downloadsPath\\Charges_Master_Export_$timeStamp.xlsx';
-        final file = File(filePath);
-        await file.writeAsBytes(fileBytes);
+        final String fileName = 'Charges_Master_Export_$timeStamp.xlsx';
+        await FileExportHelper.saveAndLaunchFile(bytes: fileBytes, fileName: fileName);
 
         if (!mounted) return;
         setState(() => _exportStatus = ButtonStatus.success);
-        _showButtonNotification('Excel exported to Downloads folder!', isError: false);
-
-        try {
-          await Process.run('explorer.exe', ['/select,', filePath]);
-        } catch (_) {}
+        _showButtonNotification('Excel export completed successfully!', isError: false);
 
         Future.delayed(const Duration(milliseconds: 1400), () {
           if (mounted) setState(() => _exportStatus = ButtonStatus.idle);

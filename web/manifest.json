@@ -1,12 +1,12 @@
 {
-    "name": "newtechmms",
-    "short_name": "newtechmms",
+    "name": "NewTech Material Management System (MMS)",
+    "short_name": "NewTech MMS",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "background_color": "#0F172A",
+    "theme_color": "#0F172A",
+    "description": "Industrial Material Management System (MMS) for NewTech Infosol",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {
