@@ -48,4 +48,8 @@ class AppColors {
   // Semantic Colors: Slate / Neutral
   static const Color slateLight = Color(0xFFF1F5F9);
   static const Color slateMuted = Color(0xFF94A3B8);
+
+  // Brand Header Accent Colors
+  static const Color brandBlue = Color(0xFF2563EB);
+  static const Color brandOrange = Color(0xFFF97316);
 }
