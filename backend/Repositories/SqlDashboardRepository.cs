@@ -1,5 +1,6 @@
 using Dapper;
 using Microsoft.Data.SqlClient;
+using MMSERP.Api.Common;
 using MMSERP.Api.Models;
 
 namespace MMSERP.Api.Repositories;
@@ -10,9 +11,7 @@ public class SqlDashboardRepository : IDashboardRepository
 
     public SqlDashboardRepository(IConfiguration configuration)
     {
-        _connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING")
-            ?? configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+        _connectionString = DbConnectionHelper.ResolveConnectionString(configuration);
     }
 
     public async Task<MetricsDto?> GetMetricsAsync()

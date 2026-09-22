@@ -10,9 +10,7 @@ namespace MMSERP.Api.Repositories
 
         public StoreMasterRepository(IConfiguration configuration)
         {
-            _connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING")
-                ?? configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+            _connectionString = MMSERP.Api.Common.DbConnectionHelper.ResolveConnectionString(configuration);
         }
 
         private static void SanitizeModel(StoreMaster model)

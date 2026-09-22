@@ -50,6 +50,8 @@ app.*.map.json
 /backend/obj/
 backend/appsettings.Production.json
 appsettings.Production.json
+backend/appsettings.Local.json
+appsettings.Local.json
 
 # Local preview / scratch images
 *.png

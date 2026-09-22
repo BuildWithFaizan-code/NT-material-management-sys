@@ -16,9 +16,7 @@ namespace MMSERP.Api.Repositories
 
         public GroupMasterRepository(IConfiguration configuration)
         {
-            _connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING")
-                ?? configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+            _connectionString = MMSERP.Api.Common.DbConnectionHelper.ResolveConnectionString(configuration);
         }
 
         private IDbConnection CreateConnection() => new SqlConnection(_connectionString);

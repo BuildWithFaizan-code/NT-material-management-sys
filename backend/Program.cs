@@ -11,9 +11,14 @@ using MMSERP.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Load optional developer-local overrides (gitignored)
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+
 // ============================================================================
 // 1. Secrets & Environment Validation
 // ============================================================================
+var dbConnectionString = DbConnectionHelper.ResolveConnectionString(builder.Configuration);
+
 var jwtSigningKey = Environment.GetEnvironmentVariable("JWT_SIGNING_KEY")
     ?? builder.Configuration["JWT_SIGNING_KEY"];
 if (string.IsNullOrWhiteSpace(jwtSigningKey))
