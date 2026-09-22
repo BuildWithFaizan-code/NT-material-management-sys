@@ -33,6 +33,14 @@ class _LoginPageState extends State<LoginPage> {
   String? _errorMessage;
 
   @override
+  void initState() {
+    super.initState();
+    if (AuthService.instance.mustChangePassword) {
+      _isChangePasswordStep = true;
+    }
+  }
+
+  @override
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();

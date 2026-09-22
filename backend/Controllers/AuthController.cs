@@ -42,11 +42,14 @@ namespace MMSERP.Api.Controllers
 
         private void SetRefreshTokenCookie(string rawRefreshToken, DateTime expiresAt)
         {
+            var isCrossOrigin = Request.Headers.TryGetValue("Origin", out var origin)
+                && !origin.ToString().Contains(Request.Host.Host, StringComparison.OrdinalIgnoreCase);
+
             var cookieOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true, // Force Secure for HttpOnly cookie
-                SameSite = SameSiteMode.Strict,
+                Secure = true, // Required for HttpOnly and SameSite=None
+                SameSite = isCrossOrigin ? SameSiteMode.None : SameSiteMode.Strict,
                 Expires = expiresAt,
                 Path = "/api/auth"
             };
@@ -55,11 +58,14 @@ namespace MMSERP.Api.Controllers
 
         private void ClearRefreshTokenCookie()
         {
+            var isCrossOrigin = Request.Headers.TryGetValue("Origin", out var origin)
+                && !origin.ToString().Contains(Request.Host.Host, StringComparison.OrdinalIgnoreCase);
+
             var cookieOptions = new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true,
-                SameSite = SameSiteMode.Strict,
+                SameSite = isCrossOrigin ? SameSiteMode.None : SameSiteMode.Strict,
                 Expires = DateTime.UtcNow.AddDays(-1),
                 Path = "/api/auth"
             };

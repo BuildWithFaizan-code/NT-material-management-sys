@@ -41,7 +41,7 @@ class App extends StatelessWidget {
               ),
             ),
           );
-        } else if (AuthService.instance.isLoggedIn) {
+        } else if (AuthService.instance.isLoggedIn && !AuthService.instance.mustChangePassword) {
           homeWidget = AppShell(
             layoutState: layoutState,
             statusState: statusState,
