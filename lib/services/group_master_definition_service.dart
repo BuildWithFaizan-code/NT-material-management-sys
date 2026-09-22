@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import 'api_client.dart';
 
 class GroupMasterDefinitionItem {
   final String ismMsCode;
@@ -79,11 +79,10 @@ class GroupMasterDefinitionService {
 
   Future<List<GroupMasterDefinitionItem>> getMappedDefinitions({String? mCode}) async {
     try {
-      final Uri uri = Uri.parse('$baseUrl/GetMappedDefinitions').replace(
-        queryParameters: mCode != null && mCode.isNotEmpty ? {'mCode': mCode} : null,
+      final response = await ApiClient.instance.get(
+        '$baseUrl/GetMappedDefinitions',
+        queryParams: mCode != null && mCode.isNotEmpty ? {'mCode': mCode} : null,
       );
-
-      final response = await http.get(uri).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         if (body['success'] == true && body['data'] != null) {
@@ -99,7 +98,7 @@ class GroupMasterDefinitionService {
 
   Future<List<CategoryLookupItem>> getCategories() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/GetCategories')).timeout(const Duration(seconds: 10));
+      final response = await ApiClient.instance.get('$baseUrl/GetCategories');
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         if (body['success'] == true && body['data'] != null) {
@@ -115,7 +114,7 @@ class GroupMasterDefinitionService {
 
   Future<List<MainGroupLookupItem>> getMainGroups() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/GetMainGroups')).timeout(const Duration(seconds: 10));
+      final response = await ApiClient.instance.get('$baseUrl/GetMainGroups');
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         if (body['success'] == true && body['data'] != null) {
@@ -131,7 +130,7 @@ class GroupMasterDefinitionService {
 
   Future<String> getMainGroupName(String mCode) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/GetMainGroupName/$mCode')).timeout(const Duration(seconds: 10));
+      final response = await ApiClient.instance.get('$baseUrl/GetMainGroupName/$mCode');
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         if (body['success'] == true && body['data'] != null) {
@@ -146,11 +145,10 @@ class GroupMasterDefinitionService {
 
   Future<bool> insertItem(GroupMasterDefinitionItem item) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/Insert'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(item.toJson()),
-      ).timeout(const Duration(seconds: 10));
+      final response = await ApiClient.instance.post(
+        '$baseUrl/Insert',
+        body: item.toJson(),
+      );
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         return body['success'] == true;
@@ -163,11 +161,10 @@ class GroupMasterDefinitionService {
 
   Future<bool> updateItem(GroupMasterDefinitionItem item) async {
     try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/Update'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(item.toJson()),
-      ).timeout(const Duration(seconds: 10));
+      final response = await ApiClient.instance.put(
+        '$baseUrl/Update',
+        body: item.toJson(),
+      );
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         return body['success'] == true;
@@ -180,7 +177,7 @@ class GroupMasterDefinitionService {
 
   Future<bool> deleteItem(String msCode) async {
     try {
-      final response = await http.delete(Uri.parse('$baseUrl/Delete/$msCode')).timeout(const Duration(seconds: 10));
+      final response = await ApiClient.instance.delete('$baseUrl/Delete/$msCode');
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
         return body['success'] == true;

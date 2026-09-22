@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import 'api_client.dart';
 
 /// Sub-Department Master Data Model (SUBDEPMST)
 class SubDepartmentMasterItem {
@@ -64,7 +64,6 @@ class SubDepartmentMasterItem {
 /// Service provider for Sub-Department Master API operations
 class SubDepartmentService {
   static String get baseUrl => ApiConfig.baseUrl;
-  static const Duration _timeout = Duration(seconds: 10);
 
   // In-memory cache for ultra-fast local responsiveness
   static List<SubDepartmentMasterItem>? _cachedSubDepartments;
@@ -75,9 +74,9 @@ class SubDepartmentService {
       return List.from(_cachedSubDepartments!);
     }
 
-    final url = Uri.parse('$baseUrl/SubDepartmentMaster/GetAll');
+    final url = '$baseUrl/SubDepartmentMaster/GetAll';
     try {
-      final response = await http.get(url).timeout(_timeout);
+      final response = await ApiClient.instance.get(url);
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
         List<dynamic> dataList = [];
@@ -110,9 +109,9 @@ class SubDepartmentService {
 
   /// GET /api/SubDepartmentMaster/GetNextCode
   static Future<int> fetchNextCode() async {
-    final url = Uri.parse('$baseUrl/SubDepartmentMaster/GetNextCode');
+    final url = '$baseUrl/SubDepartmentMaster/GetNextCode';
     try {
-      final response = await http.get(url).timeout(_timeout);
+      final response = await ApiClient.instance.get(url);
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
         if (body is int) return body;
@@ -133,15 +132,12 @@ class SubDepartmentService {
 
   /// POST /api/SubDepartmentMaster/Create
   static Future<bool> saveSubDepartment(SubDepartmentMasterItem item) async {
-    final url = Uri.parse('$baseUrl/SubDepartmentMaster/Create');
+    final url = '$baseUrl/SubDepartmentMaster/Create';
     try {
-      final response = await http
-          .post(
-            url,
-            headers: {'Content-Type': 'application/json'},
-            body: json.encode(item.toJson()),
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.instance.post(
+        url,
+        body: item.toJson(),
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         _updateLocalCache(item);
@@ -157,15 +153,12 @@ class SubDepartmentService {
 
   /// PUT /api/SubDepartmentMaster/Update/{code}
   static Future<bool> updateSubDepartment(SubDepartmentMasterItem item) async {
-    final url = Uri.parse('$baseUrl/SubDepartmentMaster/Update/${item.sdmCode}');
+    final url = '$baseUrl/SubDepartmentMaster/Update/${item.sdmCode}';
     try {
-      final response = await http
-          .put(
-            url,
-            headers: {'Content-Type': 'application/json'},
-            body: json.encode(item.toJson()),
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.instance.put(
+        url,
+        body: item.toJson(),
+      );
 
       if (response.statusCode == 200) {
         _updateLocalCache(item);
@@ -180,9 +173,9 @@ class SubDepartmentService {
 
   /// DELETE /api/SubDepartmentMaster/Delete/{code}
   static Future<bool> deleteSubDepartment(int code) async {
-    final url = Uri.parse('$baseUrl/SubDepartmentMaster/Delete/$code');
+    final url = '$baseUrl/SubDepartmentMaster/Delete/$code';
     try {
-      final response = await http.delete(url).timeout(_timeout);
+      final response = await ApiClient.instance.delete(url);
       if (response.statusCode == 200) {
         _removeFromLocalCache(code);
         await fetchAllSubDepartments(forceRefresh: true);

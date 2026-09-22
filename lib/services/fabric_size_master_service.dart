@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import 'api_client.dart';
 
 class FabricSizeItem {
   final int sizeCode;
@@ -41,8 +41,7 @@ class FabricSizeMasterService {
 
   Future<List<FabricSizeItem>> getFabricSizes() async {
     try {
-      final uri = Uri.parse('$_baseUrl/GetAll');
-      final response = await http.get(uri).timeout(ApiConfig.defaultTimeout);
+      final response = await ApiClient.instance.get('$_baseUrl/GetAll');
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -61,8 +60,7 @@ class FabricSizeMasterService {
 
   Future<int> getNextSizeCode() async {
     try {
-      final uri = Uri.parse('$_baseUrl/GetNextCode');
-      final response = await http.get(uri).timeout(ApiConfig.defaultTimeout);
+      final response = await ApiClient.instance.get('$_baseUrl/GetNextCode');
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -79,12 +77,10 @@ class FabricSizeMasterService {
 
   Future<bool> insertFabricSize(FabricSizeItem item) async {
     try {
-      final uri = Uri.parse('$_baseUrl/Insert');
-      final response = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(item.toJson()),
-      ).timeout(ApiConfig.defaultTimeout);
+      final response = await ApiClient.instance.post(
+        '$_baseUrl/Insert',
+        body: item.toJson(),
+      );
 
       if (response.statusCode == 200) {
         json.decode(response.body);
@@ -98,12 +94,10 @@ class FabricSizeMasterService {
 
   Future<bool> updateFabricSize(FabricSizeItem item) async {
     try {
-      final uri = Uri.parse('$_baseUrl/Update');
-      final response = await http.put(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(item.toJson()),
-      ).timeout(ApiConfig.defaultTimeout);
+      final response = await ApiClient.instance.put(
+        '$_baseUrl/Update',
+        body: item.toJson(),
+      );
 
       if (response.statusCode == 200) {
         json.decode(response.body);
@@ -121,8 +115,7 @@ class FabricSizeMasterService {
 
   Future<bool> deleteFabricSize(int sizeCode) async {
     try {
-      final uri = Uri.parse('$_baseUrl/Delete/$sizeCode');
-      final response = await http.delete(uri).timeout(ApiConfig.defaultTimeout);
+      final response = await ApiClient.instance.delete('$_baseUrl/Delete/$sizeCode');
 
       if (response.statusCode == 200) {
         json.decode(response.body);

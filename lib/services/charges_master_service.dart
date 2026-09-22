@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import 'api_client.dart';
 
 class ChargesMasterItem {
   final int chgId;
@@ -123,8 +123,10 @@ class ChargesMasterService {
       if (module != null && module.isNotEmpty) queryParams['module'] = module;
       if (mode != null && mode.isNotEmpty) queryParams['mode'] = mode;
 
-      final uri = Uri.parse('$_baseUrl/GetAll').replace(queryParameters: queryParams);
-      final response = await http.get(uri).timeout(ApiConfig.defaultTimeout);
+      final response = await ApiClient.instance.get(
+        '$_baseUrl/GetAll',
+        queryParams: queryParams.isNotEmpty ? queryParams : null,
+      );
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -142,12 +144,10 @@ class ChargesMasterService {
 
   Future<bool> saveChargesList(List<ChargesMasterItem> items) async {
     try {
-      final uri = Uri.parse('$_baseUrl/SaveAll');
-      final response = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(items.map((i) => i.toJson()).toList()),
-      ).timeout(ApiConfig.defaultTimeout);
+      final response = await ApiClient.instance.post(
+        '$_baseUrl/SaveAll',
+        body: items.map((i) => i.toJson()).toList(),
+      );
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);

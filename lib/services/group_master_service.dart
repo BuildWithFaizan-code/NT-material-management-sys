@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import 'api_client.dart';
 
 class GroupMasterItem {
   final String catCode;
@@ -85,14 +85,11 @@ class GroupMasterService {
   static String get baseUrl => '${ApiConfig.baseUrl}/GroupMaster';
 
   Future<List<GroupMasterItem>> getAllItems({String? search}) async {
-    final uri = Uri.parse(
-      search != null && search.isNotEmpty
-          ? '$baseUrl/GetAll?search=${Uri.encodeComponent(search)}'
-          : '$baseUrl/GetAll',
-    );
-
     try {
-      final response = await http.get(uri).timeout(const Duration(seconds: 10));
+      final response = await ApiClient.instance.get(
+        '$baseUrl/GetAll',
+        queryParams: search != null && search.isNotEmpty ? {'search': search} : null,
+      );
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         if (json['success'] == true && json['data'] != null) {
@@ -108,7 +105,7 @@ class GroupMasterService {
 
   Future<String> getNextCode() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/GetNextCode')).timeout(const Duration(seconds: 10));
+      final response = await ApiClient.instance.get('$baseUrl/GetNextCode');
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         if (json['success'] == true && json['data'] != null) {
@@ -123,7 +120,7 @@ class GroupMasterService {
 
   Future<List<TaxSlabItem>> getTaxSlabs() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/GetTaxSlabs')).timeout(const Duration(seconds: 10));
+      final response = await ApiClient.instance.get('$baseUrl/GetTaxSlabs');
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         if (json['success'] == true && json['data'] != null) {
@@ -139,11 +136,10 @@ class GroupMasterService {
 
   Future<bool> insertItem(GroupMasterItem item) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/Insert'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(item.toJson()),
-      ).timeout(const Duration(seconds: 10));
+      final response = await ApiClient.instance.post(
+        '$baseUrl/Insert',
+        body: item.toJson(),
+      );
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         return json['success'] == true;
@@ -156,11 +152,10 @@ class GroupMasterService {
 
   Future<bool> updateItem(GroupMasterItem item) async {
     try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/Update'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(item.toJson()),
-      ).timeout(const Duration(seconds: 10));
+      final response = await ApiClient.instance.put(
+        '$baseUrl/Update',
+        body: item.toJson(),
+      );
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         return json['success'] == true;
@@ -173,9 +168,9 @@ class GroupMasterService {
 
   Future<bool> deleteItem(String code) async {
     try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/Delete/${Uri.encodeComponent(code)}'),
-      ).timeout(const Duration(seconds: 10));
+      final response = await ApiClient.instance.delete(
+        '$baseUrl/Delete/${Uri.encodeComponent(code)}',
+      );
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         return json['success'] == true;

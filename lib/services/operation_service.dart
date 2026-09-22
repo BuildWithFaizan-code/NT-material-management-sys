@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import 'api_client.dart';
 
 class OperationMaster {
   final int omCode;
@@ -42,11 +42,11 @@ class OperationMaster {
 
 class OperationService {
   final String baseUrl;
-  final http.Client _client;
+  final ApiClient _client;
 
-  OperationService({String? baseUrl, http.Client? client})
+  OperationService({String? baseUrl, ApiClient? client})
       : baseUrl = baseUrl ?? ApiConfig.baseUrl,
-        _client = client ?? http.Client();
+        _client = client ?? ApiClient.instance;
 
   // In-memory fallback mock list for initial demo / offline resilience
   static final List<OperationMaster> _mockOperations = [
@@ -66,9 +66,7 @@ class OperationService {
 
   Future<List<OperationMaster>> fetchOperations() async {
     try {
-      final response = await _client
-          .get(Uri.parse('$baseUrl/OperationMaster/GetAll'))
-          .timeout(const Duration(seconds: 4));
+      final response = await _client.get('$baseUrl/OperationMaster/GetAll');
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -83,9 +81,7 @@ class OperationService {
 
   Future<int> fetchNextCode() async {
     try {
-      final response = await _client
-          .get(Uri.parse('$baseUrl/OperationMaster/GetNextCode'))
-          .timeout(const Duration(seconds: 4));
+      final response = await _client.get('$baseUrl/OperationMaster/GetNextCode');
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -107,10 +103,9 @@ class OperationService {
 
     try {
       final response = await _client.post(
-        Uri.parse('$baseUrl/OperationMaster/Create'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(payload),
-      ).timeout(const Duration(seconds: 4));
+        '$baseUrl/OperationMaster/Create',
+        body: payload,
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         _mockOperations.insert(
@@ -139,10 +134,9 @@ class OperationService {
 
     try {
       final response = await _client.put(
-        Uri.parse('$baseUrl/OperationMaster/Update/$omCode'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(payload),
-      ).timeout(const Duration(seconds: 4));
+        '$baseUrl/OperationMaster/Update/$omCode',
+        body: payload,
+      );
 
       if (response.statusCode == 200) {
         final idx = _mockOperations.indexWhere((e) => e.omCode == omCode);
@@ -165,9 +159,7 @@ class OperationService {
 
   Future<bool> deleteOperation(int omCode) async {
     try {
-      final response = await _client
-          .delete(Uri.parse('$baseUrl/OperationMaster/Delete/$omCode'))
-          .timeout(const Duration(seconds: 4));
+      final response = await _client.delete('$baseUrl/OperationMaster/Delete/$omCode');
 
       if (response.statusCode == 200) {
         _mockOperations.removeWhere((e) => e.omCode == omCode);

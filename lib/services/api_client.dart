@@ -98,6 +98,21 @@ class ApiClient {
     });
   }
 
+  /// Sends a PATCH request
+  Future<http.Response> patch(String url, {Map<String, String>? headers, Object? body}) async {
+    final uri = Uri.parse(url);
+    return _sendWithRetry(() async {
+      final token = await TokenStorageService.instance.getAccessToken();
+      return _client
+          .patch(
+            uri,
+            headers: _buildHeaders(headers, token),
+            body: body is String ? body : (body != null ? jsonEncode(body) : null),
+          )
+          .timeout(_timeout);
+    });
+  }
+
   /// Sends a DELETE request
   Future<http.Response> delete(String url, {Map<String, String>? headers, Object? body}) async {
     final uri = Uri.parse(url);

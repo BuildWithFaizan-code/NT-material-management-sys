@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import 'api_client.dart';
 
 class DepartmentMasterItem {
   final int labCode;
@@ -143,9 +143,8 @@ class DepartmentService {
 
   /// GET /api/DepartmentMaster/GetAll
   static Future<List<DepartmentMasterItem>> fetchDepartments() async {
-    final url = Uri.parse('$baseUrl/DepartmentMaster/GetAll');
     try {
-      final response = await http.get(url).timeout(const Duration(seconds: 10));
+      final response = await ApiClient.instance.get('$baseUrl/DepartmentMaster/GetAll');
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
         final dataList = body['data'] as List<dynamic>? ?? [];
@@ -157,9 +156,8 @@ class DepartmentService {
 
   /// GET /api/DepartmentMaster/GetAccounts
   static Future<List<PartyAccountItem>> fetchPartyAccounts() async {
-    final url = Uri.parse('$baseUrl/DepartmentMaster/GetAccounts');
     try {
-      final response = await http.get(url).timeout(const Duration(seconds: 10));
+      final response = await ApiClient.instance.get('$baseUrl/DepartmentMaster/GetAccounts');
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
         final dataList = body['data'] as List<dynamic>? ?? [];
@@ -179,10 +177,11 @@ class DepartmentService {
       return _cachedLookupAccounts!;
     }
 
-    final queryParam = search.isNotEmpty ? '?search=${Uri.encodeComponent(search)}' : '';
-    final url = Uri.parse('$baseUrl/DepartmentMaster/GetAccountsLookup$queryParam');
     try {
-      final response = await http.get(url).timeout(const Duration(seconds: 10));
+      final response = await ApiClient.instance.get(
+        '$baseUrl/DepartmentMaster/GetAccountsLookup',
+        queryParams: search.isNotEmpty ? {'search': search} : null,
+      );
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
         final dataList = body['data'] as List<dynamic>? ?? [];
@@ -202,9 +201,8 @@ class DepartmentService {
 
   /// GET /api/DepartmentMaster/GetNextCode
   static Future<int> fetchNextCode() async {
-    final url = Uri.parse('$baseUrl/DepartmentMaster/GetNextCode');
     try {
-      final response = await http.get(url).timeout(const Duration(seconds: 10));
+      final response = await ApiClient.instance.get('$baseUrl/DepartmentMaster/GetNextCode');
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
         if (body['data'] is int) return body['data'];
@@ -223,20 +221,18 @@ class DepartmentService {
     required String labAdd,
     int? labPCode,
   }) async {
-    final url = Uri.parse('$baseUrl/DepartmentMaster/Create');
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
+      final response = await ApiClient.instance.post(
+        '$baseUrl/DepartmentMaster/Create',
+        body: {
           'labCode': labCode,
           'labName': labName,
           'labSeries': labSeries,
           'labStatus': labStatus,
           'labAdd': labAdd,
           'labPCode': labPCode,
-        }),
-      ).timeout(const Duration(seconds: 10));
+        },
+      );
 
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (_) {
@@ -253,20 +249,18 @@ class DepartmentService {
     required String labAdd,
     int? labPCode,
   }) async {
-    final url = Uri.parse('$baseUrl/DepartmentMaster/Update/$labCode');
     try {
-      final response = await http.put(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
+      final response = await ApiClient.instance.put(
+        '$baseUrl/DepartmentMaster/Update/$labCode',
+        body: {
           'labCode': labCode,
           'labName': labName,
           'labSeries': labSeries,
           'labStatus': labStatus,
           'labAdd': labAdd,
           'labPCode': labPCode,
-        }),
-      ).timeout(const Duration(seconds: 10));
+        },
+      );
 
       return response.statusCode == 200;
     } catch (_) {
@@ -276,9 +270,8 @@ class DepartmentService {
 
   /// DELETE /api/DepartmentMaster/Delete/{code}
   static Future<bool> deleteDepartment(int labCode) async {
-    final url = Uri.parse('$baseUrl/DepartmentMaster/Delete/$labCode');
     try {
-      final response = await http.delete(url).timeout(const Duration(seconds: 10));
+      final response = await ApiClient.instance.delete('$baseUrl/DepartmentMaster/Delete/$labCode');
       return response.statusCode == 200;
     } catch (_) {
       return true; // Fallback mock success

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../config/api_config.dart';
+import 'api_client.dart';
 
 class MetricsDto {
   final int activeStocks;
@@ -121,22 +121,12 @@ class ApiResponse<T> {
   ApiResponse({required this.success, required this.message, this.data});
 }
 
-class ApiException implements Exception {
-  final String message;
-  final int? statusCode;
-  ApiException(this.message, {this.statusCode});
-
-  @override
-  String toString() => 'ApiException: $message (status: $statusCode)';
-}
-
 class ApiService {
   final String baseUrl;
-  final http.Client _client;
-  static const _timeout = ApiConfig.defaultTimeout;
+  final ApiClient _client;
 
-  ApiService({required this.baseUrl, http.Client? client})
-      : _client = client ?? http.Client();
+  ApiService({required this.baseUrl, ApiClient? client})
+      : _client = client ?? ApiClient.instance;
 
   Future<MetricsDto> fetchMetrics() async {
     final response = await _get('/metrics');
@@ -177,33 +167,23 @@ class ApiService {
   }
 
   Future<bool> updateAlertPriority(String id, String priority) async {
-    final uri = Uri.parse('$baseUrl/alerts/$id/priority');
-    final response = await _client
-        .patch(uri,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'priority': priority}))
-        .timeout(_timeout);
+    final response = await _client.patch(
+      '$baseUrl/alerts/$id/priority',
+      body: {'priority': priority},
+    );
     return response.statusCode == 200;
   }
 
   Future<bool> deleteAlert(String id) async {
-    final uri = Uri.parse('$baseUrl/alerts/$id');
-    final response = await _client.delete(uri).timeout(_timeout);
+    final response = await _client.delete('$baseUrl/alerts/$id');
     return response.statusCode == 200;
   }
 
   Future<http.Response> _get(String path,
       {Map<String, String>? queryParams}) async {
-    var uri = Uri.parse('$baseUrl$path');
-    if (queryParams != null && queryParams.isNotEmpty) {
-      uri = uri.replace(queryParameters: queryParams);
-    }
     try {
-      final response = await _client.get(uri).timeout(_timeout);
+      final response = await _client.get('$baseUrl$path', queryParams: queryParams);
       return response;
-    } on http.ClientException {
-      throw ApiException(
-          'Connection failed — server may be offline. Tap Retry.');
     } catch (_) {
       throw ApiException(
           'Connection failed — server may be offline. Tap Retry.');
@@ -223,6 +203,6 @@ class ApiService {
   }
 
   void dispose() {
-    _client.close();
+    // Shared ApiClient manages its own lifecycle
   }
 }

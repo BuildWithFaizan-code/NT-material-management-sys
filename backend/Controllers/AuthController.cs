@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using MMSERP.Api.Common;
 using MMSERP.Api.Models;
 using MMSERP.Api.Services;
 
@@ -21,12 +22,7 @@ namespace MMSERP.Api.Controllers
             _logger = logger;
         }
 
-        private string? GetClientIp()
-        {
-            return Request.Headers.TryGetValue("X-Forwarded-For", out var forwarded)
-                ? forwarded.FirstOrDefault()?.Split(',')[0].Trim()
-                : HttpContext.Connection.RemoteIpAddress?.ToString();
-        }
+        private string GetClientIp() => IpHelper.GetClientIp(HttpContext);
 
         private int? GetCurrentUserId()
         {
@@ -181,9 +177,13 @@ namespace MMSERP.Api.Controllers
                 ClearRefreshTokenCookie();
             }
 
-            if (userId.HasValue)
+            if (userId.HasValue || !string.IsNullOrWhiteSpace(rawToken))
             {
-                await _authService.LogoutAsync(userId.Value, rawToken);
+                await _authService.LogoutAsync(userId, rawToken);
+            }
+            else
+            {
+                ClearRefreshTokenCookie();
             }
 
             return Ok(ApiResponse<bool>.Ok(true, "Logged out successfully."));

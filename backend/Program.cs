@@ -3,6 +3,7 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
+using MMSERP.Api.Common;
 using MMSERP.Api.Middleware;
 using MMSERP.Api.Models;
 using MMSERP.Api.Repositories;
@@ -88,9 +89,7 @@ builder.Services.AddRateLimiter(options =>
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     options.AddPolicy("LoginRateLimit", httpContext =>
     {
-        var clientIp = httpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var forwarded)
-            ? forwarded.FirstOrDefault()?.Split(',')[0].Trim()
-            : httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown_client";
+        var clientIp = IpHelper.GetClientIp(httpContext);
 
         return RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: clientIp,
@@ -200,6 +199,14 @@ builder.Services.AddScoped<IGroupMasterDefinitionService, GroupMasterDefinitionS
 var app = builder.Build();
 
 // ============================================================================
+// 7.5 One-Time Admin Account Provisioning (CLI Flag or Environment Variable)
+// ============================================================================
+if (await HandleAdminProvisioningAsync(args, app.Services, app.Logger))
+{
+    return;
+}
+
+// ============================================================================
 // 8. Production Startup Guard & Development Warning Logging
 // ============================================================================
 if (app.Environment.IsProduction())
@@ -239,3 +246,149 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+static async Task<bool> HandleAdminProvisioningAsync(string[] args, IServiceProvider services, ILogger logger)
+{
+    string? adminUsername = null;
+    string? adminEmail = null;
+    string? adminPassword = null;
+    bool isCliCommand = false;
+
+    // Check CLI argument: --provision-admin <username> <email> <password>
+    for (int i = 0; i < args.Length; i++)
+    {
+        if (args[i] == "--provision-admin")
+        {
+            isCliCommand = true;
+            if (i + 3 < args.Length)
+            {
+                adminUsername = args[i + 1];
+                adminEmail = args[i + 2];
+                adminPassword = args[i + 3];
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("Error: --provision-admin requires 3 arguments: <username> <email> <password>");
+                Console.ResetColor();
+                return true; // Stop execution
+            }
+            break;
+        }
+    }
+
+    // Check environment variable fallback
+    if (string.IsNullOrWhiteSpace(adminPassword))
+    {
+        adminPassword = Environment.GetEnvironmentVariable("INITIAL_ADMIN_PASSWORD");
+        if (!string.IsNullOrWhiteSpace(adminPassword))
+        {
+            adminUsername = Environment.GetEnvironmentVariable("INITIAL_ADMIN_USERNAME") ?? "admin";
+            adminEmail = Environment.GetEnvironmentVariable("INITIAL_ADMIN_EMAIL") ?? "admin@newtechmms.com";
+        }
+    }
+
+    if (string.IsNullOrWhiteSpace(adminPassword))
+    {
+        return false; // No provisioning requested, continue regular startup
+    }
+
+    // Validate password complexity
+    if (adminPassword.Length < 10 || long.TryParse(adminPassword, out _))
+    {
+        const string errorMsg = "Provisioning error: Password must be at least 10 characters long and cannot be purely numeric.";
+        if (isCliCommand)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(errorMsg);
+            Console.ResetColor();
+        }
+        else
+        {
+            logger.LogError(errorMsg);
+        }
+        return isCliCommand;
+    }
+
+    try
+    {
+        using var scope = services.CreateScope();
+        var authRepo = scope.ServiceProvider.GetRequiredService<IAuthRepository>();
+
+        var existing = await authRepo.GetUserByUsernameAsync(adminUsername!);
+        if (existing != null && existing.IsActive && existing.PasswordHash != "LOCKED_PENDING_PROVISIONING")
+        {
+            var existsMsg = $"Admin user '{adminUsername}' already exists and is active. Skipping provisioning.";
+            if (isCliCommand) Console.WriteLine(existsMsg);
+            else logger.LogInformation(existsMsg);
+            return isCliCommand;
+        }
+
+        var hash = BCrypt.Net.BCrypt.HashPassword(adminPassword, workFactor: 11);
+        int userId;
+
+        if (existing != null)
+        {
+            existing.PasswordHash = hash;
+            existing.IsActive = true;
+            existing.IsAdmin = true;
+            existing.MustChangePassword = true;
+            existing.FailedLoginCount = 0;
+            existing.LockedUntil = null;
+            await authRepo.UpdateUserAsync(existing);
+            userId = existing.UserId;
+        }
+        else
+        {
+            var newUser = new User
+            {
+                Username = adminUsername!,
+                Email = adminEmail ?? $"{adminUsername}@newtechmms.com",
+                PasswordHash = hash,
+                IsActive = true,
+                IsAdmin = true,
+                MustChangePassword = true,
+                CreatedAt = DateTime.UtcNow
+            };
+            userId = await authRepo.CreateUserAsync(newUser);
+        }
+
+        await authRepo.WriteAuditLogAsync(new AuthAuditLog
+        {
+            UserId = userId,
+            EventType = "AdminProvisioned",
+            Success = true,
+            Detail = $"Initial admin user '{adminUsername}' provisioned via {(isCliCommand ? "CLI command" : "environment variable")}.",
+            Timestamp = DateTime.UtcNow
+        });
+
+        var successMsg = $"Admin user '{adminUsername}' successfully provisioned with MustChangePassword = true.";
+        if (isCliCommand)
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"✔ {successMsg}");
+            Console.ResetColor();
+        }
+        else
+        {
+            logger.LogInformation(successMsg);
+        }
+    }
+    catch (Exception ex)
+    {
+        var failMsg = $"Failed to provision admin: {ex.Message}";
+        if (isCliCommand)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(failMsg);
+            Console.ResetColor();
+        }
+        else
+        {
+            logger.LogError(ex, failMsg);
+        }
+    }
+
+    return isCliCommand;
+}
+

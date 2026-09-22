@@ -10,9 +10,9 @@ public class SqlDashboardRepository : IDashboardRepository
 
     public SqlDashboardRepository(IConfiguration configuration)
     {
-        _connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException(
-                "Connection string 'DefaultConnection' not found.");
+        _connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING")
+            ?? configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
     }
 
     public async Task<MetricsDto?> GetMetricsAsync()

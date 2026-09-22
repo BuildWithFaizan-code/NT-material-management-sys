@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import 'api_client.dart';
 
 class MainGroupMasterItem {
   final String wipCode;
@@ -34,14 +34,11 @@ class MainGroupMasterService {
   static String get baseUrl => '${ApiConfig.baseUrl}/MainGroupMaster';
 
   Future<List<MainGroupMasterItem>> getAllItems({String? search}) async {
-    final uri = Uri.parse(
-      search != null && search.isNotEmpty
-          ? '$baseUrl/GetAll?search=${Uri.encodeComponent(search)}'
-          : '$baseUrl/GetAll',
-    );
-
     try {
-      final response = await http.get(uri).timeout(const Duration(seconds: 10));
+      final response = await ApiClient.instance.get(
+        '$baseUrl/GetAll',
+        queryParams: search != null && search.isNotEmpty ? {'search': search} : null,
+      );
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         if (json['success'] == true && json['data'] != null) {
@@ -55,7 +52,7 @@ class MainGroupMasterService {
 
   Future<String?> fetchNextCode() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/GetNextCode')).timeout(const Duration(seconds: 10));
+      final response = await ApiClient.instance.get('$baseUrl/GetNextCode');
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         if (json['success'] == true && json['data'] != null) {
@@ -68,11 +65,10 @@ class MainGroupMasterService {
 
   Future<bool> insertItem(MainGroupMasterItem item) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/Insert'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(item.toJson()),
-      ).timeout(const Duration(seconds: 10));
+      final response = await ApiClient.instance.post(
+        '$baseUrl/Insert',
+        body: item.toJson(),
+      );
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         return json['success'] == true;
@@ -83,11 +79,10 @@ class MainGroupMasterService {
 
   Future<bool> updateItem(MainGroupMasterItem item) async {
     try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/Update'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(item.toJson()),
-      ).timeout(const Duration(seconds: 10));
+      final response = await ApiClient.instance.put(
+        '$baseUrl/Update',
+        body: item.toJson(),
+      );
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         return json['success'] == true;
@@ -98,9 +93,9 @@ class MainGroupMasterService {
 
   Future<bool> deleteItem(String wipCode) async {
     try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/Delete/$wipCode'),
-      ).timeout(const Duration(seconds: 10));
+      final response = await ApiClient.instance.delete(
+        '$baseUrl/Delete/$wipCode',
+      );
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         return json['success'] == true;

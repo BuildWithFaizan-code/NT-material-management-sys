@@ -6,7 +6,7 @@ namespace MMSERP.Api.Services
     {
         Task<ApiResponse<LoginResponse>> LoginAsync(LoginRequest request, string? ipAddress);
         Task<ApiResponse<LoginResponse>> RefreshTokenAsync(string rawRefreshToken, string? ipAddress, string? deviceInfo);
-        Task<ApiResponse<bool>> LogoutAsync(int userId, string? rawRefreshToken);
+        Task<ApiResponse<bool>> LogoutAsync(int? userId, string? rawRefreshToken = null);
         Task<ApiResponse<bool>> RegisterUserAsync(RegisterUserRequest request, int adminUserId);
         Task<ApiResponse<bool>> ChangePasswordAsync(int userId, ChangePasswordRequest request);
         Task<ApiResponse<MfaSetupResponse>> SetupMfaAsync(int userId);

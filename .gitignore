@@ -48,6 +48,8 @@ app.*.map.json
 # .NET / C#
 /backend/bin/
 /backend/obj/
+backend/appsettings.Production.json
+appsettings.Production.json
 
 # Local preview / scratch images
 *.png

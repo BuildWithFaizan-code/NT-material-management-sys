@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import 'api_client.dart';
 
 /// Head Master Data Model (LOCATIONMST WHERE MODE = 'COSTING HEAD')
 class HeadMasterItem {
@@ -86,7 +86,6 @@ class HeadMasterItem {
 /// Service provider for Head Master (Costing Head) API operations
 class HeadMasterService {
   static String get baseUrl => ApiConfig.baseUrl;
-  static const Duration _timeout = Duration(seconds: 10);
 
   // In-memory cache for ultra-fast responsiveness
   static List<HeadMasterItem>? _cachedHeads;
@@ -97,9 +96,8 @@ class HeadMasterService {
       return List.from(_cachedHeads!);
     }
 
-    final url = Uri.parse('$baseUrl/HeadMaster/GetAll');
     try {
-      final response = await http.get(url).timeout(_timeout);
+      final response = await ApiClient.instance.get('$baseUrl/HeadMaster/GetAll');
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
         List<dynamic> dataList = [];
@@ -131,9 +129,8 @@ class HeadMasterService {
 
   /// GET /api/HeadMaster/GetNextCode
   static Future<int> fetchNextCode() async {
-    final url = Uri.parse('$baseUrl/HeadMaster/GetNextCode');
     try {
-      final response = await http.get(url).timeout(_timeout);
+      final response = await ApiClient.instance.get('$baseUrl/HeadMaster/GetNextCode');
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
         if (body is int) return body;
@@ -154,15 +151,11 @@ class HeadMasterService {
 
   /// POST /api/HeadMaster/Create
   static Future<bool> saveHead(HeadMasterItem item) async {
-    final url = Uri.parse('$baseUrl/HeadMaster/Create');
     try {
-      final response = await http
-          .post(
-            url,
-            headers: {'Content-Type': 'application/json'},
-            body: json.encode(item.toJson()),
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.instance.post(
+        '$baseUrl/HeadMaster/Create',
+        body: item.toJson(),
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         _updateLocalCache(item);
@@ -177,15 +170,11 @@ class HeadMasterService {
 
   /// PUT /api/HeadMaster/Update/{code}
   static Future<bool> updateHead(HeadMasterItem item) async {
-    final url = Uri.parse('$baseUrl/HeadMaster/Update/${item.locCode}');
     try {
-      final response = await http
-          .put(
-            url,
-            headers: {'Content-Type': 'application/json'},
-            body: json.encode(item.toJson()),
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.instance.put(
+        '$baseUrl/HeadMaster/Update/${item.locCode}',
+        body: item.toJson(),
+      );
 
       if (response.statusCode == 200) {
         _updateLocalCache(item);
@@ -200,9 +189,8 @@ class HeadMasterService {
 
   /// DELETE /api/HeadMaster/Delete/{code}
   static Future<bool> deleteHead(int code) async {
-    final url = Uri.parse('$baseUrl/HeadMaster/Delete/$code');
     try {
-      final response = await http.delete(url).timeout(_timeout);
+      final response = await ApiClient.instance.delete('$baseUrl/HeadMaster/Delete/$code');
       if (response.statusCode == 200) {
         _removeFromLocalCache(code);
         await fetchAllHeads(forceRefresh: true);

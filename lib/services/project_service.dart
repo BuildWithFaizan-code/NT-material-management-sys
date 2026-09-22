@@ -2,24 +2,23 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../pages/project_master_page.dart';
+import 'api_client.dart';
 
 class ProjectService {
   final String baseUrl;
-  final http.Client _client;
-  static const _timeout = ApiConfig.defaultTimeout;
+  final ApiClient _client;
 
   ProjectService({
     String? baseUrl,
-    http.Client? client,
+    ApiClient? client,
   })  : baseUrl = baseUrl ?? '${ApiConfig.baseUrl}/projectmaster',
-        _client = client ?? http.Client();
+        _client = client ?? ApiClient.instance;
 
   /// GET /api/projectmaster
   /// Fetches all Project Master records from database
   Future<List<ProjectMaster>> fetchProjects() async {
-    final uri = Uri.parse(baseUrl);
     try {
-      final response = await _client.get(uri).timeout(_timeout);
+      final response = await _client.get(baseUrl);
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
         final data = body['data'] as List<dynamic>? ?? [];
@@ -38,9 +37,8 @@ class ProjectService {
   /// GET /api/projectmaster/next-code
   /// Fetches auto-incremented next PRJ_CODE from database
   Future<int> fetchNextCode() async {
-    final uri = Uri.parse('$baseUrl/next-code');
     try {
-      final response = await _client.get(uri).timeout(_timeout);
+      final response = await _client.get('$baseUrl/next-code');
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
         final nextCode = body['data'];
@@ -56,18 +54,14 @@ class ProjectService {
   /// POST /api/projectmaster
   /// Inserts a new Project Master record into PROJECTMST table
   Future<bool> createProject(int code, String name) async {
-    final uri = Uri.parse(baseUrl);
     try {
-      final response = await _client
-          .post(
-            uri,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'prjCode': code,
-              'prjName': name,
-            }),
-          )
-          .timeout(_timeout);
+      final response = await _client.post(
+        baseUrl,
+        body: {
+          'prjCode': code,
+          'prjName': name,
+        },
+      );
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       throw Exception('Failed to create project: $e');
@@ -77,18 +71,14 @@ class ProjectService {
   /// PUT /api/projectmaster
   /// Updates an existing Project Master record in PROJECTMST table
   Future<bool> updateProject(int code, String name) async {
-    final uri = Uri.parse(baseUrl);
     try {
-      final response = await _client
-          .put(
-            uri,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'prjCode': code,
-              'prjName': name,
-            }),
-          )
-          .timeout(_timeout);
+      final response = await _client.put(
+        baseUrl,
+        body: {
+          'prjCode': code,
+          'prjName': name,
+        },
+      );
       return response.statusCode == 200;
     } catch (e) {
       throw Exception('Failed to update project: $e');
@@ -98,16 +88,13 @@ class ProjectService {
   /// DELETE /api/projectmaster/{code}
   /// Deletes a Project Master record by PRJ_CODE from PROJECTMST table
   Future<bool> deleteProject(int code) async {
-    final uri = Uri.parse('$baseUrl/$code');
     try {
-      final response = await _client.delete(uri).timeout(_timeout);
+      final response = await _client.delete('$baseUrl/$code');
       return response.statusCode == 200;
     } catch (e) {
       throw Exception('Failed to delete project: $e');
     }
   }
 
-  void dispose() {
-    _client.close();
-  }
+  void dispose() {}
 }

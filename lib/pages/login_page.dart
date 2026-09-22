@@ -283,18 +283,18 @@ class _LoginPageState extends State<LoginPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0xFFFEF2F2),
+                color: AppColors.errorLight,
                 borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMd),
-                border: Border.all(color: const Color(0xFFFCA5A5)),
+                border: Border.all(color: AppColors.errorBorder),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.error_outline_rounded, color: Color(0xFFDC2626), size: 18),
+                  const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 18),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       _errorMessage!,
-                      style: const TextStyle(color: Color(0xFF991B1B), fontSize: 13, fontWeight: FontWeight.w500),
+                      style: const TextStyle(color: AppColors.errorDark, fontSize: 13, fontWeight: FontWeight.w500),
                     ),
                   ),
                 ],
@@ -401,10 +401,10 @@ class _LoginPageState extends State<LoginPage> {
             width: 54,
             height: 54,
             decoration: BoxDecoration(
-              color: const Color(0xFFEFF6FF),
+              color: AppColors.infoLight,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(Icons.security_rounded, color: Color(0xFF2563EB), size: 28),
+            child: const Icon(Icons.security_rounded, color: AppColors.info, size: 28),
           ),
         ),
         const SizedBox(height: 20),
@@ -428,13 +428,13 @@ class _LoginPageState extends State<LoginPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFFFEF2F2),
+              color: AppColors.errorLight,
               borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMd),
-              border: Border.all(color: const Color(0xFFFCA5A5)),
+              border: Border.all(color: AppColors.errorBorder),
             ),
             child: Text(
               _errorMessage!,
-              style: const TextStyle(color: Color(0xFF991B1B), fontSize: 13),
+              style: const TextStyle(color: AppColors.errorDark, fontSize: 13),
             ),
           ),
           const SizedBox(height: 16),
@@ -496,10 +496,10 @@ class _LoginPageState extends State<LoginPage> {
             width: 54,
             height: 54,
             decoration: BoxDecoration(
-              color: const Color(0xFFFFFBEB),
+              color: AppColors.warningLight,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(Icons.key_rounded, color: Color(0xFFD97706), size: 28),
+            child: const Icon(Icons.key_rounded, color: AppColors.warning, size: 28),
           ),
         ),
         const SizedBox(height: 20),
@@ -523,13 +523,13 @@ class _LoginPageState extends State<LoginPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFFFEF2F2),
+              color: AppColors.errorLight,
               borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMd),
-              border: Border.all(color: const Color(0xFFFCA5A5)),
+              border: Border.all(color: AppColors.errorBorder),
             ),
             child: Text(
               _errorMessage!,
-              style: const TextStyle(color: Color(0xFF991B1B), fontSize: 13),
+              style: const TextStyle(color: AppColors.errorDark, fontSize: 13),
             ),
           ),
           const SizedBox(height: 16),

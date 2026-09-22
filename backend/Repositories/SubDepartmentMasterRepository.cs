@@ -10,7 +10,8 @@ namespace MMSERP.Api.Repositories
 
         public SubDepartmentMasterRepository(IConfiguration configuration)
         {
-            _connectionString = configuration.GetConnectionString("DefaultConnection")
+            _connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING")
+                ?? configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
         }
 

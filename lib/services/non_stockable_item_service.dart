@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import 'api_client.dart';
 
 /// Non-Stockable Item model (from NONSTKITM)
 class NonStockableItem {
@@ -156,14 +156,11 @@ class NonStockableItemService {
   factory NonStockableItemService() => _instance;
 
   String get _baseUrl => '${ApiConfig.baseUrl}/NonStockableItem';
-  static const Duration _timeout = Duration(seconds: 10);
 
   /// Fetch Unit & Tax Slab dropdown options
   Future<NonStockableDropdowns?> getDropdowns() async {
     try {
-      final response = await http
-          .get(Uri.parse('$_baseUrl/GetDropdowns'))
-          .timeout(_timeout);
+      final response = await ApiClient.instance.get('$_baseUrl/GetDropdowns');
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -180,9 +177,7 @@ class NonStockableItemService {
   /// Fetch unassigned items from ITEMMST
   Future<List<UnassignedItem>> getUnassignedItems() async {
     try {
-      final response = await http
-          .get(Uri.parse('$_baseUrl/GetUnassignedItems'))
-          .timeout(_timeout);
+      final response = await ApiClient.instance.get('$_baseUrl/GetUnassignedItems');
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -200,9 +195,7 @@ class NonStockableItemService {
   /// Fetch all configured non-stockable items
   Future<List<NonStockableItem>> getAll() async {
     try {
-      final response = await http
-          .get(Uri.parse('$_baseUrl/GetAll'))
-          .timeout(_timeout);
+      final response = await ApiClient.instance.get('$_baseUrl/GetAll');
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -220,13 +213,10 @@ class NonStockableItemService {
   /// Save or Update non-stockable item
   Future<bool> save(SaveNonStockableItemDto dto) async {
     try {
-      final response = await http
-          .post(
-            Uri.parse('$_baseUrl/Save'),
-            headers: {'Content-Type': 'application/json'},
-            body: json.encode(dto.toJson()),
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.instance.post(
+        '$_baseUrl/Save',
+        body: dto.toJson(),
+      );
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -241,9 +231,7 @@ class NonStockableItemService {
   /// Delete non-stockable item by I_Code
   Future<bool> delete(String code) async {
     try {
-      final response = await http
-          .delete(Uri.parse('$_baseUrl/Delete/$code'))
-          .timeout(_timeout);
+      final response = await ApiClient.instance.delete('$_baseUrl/Delete/$code');
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);

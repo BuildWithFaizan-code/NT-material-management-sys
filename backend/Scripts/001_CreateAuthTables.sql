@@ -72,8 +72,25 @@ END
 GO
 
 -- ============================================================================
--- Seed Initial Admin User (Default Password: "ChangeMe123!", MustChangePassword = 1)
--- Note: Password hash below was generated using BCrypt work factor 11 for "ChangeMe123!"
+-- Seed Initial Admin User (LOCKED BY DEFAULT - ZERO PREDICTABLE CREDENTIALS)
+-- ============================================================================
+-- IMPORTANT SECURITY POLICY:
+-- The initial admin account is intentionally inserted with IsActive = 0 and an invalid
+-- placeholder hash. It cannot be used to authenticate until explicitly provisioned.
+--
+-- Provisioning Method 1 (Recommended - CLI):
+--   Run the backend provisioning command with your custom secure password:
+--   dotnet run --project backend/MMSERP.Api.csproj -- --provision-admin <username> <email> <password>
+--   Or set the environment variable INITIAL_ADMIN_PASSWORD before launching the API.
+--
+-- Provisioning Method 2 (DBA Manual SQL Update):
+--   Generate a BCrypt hash with work factor 11 (e.g., using any standard BCrypt generator)
+--   and activate the account:
+--     UPDATE Users
+--     SET PasswordHash = '<your_bcrypt_hash>',
+--         IsActive = 1,
+--         MustChangePassword = 1
+--     WHERE Username = 'admin';
 -- ============================================================================
 IF NOT EXISTS (SELECT 1 FROM Users WHERE Username = 'admin')
 BEGIN
@@ -81,11 +98,11 @@ BEGIN
     VALUES (
         'admin',
         'admin@newtechmms.com',
-        '$2a$11$uqWe7AOmgVwnNc7vW1qmhOJfpeaxHvMdvBWGwbIOBkBpGza2K3p5m', -- BCrypt hash for 'ChangeMe123!'
-        1,
-        1,
-        0,
-        1,
+        'LOCKED_PENDING_PROVISIONING',
+        0, -- Disabled by default until provisioned via CLI or DBA
+        1, -- IsAdmin
+        0, -- FailedLoginCount
+        1, -- MustChangePassword
         GETDATE()
     );
 END

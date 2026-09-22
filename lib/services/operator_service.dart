@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import 'api_client.dart';
 
 class Department {
   final int labCode;
@@ -76,8 +76,7 @@ class OperatorMaster {
 
 class OperatorService {
   final String baseUrl;
-  final http.Client _client;
-  static const _timeout = Duration(seconds: 8);
+  final ApiClient _client;
 
   // In-memory mock fallback dataset for seamless offline operation
   final List<Department> _mockDepartments = [
@@ -98,16 +97,15 @@ class OperatorService {
 
   OperatorService({
     String? baseUrl,
-    http.Client? client,
+    ApiClient? client,
   })  : baseUrl = baseUrl ?? '${ApiConfig.baseUrl}/OperatorMaster',
-        _client = client ?? http.Client();
+        _client = client ?? ApiClient.instance;
 
   /// GET /api/OperatorMaster/GetDepartments
   /// Fetches departments from LABOURMST table
   Future<List<Department>> fetchDepartments() async {
-    final uri = Uri.parse('$baseUrl/GetDepartments');
     try {
-      final response = await _client.get(uri).timeout(_timeout);
+      final response = await _client.get('$baseUrl/GetDepartments');
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
         final data = body['data'] as List<dynamic>? ?? [];
@@ -124,9 +122,8 @@ class OperatorService {
   /// GET /api/OperatorMaster/GetAll
   /// Fetches all Operator Master records joined with LABOURMST department names
   Future<List<OperatorMaster>> fetchOperators() async {
-    final uri = Uri.parse('$baseUrl/GetAll');
     try {
-      final response = await _client.get(uri).timeout(_timeout);
+      final response = await _client.get('$baseUrl/GetAll');
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
         final data = body['data'] as List<dynamic>? ?? [];
@@ -143,9 +140,8 @@ class OperatorService {
   /// GET /api/OperatorMaster/GetNextCode
   /// Fetches auto-incremented next OPER_CODE from OPERATORMST table
   Future<int> fetchNextCode() async {
-    final uri = Uri.parse('$baseUrl/GetNextCode');
     try {
-      final response = await _client.get(uri).timeout(_timeout);
+      final response = await _client.get('$baseUrl/GetNextCode');
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
         final nextCode = body['data'];
@@ -169,19 +165,15 @@ class OperatorService {
   /// POST /api/OperatorMaster/Create
   /// Inserts a new Operator Master record into OPERATORMST table
   Future<bool> createOperator(int code, String name, int depCd) async {
-    final uri = Uri.parse('$baseUrl/Create');
     try {
-      final response = await _client
-          .post(
-            uri,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'operCode': code,
-              'operName': name.trim().toUpperCase(),
-              'operDepCd': depCd,
-            }),
-          )
-          .timeout(_timeout);
+      final response = await _client.post(
+        '$baseUrl/Create',
+        body: {
+          'operCode': code,
+          'operName': name.trim().toUpperCase(),
+          'operDepCd': depCd,
+        },
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return true;
@@ -206,19 +198,15 @@ class OperatorService {
   /// PUT /api/OperatorMaster/Update/{code}
   /// Updates an existing Operator Master record in OPERATORMST table
   Future<bool> updateOperator(int code, String name, int depCd) async {
-    final uri = Uri.parse('$baseUrl/Update/$code');
     try {
-      final response = await _client
-          .put(
-            uri,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'operCode': code,
-              'operName': name.trim().toUpperCase(),
-              'operDepCd': depCd,
-            }),
-          )
-          .timeout(_timeout);
+      final response = await _client.put(
+        '$baseUrl/Update/$code',
+        body: {
+          'operCode': code,
+          'operName': name.trim().toUpperCase(),
+          'operDepCd': depCd,
+        },
+      );
 
       if (response.statusCode == 200) {
         return true;
@@ -246,9 +234,8 @@ class OperatorService {
   /// DELETE /api/OperatorMaster/Delete/{code}
   /// Deletes an Operator Master record by OPER_CODE from OPERATORMST table
   Future<bool> deleteOperator(int code) async {
-    final uri = Uri.parse('$baseUrl/Delete/$code');
     try {
-      final response = await _client.delete(uri).timeout(_timeout);
+      final response = await _client.delete('$baseUrl/Delete/$code');
       if (response.statusCode == 200) {
         return true;
       }
@@ -259,7 +246,5 @@ class OperatorService {
     return false;
   }
 
-  void dispose() {
-    _client.close();
-  }
+  void dispose() {}
 }

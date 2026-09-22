@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import 'api_client.dart';
 
 /// Category item model (from CATEGORYMST)
 class CategoryItem {
@@ -140,14 +140,11 @@ class BookMasterService {
   factory BookMasterService() => _instance;
 
   String get _baseUrl => '${ApiConfig.baseUrl}/BookMaster';
-  static const Duration _timeout = Duration(seconds: 10);
 
   /// Get all distinct books summary
   Future<List<BookMasterSummaryItem>> getAllBooks() async {
     try {
-      final response = await http
-          .get(Uri.parse('$_baseUrl/GetAllBooks'))
-          .timeout(_timeout);
+      final response = await ApiClient.instance.get('$_baseUrl/GetAllBooks');
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -165,9 +162,7 @@ class BookMasterService {
   /// Get all books with full details for export and grid preview
   Future<List<BookDetailItem>> getAllBooksWithDetails() async {
     try {
-      final response = await http
-          .get(Uri.parse('$_baseUrl/GetAllBooksWithDetails'))
-          .timeout(_timeout);
+      final response = await ApiClient.instance.get('$_baseUrl/GetAllBooksWithDetails');
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -185,9 +180,7 @@ class BookMasterService {
   /// Get book details including assigned categories
   Future<BookDetailItem?> getBookDetails(int bookCode) async {
     try {
-      final response = await http
-          .get(Uri.parse('$_baseUrl/GetBookDetails/$bookCode'))
-          .timeout(_timeout);
+      final response = await ApiClient.instance.get('$_baseUrl/GetBookDetails/$bookCode');
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -204,9 +197,7 @@ class BookMasterService {
   /// Get available categories not assigned to this book
   Future<List<CategoryItem>> getAvailableCategories(int bookCode) async {
     try {
-      final response = await http
-          .get(Uri.parse('$_baseUrl/GetAvailableCategories/$bookCode'))
-          .timeout(_timeout);
+      final response = await ApiClient.instance.get('$_baseUrl/GetAvailableCategories/$bookCode');
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -224,9 +215,7 @@ class BookMasterService {
   /// Get next auto-incremented BookCode
   Future<int> getNextBookCode() async {
     try {
-      final response = await http
-          .get(Uri.parse('$_baseUrl/GetNextBookCode'))
-          .timeout(_timeout);
+      final response = await ApiClient.instance.get('$_baseUrl/GetNextBookCode');
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -243,13 +232,10 @@ class BookMasterService {
   /// Save or Update Book master record + category allocations
   Future<bool> saveBook(BookSaveDto dto) async {
     try {
-      final response = await http
-          .post(
-            Uri.parse('$_baseUrl/SaveBook'),
-            headers: {'Content-Type': 'application/json'},
-            body: json.encode(dto.toJson()),
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.instance.post(
+        '$_baseUrl/SaveBook',
+        body: dto.toJson(),
+      );
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -264,9 +250,7 @@ class BookMasterService {
   /// Delete Book master record and category allocations
   Future<bool> deleteBook(int bookCode) async {
     try {
-      final response = await http
-          .delete(Uri.parse('$_baseUrl/DeleteBook/$bookCode'))
-          .timeout(_timeout);
+      final response = await ApiClient.instance.delete('$_baseUrl/DeleteBook/$bookCode');
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);

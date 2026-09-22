@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import 'api_client.dart';
 
 class GradeItem {
   final int gradeSrl;
@@ -40,8 +40,7 @@ class GradeMasterService {
 
   Future<List<GradeItem>> getGrades() async {
     try {
-      final uri = Uri.parse('$_baseUrl/GetAll');
-      final response = await http.get(uri).timeout(ApiConfig.defaultTimeout);
+      final response = await ApiClient.instance.get('$_baseUrl/GetAll');
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -60,8 +59,7 @@ class GradeMasterService {
 
   Future<int> getNextGradeSrl() async {
     try {
-      final uri = Uri.parse('$_baseUrl/GetNextSrl');
-      final response = await http.get(uri).timeout(ApiConfig.defaultTimeout);
+      final response = await ApiClient.instance.get('$_baseUrl/GetNextSrl');
 
       if (response.statusCode == 200) {
         final body = json.decode(response.body);
@@ -78,12 +76,10 @@ class GradeMasterService {
 
   Future<bool> insertGrade(GradeItem item) async {
     try {
-      final uri = Uri.parse('$_baseUrl/Insert');
-      final response = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(item.toJson()),
-      ).timeout(ApiConfig.defaultTimeout);
+      final response = await ApiClient.instance.post(
+        '$_baseUrl/Insert',
+        body: item.toJson(),
+      );
 
       if (response.statusCode == 200) {
         json.decode(response.body);
@@ -97,12 +93,10 @@ class GradeMasterService {
 
   Future<bool> updateGrade(GradeItem item) async {
     try {
-      final uri = Uri.parse('$_baseUrl/Update');
-      final response = await http.put(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(item.toJson()),
-      ).timeout(ApiConfig.defaultTimeout);
+      final response = await ApiClient.instance.put(
+        '$_baseUrl/Update',
+        body: item.toJson(),
+      );
 
       if (response.statusCode == 200) {
         json.decode(response.body);
@@ -120,8 +114,7 @@ class GradeMasterService {
 
   Future<bool> deleteGrade(int gradeSrl) async {
     try {
-      final uri = Uri.parse('$_baseUrl/Delete/$gradeSrl');
-      final response = await http.delete(uri).timeout(ApiConfig.defaultTimeout);
+      final response = await ApiClient.instance.delete('$_baseUrl/Delete/$gradeSrl');
 
       if (response.statusCode == 200) {
         json.decode(response.body);

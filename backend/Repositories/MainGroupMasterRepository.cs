@@ -10,8 +10,9 @@ namespace MMSERP.Api.Repositories
 
         public MainGroupMasterRepository(IConfiguration configuration)
         {
-            _connectionString = configuration.GetConnectionString("DefaultConnection") 
-                ?? throw new ArgumentNullException(nameof(configuration), "DefaultConnection configuration string is missing.");
+            _connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING")
+                ?? configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
             
             EnsureTableCreated();
         }

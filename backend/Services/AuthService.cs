@@ -294,29 +294,35 @@ namespace MMSERP.Api.Services
             ), "Token refreshed successfully.");
         }
 
-        public async Task<ApiResponse<bool>> LogoutAsync(int userId, string? rawRefreshToken)
+        public async Task<ApiResponse<bool>> LogoutAsync(int? userId, string? rawRefreshToken = null)
         {
+            int? effectiveUserId = userId;
+
             if (!string.IsNullOrWhiteSpace(rawRefreshToken))
             {
                 var tokenHash = HashToken(rawRefreshToken.Trim());
                 var token = await _authRepository.GetRefreshTokenByHashAsync(tokenHash);
-                if (token != null && token.UserId == userId)
+                if (token != null)
                 {
                     await _authRepository.RevokeRefreshTokenAsync(token.TokenId);
+                    effectiveUserId ??= token.UserId;
                 }
             }
-            else
+            else if (userId.HasValue)
             {
-                await _authRepository.RevokeAllSessionsAsync(userId);
+                await _authRepository.RevokeAllSessionsAsync(userId.Value);
             }
 
-            await _authRepository.WriteAuditLogAsync(new AuthAuditLog
+            if (effectiveUserId.HasValue)
             {
-                UserId = userId,
-                EventType = "Logout",
-                Success = true,
-                Detail = "User logged out"
-            });
+                await _authRepository.WriteAuditLogAsync(new AuthAuditLog
+                {
+                    UserId = effectiveUserId.Value,
+                    EventType = "Logout",
+                    Success = true,
+                    Detail = "User logged out"
+                });
+            }
 
             return ApiResponse<bool>.Ok(true, "Logged out successfully.");
         }
