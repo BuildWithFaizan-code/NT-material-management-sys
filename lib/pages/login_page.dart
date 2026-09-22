@@ -229,24 +229,13 @@ class _LoginPageState extends State<LoginPage> {
                 _buildBrandHeader(center: false),
                 const SizedBox(height: 16),
 
-                // 3D Lottie Animation: Big, Centered, High Performance
+                // 3D Lottie Animation: Big, Centered, High Performance & Paced Cycle
                 Expanded(
                   child: Center(
                     child: RepaintBoundary(
-                      child: Container(
-                        constraints: BoxConstraints(
-                          maxWidth: 620,
-                          maxHeight: constraints.maxHeight * 0.64,
-                        ),
-                        child: Lottie.asset(
-                          'assets/animations/business_analysis_3d.json',
-                          fit: BoxFit.contain,
-                          repeat: true,
-                          animate: true,
-                          frameRate: FrameRate.max, // Silky smooth 60fps, no dropped frames
-                          options: LottieOptions(enableMergePaths: true),
-                          filterQuality: FilterQuality.medium,
-                        ),
+                      child: _Paced3DLottieModel(
+                        maxWidth: 620,
+                        maxHeight: constraints.maxHeight * 0.64,
                       ),
                     ),
                   ),
@@ -315,17 +304,12 @@ class _LoginPageState extends State<LoginPage> {
           _buildBrandHeader(center: true),
           const SizedBox(height: 16),
 
-          // Compact 3D Animation for Mobile
+          // Compact Paced 3D Animation for Mobile
           RepaintBoundary(
             child: SizedBox(
               height: 220,
-              child: Lottie.asset(
-                'assets/animations/business_analysis_3d.json',
-                fit: BoxFit.contain,
-                repeat: true,
-                animate: true,
-                frameRate: FrameRate.max,
-                options: LottieOptions(enableMergePaths: true),
+              child: _Paced3DLottieModel(
+                maxHeight: 220,
               ),
             ),
           ),
@@ -988,3 +972,108 @@ class _CloudyFluidWavePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+
+/// High-performance 3D Lottie animation with controlled cycle pacing and hold interval.
+/// Showcases the complete model on screen by pausing at full completion before restarting.
+class _Paced3DLottieModel extends StatefulWidget {
+  final double? maxHeight;
+  final double? maxWidth;
+
+  const _Paced3DLottieModel({
+    this.maxHeight,
+    this.maxWidth,
+  });
+
+  @override
+  State<_Paced3DLottieModel> createState() => _Paced3DLottieModelState();
+}
+
+class _Paced3DLottieModelState extends State<_Paced3DLottieModel>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  double _opacity = 1.0;
+  bool _isDisposed = false;
+  bool _hasStarted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onCompositionLoaded(LottieComposition composition) {
+    if (_hasStarted || _isDisposed || !mounted) return;
+    _hasStarted = true;
+    // Set a steady, majestic pace (6.8s) for the complete assembly animation
+    _controller.duration = const Duration(milliseconds: 6800);
+    _runPacedAnimationCycle();
+  }
+
+  Future<void> _runPacedAnimationCycle() async {
+    while (!_isDisposed && mounted) {
+      if (mounted) setState(() => _opacity = 1.0);
+
+      // 1. Play animation smoothly forward to completion
+      _controller.reset();
+      try {
+        await _controller.forward().orCancel;
+      } catch (_) {
+        break; // Cancelled if widget is disposed
+      }
+
+      if (_isDisposed || !mounted) break;
+
+      // 2. Generous hold interval: Keep the complete 3D model prominently on screen
+      // Holds for 6.0 seconds so users can comfortably observe the full 3D visual
+      await Future.delayed(const Duration(milliseconds: 6000));
+
+      if (_isDisposed || !mounted) break;
+
+      // 3. Gentle, elegant crossfade transition before starting the next cycle
+      if (mounted) {
+        setState(() => _opacity = 0.0);
+      }
+      await Future.delayed(const Duration(milliseconds: 350));
+
+      if (_isDisposed || !mounted) break;
+
+      _controller.reset();
+      if (mounted) {
+        setState(() => _opacity = 1.0);
+      }
+      await Future.delayed(const Duration(milliseconds: 200));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedOpacity(
+      opacity: _opacity,
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOut,
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: widget.maxWidth ?? double.infinity,
+          maxHeight: widget.maxHeight ?? double.infinity,
+        ),
+        child: Lottie.asset(
+          'assets/animations/business_analysis_3d.json',
+          controller: _controller,
+          onLoaded: _onCompositionLoaded,
+          fit: BoxFit.contain,
+          frameRate: FrameRate.max,
+          options: LottieOptions(enableMergePaths: true),
+          filterQuality: FilterQuality.medium,
+        ),
+      ),
+    );
+  }
+}
+
