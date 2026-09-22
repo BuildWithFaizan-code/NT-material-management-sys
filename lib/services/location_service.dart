@@ -1,25 +1,23 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../pages/location_master_page.dart';
+import 'api_client.dart';
 
 class LocationService {
   final String baseUrl;
-  final http.Client _client;
-  static const _timeout = ApiConfig.defaultTimeout;
+  final ApiClient _client;
 
   LocationService({
     String? baseUrl,
-    http.Client? client,
+    ApiClient? client,
   })  : baseUrl = baseUrl ?? '${ApiConfig.baseUrl}/locationmaster',
-        _client = client ?? http.Client();
+        _client = client ?? ApiClient.instance;
 
   /// GET /api/locationmaster
   /// Fetches all Location Master records from LocationMst table
   Future<List<LocationMaster>> fetchLocations() async {
-    final uri = Uri.parse(baseUrl);
     try {
-      final response = await _client.get(uri).timeout(_timeout);
+      final response = await _client.get(baseUrl);
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
         final data = body['data'] as List<dynamic>? ?? [];
@@ -28,8 +26,8 @@ class LocationService {
             .toList();
       }
       throw Exception('Failed to fetch location records (HTTP ${response.statusCode})');
-    } on http.ClientException {
-      throw Exception('Client HTTP exception connecting to backend API.');
+    } on ApiException catch (e) {
+      throw Exception(e.message);
     } catch (_) {
       throw Exception('Server connection failed. Verify backend API is running.');
     }
@@ -38,9 +36,8 @@ class LocationService {
   /// GET /api/locationmaster/next-code
   /// Fetches auto-incremented next Loc_Code from LocationMst table
   Future<int> fetchNextCode() async {
-    final uri = Uri.parse('$baseUrl/next-code');
     try {
-      final response = await _client.get(uri).timeout(_timeout);
+      final response = await _client.get('$baseUrl/next-code');
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
         final nextCode = body['data'];
@@ -56,20 +53,16 @@ class LocationService {
   /// POST /api/locationmaster
   /// Inserts a new Location Master record into LocationMst table
   Future<bool> createLocation(int code, String name, String prefix, {String? series}) async {
-    final uri = Uri.parse(baseUrl);
     try {
-      final response = await _client
-          .post(
-            uri,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'locCode': code,
-              'locName': name,
-              'locPrefix': prefix,
-              'locSeries': series ?? '',
-            }),
-          )
-          .timeout(_timeout);
+      final response = await _client.post(
+        baseUrl,
+        body: {
+          'locCode': code,
+          'locName': name,
+          'locPrefix': prefix,
+          'locSeries': series ?? '',
+        },
+      );
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       throw Exception('Failed to create location record: $e');
@@ -79,20 +72,16 @@ class LocationService {
   /// PUT /api/locationmaster/{code}
   /// Updates an existing Location Master record in LocationMst table
   Future<bool> updateLocation(int code, String name, String prefix, {String? series}) async {
-    final uri = Uri.parse('$baseUrl/$code');
     try {
-      final response = await _client
-          .put(
-            uri,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'locCode': code,
-              'locName': name,
-              'locPrefix': prefix,
-              'locSeries': series ?? '',
-            }),
-          )
-          .timeout(_timeout);
+      final response = await _client.put(
+        '$baseUrl/$code',
+        body: {
+          'locCode': code,
+          'locName': name,
+          'locPrefix': prefix,
+          'locSeries': series ?? '',
+        },
+      );
       return response.statusCode == 200;
     } catch (e) {
       throw Exception('Failed to update location record: $e');
@@ -102,9 +91,8 @@ class LocationService {
   /// DELETE /api/locationmaster/{code}
   /// Deletes a Location Master record by Loc_Code from LocationMst table
   Future<bool> deleteLocation(int code) async {
-    final uri = Uri.parse('$baseUrl/$code');
     try {
-      final response = await _client.delete(uri).timeout(_timeout);
+      final response = await _client.delete('$baseUrl/$code');
       return response.statusCode == 200;
     } catch (e) {
       throw Exception('Failed to delete location record: $e');
@@ -112,6 +100,6 @@ class LocationService {
   }
 
   void dispose() {
-    _client.close();
+    // Shared ApiClient manages its own lifecycle
   }
 }

@@ -6,7 +6,8 @@
       "launchBrowser": false,
       "applicationUrl": "http://localhost:5000;https://localhost:5001",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "JWT_SIGNING_KEY": "NTMMS_Dev_Local_Secret_Key_Minimum_32_Characters_Long!"
       }
     }
   }

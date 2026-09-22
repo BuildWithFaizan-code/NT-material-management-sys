@@ -2,6 +2,9 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../design/app_dimensions.dart';
+import '../../services/auth_service.dart';
+import '../../pages/active_sessions_page.dart';
+import '../../pages/mfa_setup_dialog.dart';
 
 class AppHeader extends StatelessWidget {
   final String title;
@@ -881,66 +884,91 @@ class _AnimativeAdminProfileState extends State<_AnimativeAdminProfile>
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       color: Colors.white,
       elevation: 8,
-      onSelected: (val) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('$val selected'),
-            duration: const Duration(seconds: 2),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+      onSelected: (val) async {
+        if (val == 'logout') {
+          await AuthService.instance.logout();
+        } else if (val == 'sessions') {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const ActiveSessionsPage()),
+          );
+        } else if (val == 'mfa') {
+          showDialog(
+            context: context,
+            builder: (_) => const MfaSetupDialog(),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$val selected'),
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       },
-      itemBuilder: (context) => [
-        // Profile Header in Dropdown
-        PopupMenuItem(
-          enabled: false,
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF0F172A), Color(0xFF334155)],
-                  ),
-                ),
-                child: const Center(
-                  child: Text('A',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800)),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'Admin User',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF0F172A),
+      itemBuilder: (context) {
+        final user = AuthService.instance.currentUser;
+        final displayName = user?.username.isNotEmpty == true ? user!.username : 'Admin User';
+        final displayEmail = user?.email.isNotEmpty == true ? user!.email : 'admin@newtechmms.com';
+        final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'A';
+
+        return [
+          // Profile Header in Dropdown
+          PopupMenuItem(
+            enabled: false,
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF0F172A), Color(0xFF334155)],
                     ),
                   ),
-                  Text(
-                    'admin@newtechmms.com',
-                    style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                  child: Center(
+                    child: Text(
+                      initial,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
-                ],
-              ),
-            ],
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayName,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    Text(
+                      displayEmail,
+                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-        const PopupMenuDivider(),
-        _buildProfileMenuItem('profile', 'Account Settings', Icons.person_outline_rounded),
-        _buildProfileMenuItem('roles', 'Role & Access Control', Icons.admin_panel_settings_outlined),
-        _buildProfileMenuItem('audit', 'System Audit Trail', Icons.history_rounded),
-        const PopupMenuDivider(),
-        _buildProfileMenuItem('logout', 'Sign Out', Icons.logout_rounded, isDestructive: true),
-      ],
+          const PopupMenuDivider(),
+          _buildProfileMenuItem('sessions', 'My Devices & Sessions', Icons.devices_rounded),
+          _buildProfileMenuItem('mfa', 'Two-Factor Auth (MFA)', Icons.security_rounded),
+          _buildProfileMenuItem('profile', 'Account Settings', Icons.person_outline_rounded),
+          _buildProfileMenuItem('roles', 'Role & Access Control', Icons.admin_panel_settings_outlined),
+          _buildProfileMenuItem('audit', 'System Audit Trail', Icons.history_rounded),
+          const PopupMenuDivider(),
+          _buildProfileMenuItem('logout', 'Sign Out', Icons.logout_rounded, isDestructive: true),
+        ];
+      },
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: Container(

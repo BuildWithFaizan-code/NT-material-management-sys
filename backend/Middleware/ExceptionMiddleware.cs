@@ -1,57 +1,82 @@
 using System.Net;
+using System.Security.Authentication;
 using System.Text.Json;
+using Microsoft.IdentityModel.Tokens;
 using MMSERP.Api.Models;
 
-namespace MMSERP.Api.Middleware;
-
-public class ExceptionMiddleware
+namespace MMSERP.Api.Middleware
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<ExceptionMiddleware> _logger;
-
-    public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
+    public class ExceptionMiddleware
     {
-        _next = next;
-        _logger = logger;
-    }
+        private readonly RequestDelegate _next;
+        private readonly ILogger<ExceptionMiddleware> _logger;
 
-    public async Task InvokeAsync(HttpContext context)
-    {
-        try
+        public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
         {
-            await _next(context);
+            _next = next;
+            _logger = logger;
         }
-        catch (Exception ex)
+
+        public async Task InvokeAsync(HttpContext context)
         {
-            _logger.LogError(ex, "Unhandled exception occurred: {Message}", ex.Message);
-            await HandleExceptionAsync(context, ex);
+            try
+            {
+                await _next(context);
+
+                // Handle status code responses that didn't throw exceptions (e.g. from framework auth/authorization)
+                if (context.Response.StatusCode == StatusCodes.Status401Unauthorized && !context.Response.HasStarted)
+                {
+                    await WriteJsonResponseAsync(context, HttpStatusCode.Unauthorized, "Unauthorized: Authentication is required to access this resource.");
+                }
+                else if (context.Response.StatusCode == StatusCodes.Status403Forbidden && !context.Response.HasStarted)
+                {
+                    await WriteJsonResponseAsync(context, HttpStatusCode.Forbidden, "Forbidden: You do not have permission to access this resource.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unhandled exception occurred during request {Method} {Path}: {Message}",
+                    context.Request.Method, context.Request.Path, ex.Message);
+                await HandleExceptionAsync(context, ex);
+            }
         }
-    }
 
-    private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
-    {
-        var code = exception switch
+        private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
-            KeyNotFoundException => HttpStatusCode.NotFound,
-            ArgumentException => HttpStatusCode.BadRequest,
-            UnauthorizedAccessException => HttpStatusCode.Unauthorized,
-            _ => HttpStatusCode.InternalServerError,
-        };
+            if (context.Response.HasStarted)
+            {
+                return;
+            }
 
-        var message = string.IsNullOrWhiteSpace(exception.Message)
-            ? "An internal server error occurred."
-            : exception.Message;
+            var (statusCode, clientMessage) = exception switch
+            {
+                AuthenticationException or SecurityTokenException or UnauthorizedAccessException =>
+                    (HttpStatusCode.Unauthorized, "Unauthorized: Authentication required or invalid token."),
+                KeyNotFoundException =>
+                    (HttpStatusCode.NotFound, "The requested resource was not found."),
+                ArgumentException =>
+                    (HttpStatusCode.BadRequest, "Invalid request parameters."),
+                InvalidOperationException =>
+                    (HttpStatusCode.BadRequest, "The requested operation could not be completed."),
+                _ =>
+                    (HttpStatusCode.InternalServerError, "An unexpected server error occurred. Please try again later.")
+            };
 
-        var response = ApiResponse<object>.Fail(message);
+            await WriteJsonResponseAsync(context, statusCode, clientMessage);
+        }
 
-        context.Response.ContentType = "application/json";
-        context.Response.StatusCode = (int)code;
-
-        var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
+        private static async Task WriteJsonResponseAsync(HttpContext context, HttpStatusCode statusCode, string clientMessage)
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = (int)statusCode;
 
-        await context.Response.WriteAsync(json);
+            var response = ApiResponse<object>.Fail(clientMessage);
+            var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
+
+            await context.Response.WriteAsync(json);
+        }
     }
 }
