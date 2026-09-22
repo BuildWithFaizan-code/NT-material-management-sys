@@ -359,42 +359,67 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  /// Sharp Brand Header: Logo Badge + "NewTech" (New = Blue, Tech = Orange)
+  /// Sharp Brand Header: Logo Badge + "NewTech" (Sharp Italic, Enlarged 'N' and 'T')
   Widget _buildBrandHeader({bool center = false}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: center ? MainAxisAlignment.center : MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Brand Gold Medal Badge Logo
+        // Brand Gold Medal Badge Logo with Long X-Forming Ribbon
         Image.asset(
           'assets/images/newtech_logo_badge.png',
-          height: 48,
-          width: 48,
+          height: 60,
           fit: BoxFit.contain,
           filterQuality: FilterQuality.high,
         ),
         const SizedBox(width: 14),
-        // Sharp "NewTech" Typography
+        // Sharp "NewTech" Italic Typography with Specifically Enlarged 'N' and 'T'
         RichText(
           text: TextSpan(
             children: [
+              // Large Sharp 'N'
               TextSpan(
-                text: 'New',
-                style: GoogleFonts.rubik(
-                  fontSize: 46,
+                text: 'N',
+                style: GoogleFonts.kanit(
+                  fontSize: 52,
                   fontWeight: FontWeight.w900,
+                  fontStyle: FontStyle.italic,
                   color: const Color(0xFF1D5CFF),
-                  letterSpacing: -1.2,
+                  letterSpacing: -1.0,
                 ),
               ),
+              // Sharp 'ew'
               TextSpan(
-                text: 'Tech',
-                style: GoogleFonts.rubik(
-                  fontSize: 46,
+                text: 'ew',
+                style: GoogleFonts.kanit(
+                  fontSize: 38,
+                  fontWeight: FontWeight.w800,
+                  fontStyle: FontStyle.italic,
+                  color: const Color(0xFF1D5CFF),
+                  letterSpacing: -0.5,
+                ),
+              ),
+              // Large Sharp 'T'
+              TextSpan(
+                text: 'T',
+                style: GoogleFonts.kanit(
+                  fontSize: 52,
                   fontWeight: FontWeight.w900,
+                  fontStyle: FontStyle.italic,
                   color: const Color(0xFFFF6400),
-                  letterSpacing: -1.2,
+                  letterSpacing: -1.0,
+                ),
+              ),
+              // Sharp 'ech'
+              TextSpan(
+                text: 'ech',
+                style: GoogleFonts.kanit(
+                  fontSize: 38,
+                  fontWeight: FontWeight.w800,
+                  fontStyle: FontStyle.italic,
+                  color: const Color(0xFFFF6400),
+                  letterSpacing: -0.5,
                 ),
               ),
             ],
