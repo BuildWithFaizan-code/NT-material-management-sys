@@ -1017,26 +1017,50 @@ class _Paced3DLottieModelState extends State<_Paced3DLottieModel>
   }
 
   Future<void> _runPacedAnimationCycle() async {
+    // Normalization bounds based on composition frame counts:
+    // Frame 110: Scene is 100% assembled; team discussion/gesture loop starts
+    // Frame 170: Team discussion/gesture loop completes with identical resting poses
+    const double idleStart = 110.0 / 171.0;
+    const double idleEnd = 170.0 / 171.0;
+    const int idleLoopDurationMs = 2000;
+
     while (!_isDisposed && mounted) {
       if (mounted) setState(() => _opacity = 1.0);
 
-      // 1. Play animation smoothly forward to completion
-      _controller.reset();
+      // 1. Initial Assembly: Build up all elements from frame 0 to frame 170
+      _controller.value = 0.0;
       try {
-        await _controller.forward().orCancel;
+        await _controller.animateTo(
+          idleEnd,
+          duration: const Duration(milliseconds: 6200),
+          curve: Curves.linear,
+        ).orCancel;
       } catch (_) {
         break; // Cancelled if widget is disposed
       }
 
       if (_isDisposed || !mounted) break;
 
-      // 2. Generous hold interval: Keep the complete 3D model prominently on screen
-      // Holds for 6.0 seconds so users can comfortably observe the full 3D visual
-      await Future.delayed(const Duration(milliseconds: 6000));
+      // 2. Active Hold Interval: Continue the live animation loop of the complete 3D model
+      // Run the seamless 110-170 frame gesture cycle 3 times (~6.0s total).
+      // Keeps the complete model actively gesturing, pointing at charts, and nodding without pausing!
+      for (int i = 0; i < 3; i++) {
+        if (_isDisposed || !mounted) break;
+        _controller.value = idleStart;
+        try {
+          await _controller.animateTo(
+            idleEnd,
+            duration: const Duration(milliseconds: idleLoopDurationMs),
+            curve: Curves.linear,
+          ).orCancel;
+        } catch (_) {
+          break;
+        }
+      }
 
       if (_isDisposed || !mounted) break;
 
-      // 3. Gentle, elegant crossfade transition before starting the next cycle
+      // 3. Gentle crossfade transition before starting the next full assembly cycle
       if (mounted) {
         setState(() => _opacity = 0.0);
       }
@@ -1044,7 +1068,7 @@ class _Paced3DLottieModelState extends State<_Paced3DLottieModel>
 
       if (_isDisposed || !mounted) break;
 
-      _controller.reset();
+      _controller.value = 0.0;
       if (mounted) {
         setState(() => _opacity = 1.0);
       }
