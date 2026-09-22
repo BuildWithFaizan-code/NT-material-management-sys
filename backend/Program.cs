@@ -321,12 +321,11 @@ static async Task<bool> HandleAdminProvisioningAsync(string[] args, IServiceProv
         var authRepo = scope.ServiceProvider.GetRequiredService<IAuthRepository>();
 
         var existing = await authRepo.GetUserByUsernameAsync(adminUsername!);
-        if (existing != null && existing.IsActive && existing.PasswordHash != "LOCKED_PENDING_PROVISIONING")
+        if (!isCliCommand && existing != null && existing.IsActive && existing.PasswordHash != "LOCKED_PENDING_PROVISIONING")
         {
             var existsMsg = $"Admin user '{adminUsername}' already exists and is active. Skipping provisioning.";
-            if (isCliCommand) Console.WriteLine(existsMsg);
-            else logger.LogInformation(existsMsg);
-            return isCliCommand;
+            logger.LogInformation(existsMsg);
+            return false;
         }
 
         var hash = BCrypt.Net.BCrypt.HashPassword(adminPassword, workFactor: 11);
