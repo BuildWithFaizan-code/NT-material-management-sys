@@ -221,12 +221,12 @@ class _LoginPageState extends State<LoginPage> {
           flex: 5,
           child: Container(
             color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
+            padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 36),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top Brand Header: "NewTech" (New = Blue, Tech = Orange)
-                _buildBrandHeader(),
+                // Top Brand Header: Logo Badge + "NewTech" (Sharp, No subtitle, on left)
+                _buildBrandHeader(center: false),
                 const SizedBox(height: 16),
 
                 // 3D Lottie Animation: Big, Centered, High Performance
@@ -236,7 +236,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: Container(
                         constraints: BoxConstraints(
                           maxWidth: 620,
-                          maxHeight: constraints.maxHeight * 0.62,
+                          maxHeight: constraints.maxHeight * 0.64,
                         ),
                         child: Lottie.asset(
                           'assets/animations/business_analysis_3d.json',
@@ -254,7 +254,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 const SizedBox(height: 16),
                 // Left Pane Footer Badges
-                _buildLeftPaneFooter(),
+                Center(child: _buildLeftPaneFooter()),
               ],
             ),
           ),
@@ -312,8 +312,8 @@ class _LoginPageState extends State<LoginPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _buildBrandHeader(),
-          const SizedBox(height: 12),
+          _buildBrandHeader(center: true),
+          const SizedBox(height: 16),
 
           // Compact 3D Animation for Mobile
           RepaintBoundary(
@@ -359,46 +359,45 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  /// Big Brand Header Text: "NewTech" (New = Blue, Tech = Orange)
-  Widget _buildBrandHeader() {
-    return Column(
+  /// Sharp Brand Header: Logo Badge + "NewTech" (New = Blue, Tech = Orange)
+  Widget _buildBrandHeader({bool center = false}) {
+    return Row(
       mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: center ? MainAxisAlignment.center : MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        // Brand Gold Medal Badge Logo
+        Image.asset(
+          'assets/images/newtech_logo_badge.png',
+          height: 48,
+          width: 48,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+        ),
+        const SizedBox(width: 14),
+        // Sharp "NewTech" Typography
         RichText(
-          textAlign: TextAlign.center,
           text: TextSpan(
             children: [
               TextSpan(
                 text: 'New',
-                style: GoogleFonts.poppins(
-                  fontSize: 42,
+                style: GoogleFonts.rubik(
+                  fontSize: 46,
                   fontWeight: FontWeight.w900,
-                  color: AppColors.brandBlue,
-                  letterSpacing: -1.0,
+                  color: const Color(0xFF1D5CFF),
+                  letterSpacing: -1.2,
                 ),
               ),
               TextSpan(
                 text: 'Tech',
-                style: GoogleFonts.poppins(
-                  fontSize: 42,
+                style: GoogleFonts.rubik(
+                  fontSize: 46,
                   fontWeight: FontWeight.w900,
-                  color: AppColors.brandOrange,
-                  letterSpacing: -1.0,
+                  color: const Color(0xFFFF6400),
+                  letterSpacing: -1.2,
                 ),
               ),
             ],
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'MATERIAL MANAGEMENT SYSTEM',
-          textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 2.2,
-            color: AppColors.neutralDark.withValues(alpha: 0.6),
           ),
         ),
       ],
