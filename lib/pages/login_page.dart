@@ -274,7 +274,7 @@ class _LoginPageState extends State<LoginPage> {
           child: Stack(
             clipBehavior: Clip.hardEdge,
             children: [
-              // 1. Soft Sky Tint Background Gradient matching illustration
+              // 1. Serene Soft Neutral Background Gradient
               Container(
                 width: 480,
                 height: constraints.maxHeight,
@@ -283,16 +283,16 @@ class _LoginPageState extends State<LoginPage> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Color(0xFFEFF6FF), // soft airy sky tint at top
-                      Color(0xFFF8FAFC), // clean neutral center
-                      Color(0xFFE0F2FE), // light sky blue near bottom matching illustration
+                      Color(0xFFF1F5F9), // subtle airy neutral slate at top
+                      Color(0xFFF8FAFC), // clean pristine center
+                      Color(0xFFE2E8F0), // muted soft tone at bottom
                     ],
-                    stops: [0.0, 0.55, 1.0],
+                    stops: [0.0, 0.5, 1.0],
                   ),
                 ),
               ),
 
-              // 2. Ambient Luminous Gradient Orbs for Glass Refraction
+              // 2. Ambient Luminous Gradient Orbs (Faded & Balanced)
               Positioned(
                 top: -30,
                 right: -20,
@@ -303,7 +303,7 @@ class _LoginPageState extends State<LoginPage> {
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        const Color(0xFF38BDF8).withValues(alpha: 0.16),
+                        const Color(0xFF38BDF8).withValues(alpha: 0.08),
                         const Color(0xFF60A5FA).withValues(alpha: 0.0),
                       ],
                     ),
@@ -320,7 +320,7 @@ class _LoginPageState extends State<LoginPage> {
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        const Color(0xFF06B6D4).withValues(alpha: 0.12),
+                        const Color(0xFF06B6D4).withValues(alpha: 0.06),
                         const Color(0xFF38BDF8).withValues(alpha: 0.0),
                       ],
                     ),
@@ -336,7 +336,7 @@ class _LoginPageState extends State<LoginPage> {
                     width: 480,
                     height: constraints.maxHeight,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.55),
+                      color: Colors.white.withValues(alpha: 0.65),
                       border: const Border(
                         left: BorderSide(
                           color: Color(0xFFE2E8F0),
@@ -348,24 +348,24 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
 
-              // 4. Header Clouds (floating softly at the top of the right pane to match the bottom scenery)
+              // 4. Natural Organic Header Clouds (smooth Bezier billows)
               Positioned(
-                top: 22,
-                left: 32,
-                child: _buildHeaderCloud(width: 86, height: 32, opacity: 0.8),
+                top: 20,
+                left: 28,
+                child: _buildOrganicCloud(width: 96, height: 42, opacity: 0.85, flip: true),
               ),
               Positioned(
-                top: 38,
-                right: 36,
-                child: _buildHeaderCloud(width: 112, height: 42, opacity: 0.75),
+                top: 34,
+                right: 32,
+                child: _buildOrganicCloud(width: 126, height: 50, opacity: 0.90, flip: false),
               ),
               Positioned(
-                top: 86,
-                left: 110,
-                child: _buildHeaderCloud(width: 60, height: 24, opacity: 0.5),
+                top: 78,
+                left: 120,
+                child: _buildOrganicCloud(width: 68, height: 30, opacity: 0.60, flip: false),
               ),
 
-              // 5. Bottom Cityscape Illustration (High-resolution corporate vector art)
+              // 5. Bottom Cityscape Illustration (Faded & Balanced, subtle corporate watermark)
               Positioned(
                 bottom: 0,
                 left: 0,
@@ -381,12 +381,12 @@ class _LoginPageState extends State<LoginPage> {
                           Colors.white,
                           Colors.white,
                         ],
-                        stops: [0.0, 0.16, 1.0],
+                        stops: [0.0, 0.28, 1.0],
                       ).createShader(bounds);
                     },
                     blendMode: BlendMode.dstIn,
                     child: Opacity(
-                      opacity: 0.95,
+                      opacity: 0.32,
                       child: Image.asset(
                         'assets/images/login_city_illustration.png',
                         fit: BoxFit.cover,
@@ -926,70 +926,26 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  /// Aesthetic stylized cloud matching the cityscape illustration header
-  Widget _buildHeaderCloud({
+  /// Aesthetic organic vector cloud with smooth Bezier curves and depth
+  Widget _buildOrganicCloud({
     required double width,
     required double height,
-    double opacity = 0.7,
+    double opacity = 0.8,
+    bool flip = false,
   }) {
-    return Opacity(
-      opacity: opacity,
-      child: SizedBox(
-        width: width,
-        height: height,
-        child: Stack(
-          alignment: Alignment.bottomCenter,
-          children: [
-            // Base rounded pill
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                height: height * 0.65,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  borderRadius: BorderRadius.circular(height * 0.5),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF38BDF8).withValues(alpha: 0.14),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // Left circular puff
-            Positioned(
-              bottom: height * 0.12,
-              left: width * 0.16,
-              child: Container(
-                width: height * 0.72,
-                height: height * 0.72,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.92),
-                ),
-              ),
-            ),
-            // Center-right higher puff
-            Positioned(
-              bottom: height * 0.2,
-              right: width * 0.25,
-              child: Container(
-                width: height * 0.86,
-                height: height * 0.86,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.96),
-                ),
-              ),
-            ),
-          ],
-        ),
+    Widget cloud = CustomPaint(
+      size: Size(width, height),
+      painter: _OrganicCloudPainter(
+        color: Colors.white.withValues(alpha: opacity),
+        shadowColor: const Color(0xFF38BDF8).withValues(alpha: (0.15 * opacity).clamp(0.0, 1.0)),
       ),
     );
+
+    if (flip) {
+      cloud = Transform.scale(scaleX: -1, child: cloud);
+    }
+
+    return cloud;
   }
 
   Widget _buildContent() {
@@ -2107,4 +2063,75 @@ class _TooltipBubbleBorder extends ShapeBorder {
   ShapeBorder scale(double t) => this;
 }
 
+/// Custom organic vector cloud painter with smooth Bezier billows and soft depth shading
+class _OrganicCloudPainter extends CustomPainter {
+  final Color color;
+  final Color shadowColor;
 
+  const _OrganicCloudPainter({
+    required this.color,
+    required this.shadowColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    // Soft drop shadow
+    final shadowPaint = Paint()
+      ..color = shadowColor
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+
+    // Main cloud body gradient
+    final cloudPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          color,
+          color.withValues(alpha: (color.a * 0.88).clamp(0.0, 1.0)),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, w, h));
+
+    final path = Path();
+    // Smooth flat-rounded bottom
+    path.moveTo(w * 0.12, h * 0.82);
+    path.lineTo(w * 0.88, h * 0.82);
+    // Right bottom corner into lower right puff
+    path.cubicTo(w * 0.96, h * 0.82, w * 1.0, h * 0.68, w * 0.92, h * 0.54);
+    // Right-center upper billow
+    path.cubicTo(w * 0.95, h * 0.38, w * 0.80, h * 0.24, w * 0.68, h * 0.32);
+    // Center high crown billow
+    path.cubicTo(w * 0.62, h * 0.08, w * 0.38, h * 0.08, w * 0.32, h * 0.30);
+    // Left-center upper billow
+    path.cubicTo(w * 0.20, h * 0.26, w * 0.08, h * 0.42, w * 0.10, h * 0.58);
+    // Left bottom corner
+    path.cubicTo(w * 0.02, h * 0.70, w * 0.05, h * 0.82, w * 0.12, h * 0.82);
+    path.close();
+
+    // Draw shadow
+    canvas.drawPath(path.shift(const Offset(0, 2)), shadowPaint);
+    // Draw cloud
+    canvas.drawPath(path, cloudPaint);
+
+    // Subtle internal soft white highlight puff for depth
+    final highlightPaint = Paint()
+      ..shader = RadialGradient(
+        center: Alignment.topCenter,
+        radius: 0.85,
+        colors: [
+          Colors.white.withValues(alpha: (color.a * 0.6).clamp(0.0, 1.0)),
+          Colors.white.withValues(alpha: 0.0),
+        ],
+      ).createShader(Rect.fromLTWH(w * 0.28, h * 0.10, w * 0.38, h * 0.42));
+
+    final highlightPath = Path()
+      ..addOval(Rect.fromLTWH(w * 0.30, h * 0.12, w * 0.34, h * 0.36));
+    canvas.drawPath(highlightPath, highlightPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _OrganicCloudPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.shadowColor != shadowColor;
+}
