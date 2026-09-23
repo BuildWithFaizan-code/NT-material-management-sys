@@ -267,33 +267,35 @@ class _LoginPageState extends State<LoginPage> {
         ),
 
         // Split Screen Dividing Line
-        // Right Pane: Dedicated Full-Height Modern Sidebar with Glassmorphism
+        // Right Pane: Dedicated Full-Height Modern Sidebar with Glassmorphism, Scenic City Illustration & Header Clouds
         SizedBox(
           width: 480,
           height: constraints.maxHeight,
           child: Stack(
+            clipBehavior: Clip.hardEdge,
             children: [
-              // Ambient Luminous Gradient Orbs for Authentic Glass Refraction
-              Positioned(
-                top: -40,
-                right: -30,
-                child: Container(
-                  width: 250,
-                  height: 250,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        const Color(0xFF3B82F6).withValues(alpha: 0.18),
-                        const Color(0xFF60A5FA).withValues(alpha: 0.0),
-                      ],
-                    ),
+              // 1. Soft Sky Tint Background Gradient matching illustration
+              Container(
+                width: 480,
+                height: constraints.maxHeight,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xFFEFF6FF), // soft airy sky tint at top
+                      Color(0xFFF8FAFC), // clean neutral center
+                      Color(0xFFE0F2FE), // light sky blue near bottom matching illustration
+                    ],
+                    stops: [0.0, 0.55, 1.0],
                   ),
                 ),
               ),
+
+              // 2. Ambient Luminous Gradient Orbs for Glass Refraction
               Positioned(
-                bottom: 30,
-                left: -40,
+                top: -30,
+                right: -20,
                 child: Container(
                   width: 240,
                   height: 240,
@@ -301,85 +303,131 @@ class _LoginPageState extends State<LoginPage> {
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        const Color(0xFF06B6D4).withValues(alpha: 0.14),
-                        const Color(0xFF38BDF8).withValues(alpha: 0.0),
+                        const Color(0xFF38BDF8).withValues(alpha: 0.16),
+                        const Color(0xFF60A5FA).withValues(alpha: 0.0),
                       ],
                     ),
                   ),
                 ),
               ),
               Positioned(
-                top: constraints.maxHeight * 0.45,
-                right: 30,
+                bottom: 80,
+                left: -30,
                 child: Container(
-                  width: 200,
-                  height: 200,
+                  width: 220,
+                  height: 220,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        const Color(0xFF818CF8).withValues(alpha: 0.12),
-                        const Color(0xFFA5B4FC).withValues(alpha: 0.0),
+                        const Color(0xFF06B6D4).withValues(alpha: 0.12),
+                        const Color(0xFF38BDF8).withValues(alpha: 0.0),
                       ],
                     ),
                   ),
                 ),
               ),
 
-              // Frosted Glass Layer
+              // 3. Frosted Glassmorphism Layer
               ClipRect(
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                   child: Container(
                     width: 480,
                     height: constraints.maxHeight,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.68),
+                      color: Colors.white.withValues(alpha: 0.55),
                       border: const Border(
                         left: BorderSide(
                           color: Color(0xFFE2E8F0),
                           width: 1.2,
                         ),
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF0F172A).withValues(alpha: 0.03),
-                          blurRadius: 20,
-                          offset: const Offset(-4, 0),
-                        ),
-                      ],
                     ),
-                    child: Center(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 44, vertical: 36),
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 410),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 40),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(
-                                color: const Color(0xFFE2E8F0),
-                                width: 1.2,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF0F172A).withValues(alpha: 0.06),
-                                  blurRadius: 28,
-                                  offset: const Offset(0, 10),
-                                ),
-                                BoxShadow(
-                                  color: AppColors.brandBlue.withValues(alpha: 0.04),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: _buildContent(),
-                          ),
-                        ),
+                  ),
+                ),
+              ),
+
+              // 4. Header Clouds (floating softly at the top of the right pane to match the bottom scenery)
+              Positioned(
+                top: 22,
+                left: 32,
+                child: _buildHeaderCloud(width: 86, height: 32, opacity: 0.8),
+              ),
+              Positioned(
+                top: 38,
+                right: 36,
+                child: _buildHeaderCloud(width: 112, height: 42, opacity: 0.75),
+              ),
+              Positioned(
+                top: 86,
+                left: 110,
+                child: _buildHeaderCloud(width: 60, height: 24, opacity: 0.5),
+              ),
+
+              // 5. Bottom Cityscape Illustration (with soft gradient blend at top)
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: IgnorePointer(
+                  child: ShaderMask(
+                    shaderCallback: (Rect bounds) {
+                      return const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.white,
+                          Colors.white,
+                        ],
+                        stops: [0.0, 0.22, 1.0],
+                      ).createShader(bounds);
+                    },
+                    blendMode: BlendMode.dstIn,
+                    child: Opacity(
+                      opacity: 0.88,
+                      child: Image.asset(
+                        'assets/images/login_city_illustration.png',
+                        fit: BoxFit.cover,
+                        alignment: Alignment.bottomCenter,
+                        height: 200,
+                        errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
                       ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // 6. Centered Elevated Login Card
+              Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 28),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 404),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 34, vertical: 36),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(
+                          color: const Color(0xFFE2E8F0),
+                          width: 1.2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF0F172A).withValues(alpha: 0.08),
+                            blurRadius: 30,
+                            offset: const Offset(0, 10),
+                          ),
+                          BoxShadow(
+                            color: const Color(0xFF38BDF8).withValues(alpha: 0.06),
+                            blurRadius: 14,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: _buildContent(),
                     ),
                   ),
                 ),
@@ -873,6 +921,72 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Aesthetic stylized cloud matching the cityscape illustration header
+  Widget _buildHeaderCloud({
+    required double width,
+    required double height,
+    double opacity = 0.7,
+  }) {
+    return Opacity(
+      opacity: opacity,
+      child: SizedBox(
+        width: width,
+        height: height,
+        child: Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
+            // Base rounded pill
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: height * 0.65,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(height * 0.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF38BDF8).withValues(alpha: 0.14),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Left circular puff
+            Positioned(
+              bottom: height * 0.12,
+              left: width * 0.16,
+              child: Container(
+                width: height * 0.72,
+                height: height * 0.72,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.92),
+                ),
+              ),
+            ),
+            // Center-right higher puff
+            Positioned(
+              bottom: height * 0.2,
+              right: width * 0.25,
+              child: Container(
+                width: height * 0.86,
+                height: height * 0.86,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.96),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
