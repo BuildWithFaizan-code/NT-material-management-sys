@@ -406,55 +406,60 @@ class _LoginPageState extends State<LoginPage> {
         // Sharp "NewTech" Italic Typography with Specifically Enlarged 'N' and 'T'
         RichText(
           text: TextSpan(
+            style: const TextStyle(height: 1.0),
             children: [
               // Large Sharp 'N'
               TextSpan(
                 text: 'N',
                 style: GoogleFonts.kanit(
-                  fontSize: 48,
+                  fontSize: 60,
                   fontWeight: FontWeight.w900,
                   fontStyle: FontStyle.italic,
                   color: const Color(0xFF1D5CFF),
                   letterSpacing: -1.0,
+                  height: 1.0,
                 ),
               ),
               // Sharp 'ew'
               TextSpan(
                 text: 'ew',
                 style: GoogleFonts.kanit(
-                  fontSize: 34,
+                  fontSize: 32,
                   fontWeight: FontWeight.w800,
                   fontStyle: FontStyle.italic,
                   color: const Color(0xFF1D5CFF),
                   letterSpacing: -0.5,
+                  height: 1.0,
                 ),
               ),
               // Large Sharp 'T'
               TextSpan(
                 text: 'T',
                 style: GoogleFonts.kanit(
-                  fontSize: 48,
+                  fontSize: 60,
                   fontWeight: FontWeight.w900,
                   fontStyle: FontStyle.italic,
                   color: const Color(0xFFFF6400),
                   letterSpacing: -1.0,
+                  height: 1.0,
                 ),
               ),
               // Sharp 'ech'
               TextSpan(
                 text: 'ech',
                 style: GoogleFonts.kanit(
-                  fontSize: 34,
+                  fontSize: 32,
                   fontWeight: FontWeight.w800,
                   fontStyle: FontStyle.italic,
                   color: const Color(0xFFFF6400),
                   letterSpacing: -0.5,
+                  height: 1.0,
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 2),
         // Professional Structured Subtext
         Row(
           mainAxisSize: MainAxisSize.min,
@@ -482,6 +487,7 @@ class _LoginPageState extends State<LoginPage> {
                 fontWeight: FontWeight.w600,
                 letterSpacing: 2.2,
                 color: const Color(0xFF64748B),
+                height: 1.0,
               ),
             ),
           ],
