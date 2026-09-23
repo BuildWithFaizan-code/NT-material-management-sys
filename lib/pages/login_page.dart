@@ -249,75 +249,53 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
 
-        // Right Pane: Blue Gradient Background with large rounded bottom-left corner matching Image 2
+        // Center Divider: Cloudy and Fluid Border
+        const FluidWaveDivider(),
+
+        // Right Pane: Deep Professional Tech Blue Background with Cool Border Form Card
         Expanded(
           flex: 5,
-          child: ClipRRect(
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(84),
-            ),
-            child: Container(
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('assets/images/login_blue_gradient_bg.jpg'),
-                  fit: BoxFit.cover,
-                  alignment: Alignment.center,
-                ),
-              ),
-              child: Stack(
-                children: [
-                  // Subtle ambient glow & gradient overlay to match theme perfectly
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            const Color(0xFFCFA7FB).withValues(alpha: 0.12),
-                            Colors.transparent,
-                            const Color(0xFF1E3A8A).withValues(alpha: 0.28),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Main Center Scrollable Content: White Modern Login Box
-                  Center(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 48),
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 440),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 38),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(26),
-                            border: Border.all(
-                              color: const Color(0xFFE2E8F0),
-                              width: 1.0,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF0F172A).withValues(alpha: 0.22),
-                                blurRadius: 40,
-                                offset: const Offset(0, 18),
-                              ),
-                              BoxShadow(
-                                color: const Color(0xFF1E3A8A).withValues(alpha: 0.15),
-                                blurRadius: 18,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          child: _buildContent(),
-                        ),
-                      ),
-                    ),
-                  ),
+          child: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF071328),
+                  Color(0xFF0C2346),
+                  Color(0xFF081730),
                 ],
               ),
+            ),
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Ambient luminous blue radial orb behind card
+                Positioned(
+                  child: Container(
+                    width: 380,
+                    height: 380,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          const Color(0xFF1D5CFF).withValues(alpha: 0.18),
+                          const Color(0xFF38BDF8).withValues(alpha: 0.08),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 440),
+                    child: _buildCoolBorderFormCard(),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -327,68 +305,85 @@ class _LoginPageState extends State<LoginPage> {
 
   /// Compact Mobile / Narrow Screen Layout
   Widget _buildMobileLayout(BoxConstraints constraints) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            child: Column(
-              children: [
-                _buildBrandHeader(center: true),
-                const SizedBox(height: 16),
-                RepaintBoundary(
-                  child: SizedBox(
-                    height: 220,
-                    child: _Paced3DLottieModel(
-                      maxHeight: 220,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+    return Container(
+      color: Colors.white,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            _buildBrandHeader(center: true),
+            const SizedBox(height: 16),
 
-          // Mobile Blue Gradient Container with Floating Modern White Box
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/images/login_blue_gradient_bg.jpg'),
-                fit: BoxFit.cover,
-                alignment: Alignment.center,
-              ),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(32),
-                topRight: Radius.circular(32),
-                bottomLeft: Radius.circular(56),
-              ),
-            ),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(
-                    color: const Color(0xFFE2E8F0),
-                    width: 1.0,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF0F172A).withValues(alpha: 0.18),
-                      blurRadius: 28,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
+            // Compact Paced 3D Animation for Mobile
+            RepaintBoundary(
+              child: SizedBox(
+                height: 220,
+                child: _Paced3DLottieModel(
+                  maxHeight: 220,
                 ),
-                child: _buildContent(),
               ),
             ),
+            const SizedBox(height: 20),
+
+            // Centered Form Card with Cool Borders
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: _buildCoolBorderFormCard(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Form Card with Cool Multi-tone Gradient Border & Glowing Ambient Shadow
+  Widget _buildCoolBorderFormCard() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: [
+          // Outer electric blue atmospheric halo
+          BoxShadow(
+            color: const Color(0xFF1D5CFF).withValues(alpha: 0.28),
+            blurRadius: 40,
+            spreadRadius: -4,
+            offset: const Offset(0, 16),
+          ),
+          // Inner cyan rim glow
+          BoxShadow(
+            color: const Color(0xFF38BDF8).withValues(alpha: 0.15),
+            blurRadius: 18,
+            spreadRadius: 0,
           ),
         ],
+        // Cool Multi-tone Cyan-to-Royal-Blue Gradient Border
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF38BDF8),
+            Color(0xFF2563EB),
+            Color(0xFF1D4ED8),
+            Color(0xFF38BDF8),
+          ],
+        ),
+      ),
+      padding: const EdgeInsets.all(1.8), // 1.8px high-precision gradient border
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 38),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24.2),
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF0D1F3C),
+              Color(0xFF09162A),
+            ],
+          ),
+        ),
+        child: _buildContent(),
       ),
     );
   }
@@ -503,7 +498,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-
   Widget _buildContent() {
     if (_isChangePasswordStep) {
       return _buildChangePasswordView();
@@ -521,45 +515,54 @@ class _LoginPageState extends State<LoginPage> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Capsule Security Indicator
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.brandBlue.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: AppColors.brandBlue.withValues(alpha: 0.18),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.shield_outlined, size: 13, color: AppColors.brandBlue),
-                    const SizedBox(width: 5),
-                    Text(
-                      'Secure Enterprise Portal',
-                      style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.brandBlue,
-                      ),
-                    ),
-                  ],
-                ),
+          // Secure Gateway Status Badge
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F2B56),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFF1D5CFF).withValues(alpha: 0.5)),
               ),
-            ],
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0xFF22C55E),
+                      boxShadow: [
+                        BoxShadow(color: Color(0xFF22C55E), blurRadius: 6, spreadRadius: 1),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'SECURE WORKSPACE PORTAL',
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.0,
+                      color: const Color(0xFF93C5FD),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
+
           // Greeting Title
           Text(
-            'Sign In to Your Workspace',
+            'WELCOME BACK!',
             style: GoogleFonts.poppins(
-              fontSize: 22,
+              fontSize: 24,
               fontWeight: FontWeight.w800,
-              letterSpacing: -0.4,
-              color: AppColors.neutralDark,
+              letterSpacing: 0.5,
+              color: Colors.white,
             ),
           ),
           const SizedBox(height: 4),
@@ -568,7 +571,7 @@ class _LoginPageState extends State<LoginPage> {
             style: GoogleFonts.poppins(
               fontSize: 13,
               fontWeight: FontWeight.w400,
-              color: const Color(0xFF64748B),
+              color: const Color(0xFF94A3B8),
             ),
           ),
           const SizedBox(height: 24),
@@ -578,19 +581,19 @@ class _LoginPageState extends State<LoginPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: AppColors.errorLight,
+                color: const Color(0xFF450A0A).withValues(alpha: 0.85),
                 borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMd),
-                border: Border.all(color: AppColors.errorBorder),
+                border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.6)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 18),
+                  const Icon(Icons.error_outline_rounded, color: Color(0xFFF87171), size: 18),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       _errorMessage!,
                       style: const TextStyle(
-                        color: AppColors.errorDark,
+                        color: Color(0xFFFCA5A5),
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
@@ -608,31 +611,31 @@ class _LoginPageState extends State<LoginPage> {
             style: GoogleFonts.poppins(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: AppColors.neutralDark,
+              color: const Color(0xFFE2E8F0),
             ),
           ),
           const SizedBox(height: 6),
           TextFormField(
             controller: _usernameController,
             textInputAction: TextInputAction.next,
-            style: GoogleFonts.poppins(fontSize: 14),
+            style: GoogleFonts.poppins(fontSize: 14, color: Colors.white),
             decoration: InputDecoration(
               hintText: 'Enter your username or email',
-              hintStyle: GoogleFonts.poppins(fontSize: 13, color: Colors.black38),
-              prefixIcon: const Icon(Icons.person_outline_rounded, size: 20, color: Color(0xFF64748B)),
+              hintStyle: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF64748B)),
+              prefixIcon: const Icon(Icons.person_outline_rounded, size: 20, color: Color(0xFF38BDF8)),
               filled: true,
-              fillColor: const Color(0xFFF8FAFC),
+              fillColor: const Color(0xFF0B172C).withValues(alpha: 0.85),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                borderSide: const BorderSide(color: Color(0xFF1E3A5F), width: 1.2),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                borderSide: const BorderSide(color: Color(0xFF1E3A5F), width: 1.2),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: AppColors.brandBlue, width: 1.8),
+                borderSide: const BorderSide(color: Color(0xFF38BDF8), width: 2.0),
               ),
               contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
             ),
@@ -652,7 +655,7 @@ class _LoginPageState extends State<LoginPage> {
                 style: GoogleFonts.poppins(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.neutralDark,
+                  color: const Color(0xFFE2E8F0),
                 ),
               ),
               TextButton(
@@ -674,7 +677,7 @@ class _LoginPageState extends State<LoginPage> {
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.brandBlue,
+                    color: const Color(0xFF60A5FA),
                   ),
                 ),
               ),
@@ -686,32 +689,32 @@ class _LoginPageState extends State<LoginPage> {
             obscureText: _obscurePassword,
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _handleLogin(),
-            style: GoogleFonts.poppins(fontSize: 14),
+            style: GoogleFonts.poppins(fontSize: 14, color: Colors.white),
             decoration: InputDecoration(
               hintText: 'Enter your password',
-              hintStyle: GoogleFonts.poppins(fontSize: 13, color: Colors.black38),
-              prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20, color: Color(0xFF64748B)),
+              hintStyle: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF64748B)),
+              prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20, color: Color(0xFF38BDF8)),
               suffixIcon: IconButton(
                 icon: Icon(
                   _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                   size: 20,
-                  color: const Color(0xFF64748B),
+                  color: const Color(0xFF94A3B8),
                 ),
                 onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
               ),
               filled: true,
-              fillColor: const Color(0xFFF8FAFC),
+              fillColor: const Color(0xFF0B172C).withValues(alpha: 0.85),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                borderSide: const BorderSide(color: Color(0xFF1E3A5F), width: 1.2),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                borderSide: const BorderSide(color: Color(0xFF1E3A5F), width: 1.2),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: AppColors.brandBlue, width: 1.8),
+                borderSide: const BorderSide(color: Color(0xFF38BDF8), width: 2.0),
               ),
               contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
             ),
@@ -722,16 +725,37 @@ class _LoginPageState extends State<LoginPage> {
           ),
           const SizedBox(height: 26),
 
-          // Primary Sign In Button
-          SizedBox(
-            height: 48,
+          // Primary Sign In Button with Cool Glow
+          Container(
+            height: 50,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF1D5CFF).withValues(alpha: 0.45),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+              gradient: const LinearGradient(
+                colors: [
+                  Color(0xFF1D5CFF),
+                  Color(0xFF0284C7),
+                ],
+              ),
+            ),
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brandBlue,
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                elevation: 2,
-                shadowColor: AppColors.brandBlue.withValues(alpha: 0.35),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  side: BorderSide(
+                    color: const Color(0xFF38BDF8).withValues(alpha: 0.4),
+                    width: 1.0,
+                  ),
+                ),
               ),
               onPressed: _isLoading ? null : _handleLogin,
               child: _isLoading
@@ -740,11 +764,37 @@ class _LoginPageState extends State<LoginPage> {
                       height: 22,
                       child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
                     )
-                  : Text(
-                      'Sign In to Workspace',
-                      style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700),
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Sign In to Workspace',
+                          style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.arrow_forward_rounded, size: 18),
+                      ],
                     ),
             ),
+          ),
+          const SizedBox(height: 24),
+
+          // Security Reassurance Badge
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 6,
+            children: [
+              const Icon(Icons.shield_outlined, size: 14, color: Color(0xFF38BDF8)),
+              Text(
+                '256-Bit SSL Encrypted  •  SOC2 Certified',
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF64748B),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -758,13 +808,14 @@ class _LoginPageState extends State<LoginPage> {
       children: [
         Center(
           child: Container(
-            width: 56,
-            height: 56,
+            width: 58,
+            height: 58,
             decoration: BoxDecoration(
-              color: AppColors.infoLight,
-              borderRadius: BorderRadius.circular(16),
+              color: const Color(0xFF0F2B56),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.5)),
             ),
-            child: const Icon(Icons.security_rounded, color: AppColors.info, size: 28),
+            child: const Icon(Icons.security_rounded, color: Color(0xFF38BDF8), size: 28),
           ),
         ),
         const SizedBox(height: 20),
@@ -774,14 +825,14 @@ class _LoginPageState extends State<LoginPage> {
           style: GoogleFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w800,
-            color: AppColors.neutralDark,
+            color: Colors.white,
           ),
         ),
         const SizedBox(height: 8),
         Text(
           'Enter the 6-digit code generated by your Authenticator app.',
           textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF64748B)),
+          style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF94A3B8)),
         ),
         const SizedBox(height: 24),
 
@@ -789,13 +840,13 @@ class _LoginPageState extends State<LoginPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: AppColors.errorLight,
+              color: const Color(0xFF450A0A).withValues(alpha: 0.85),
               borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMd),
-              border: Border.all(color: AppColors.errorBorder),
+              border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.6)),
             ),
             child: Text(
               _errorMessage!,
-              style: const TextStyle(color: AppColors.errorDark, fontSize: 13),
+              style: const TextStyle(color: Color(0xFFFCA5A5), fontSize: 13),
             ),
           ),
           const SizedBox(height: 16),
@@ -806,24 +857,53 @@ class _LoginPageState extends State<LoginPage> {
           keyboardType: TextInputType.number,
           maxLength: 6,
           textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(fontSize: 24, letterSpacing: 8, fontWeight: FontWeight.w700),
+          style: GoogleFonts.poppins(fontSize: 24, letterSpacing: 8, fontWeight: FontWeight.w700, color: Colors.white),
           decoration: InputDecoration(
             hintText: '000000',
+            hintStyle: GoogleFonts.poppins(fontSize: 24, letterSpacing: 8, color: const Color(0xFF475569)),
             counterText: '',
             filled: true,
-            fillColor: const Color(0xFFF8FAFC),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+            fillColor: const Color(0xFF0B172C).withValues(alpha: 0.85),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: Color(0xFF1E3A5F)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: Color(0xFF1E3A5F)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: Color(0xFF38BDF8), width: 2.0),
+            ),
             contentPadding: const EdgeInsets.symmetric(vertical: 14),
           ),
           onFieldSubmitted: (_) => _handleMfaVerify(),
         ),
         const SizedBox(height: 22),
 
-        SizedBox(
+        Container(
           height: 48,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF1D5CFF).withValues(alpha: 0.45),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
+              ),
+            ],
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFF1D5CFF),
+                Color(0xFF0284C7),
+              ],
+            ),
+          ),
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.brandBlue,
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
@@ -843,7 +923,7 @@ class _LoginPageState extends State<LoginPage> {
               _errorMessage = null;
             });
           },
-          child: Text('Back to Login', style: GoogleFonts.poppins(color: AppColors.neutralDark, fontWeight: FontWeight.w600)),
+          child: Text('Back to Login', style: GoogleFonts.poppins(color: const Color(0xFF94A3B8), fontWeight: FontWeight.w600)),
         ),
       ],
     );
@@ -856,13 +936,14 @@ class _LoginPageState extends State<LoginPage> {
       children: [
         Center(
           child: Container(
-            width: 56,
-            height: 56,
+            width: 58,
+            height: 58,
             decoration: BoxDecoration(
-              color: AppColors.warningLight,
-              borderRadius: BorderRadius.circular(16),
+              color: const Color(0xFF0F2B56),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFFF6400).withValues(alpha: 0.6)),
             ),
-            child: const Icon(Icons.key_rounded, color: AppColors.warning, size: 28),
+            child: const Icon(Icons.key_rounded, color: Color(0xFFFF6400), size: 28),
           ),
         ),
         const SizedBox(height: 20),
@@ -872,14 +953,14 @@ class _LoginPageState extends State<LoginPage> {
           style: GoogleFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w800,
-            color: AppColors.neutralDark,
+            color: Colors.white,
           ),
         ),
         const SizedBox(height: 8),
         Text(
           'Your account requires a new password before continuing (minimum 10 characters, cannot be purely numeric).',
           textAlign: TextAlign.center,
-          style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF64748B)),
+          style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF94A3B8)),
         ),
         const SizedBox(height: 24),
 
@@ -887,69 +968,95 @@ class _LoginPageState extends State<LoginPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: AppColors.errorLight,
+              color: const Color(0xFF450A0A).withValues(alpha: 0.85),
               borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMd),
-              border: Border.all(color: AppColors.errorBorder),
+              border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.6)),
             ),
             child: Text(
               _errorMessage!,
-              style: const TextStyle(color: AppColors.errorDark, fontSize: 13),
+              style: const TextStyle(color: Color(0xFFFCA5A5), fontSize: 13),
             ),
           ),
           const SizedBox(height: 16),
         ],
 
-        Text('Current Password', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600)),
+        Text('Current Password', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFFE2E8F0))),
         const SizedBox(height: 6),
         TextFormField(
           controller: _currentPasswordController,
           obscureText: true,
+          style: GoogleFonts.poppins(fontSize: 14, color: Colors.white),
           decoration: InputDecoration(
             filled: true,
-            fillColor: const Color(0xFFF8FAFC),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+            fillColor: const Color(0xFF0B172C).withValues(alpha: 0.85),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF1E3A5F))),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF1E3A5F))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF38BDF8), width: 2.0)),
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           ),
         ),
         const SizedBox(height: 14),
 
-        Text('New Password (min 10 characters)', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600)),
+        Text('New Password (min 10 characters)', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFFE2E8F0))),
         const SizedBox(height: 6),
         TextFormField(
           controller: _newPasswordController,
           obscureText: _obscureNewPassword,
+          style: GoogleFonts.poppins(fontSize: 14, color: Colors.white),
           decoration: InputDecoration(
             filled: true,
-            fillColor: const Color(0xFFF8FAFC),
+            fillColor: const Color(0xFF0B172C).withValues(alpha: 0.85),
             suffixIcon: IconButton(
-              icon: Icon(_obscureNewPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 20),
+              icon: Icon(_obscureNewPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 20, color: const Color(0xFF94A3B8)),
               onPressed: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
             ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF1E3A5F))),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF1E3A5F))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF38BDF8), width: 2.0)),
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           ),
         ),
         const SizedBox(height: 14),
 
-        Text('Confirm New Password', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600)),
+        Text('Confirm New Password', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFFE2E8F0))),
         const SizedBox(height: 6),
         TextFormField(
           controller: _confirmPasswordController,
           obscureText: _obscureNewPassword,
+          style: GoogleFonts.poppins(fontSize: 14, color: Colors.white),
           decoration: InputDecoration(
             filled: true,
-            fillColor: const Color(0xFFF8FAFC),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+            fillColor: const Color(0xFF0B172C).withValues(alpha: 0.85),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF1E3A5F))),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF1E3A5F))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF38BDF8), width: 2.0)),
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           ),
         ),
         const SizedBox(height: 24),
 
-        SizedBox(
+        Container(
           height: 48,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF1D5CFF).withValues(alpha: 0.45),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
+              ),
+            ],
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFF1D5CFF),
+                Color(0xFF0284C7),
+              ],
+            ),
+          ),
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.brandBlue,
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
@@ -964,6 +1071,96 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
+/// Cloudy and Fluid Wave Divider separating Left and Right Panes
+class FluidWaveDivider extends StatelessWidget {
+  const FluidWaveDivider({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 54,
+      height: double.infinity,
+      child: CustomPaint(
+        painter: _CloudyFluidWavePainter(),
+      ),
+    );
+  }
+}
+
+class _CloudyFluidWavePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    // Layer 1: Soft shadow aura casting onto the left pane
+    final shadowPaint = Paint()
+      ..color = const Color(0xFF071328).withValues(alpha: 0.14)
+      ..style = PaintingStyle.fill
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
+
+    final auraPath = Path();
+    auraPath.moveTo(w * 0.45, 0);
+    auraPath.cubicTo(w * 0.9, h * 0.18, w * 0.1, h * 0.45, w * 0.8, h * 0.72);
+    auraPath.cubicTo(w * 0.95, h * 0.86, w * 0.2, h * 0.94, w * 0.45, h);
+    auraPath.lineTo(w, h);
+    auraPath.lineTo(w, 0);
+    auraPath.close();
+    canvas.drawPath(auraPath, shadowPaint);
+
+    // Layer 2: Deep blue gradient seamlessly bridging to the right pane
+    final waveFillPaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Color(0xFF071328),
+          Color(0xFF0C2346),
+          Color(0xFF081730),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, w, h))
+      ..style = PaintingStyle.fill;
+
+    final wavePath = Path();
+    wavePath.moveTo(w * 0.45, 0);
+    wavePath.cubicTo(w * 0.88, h * 0.18, w * 0.12, h * 0.44, w * 0.78, h * 0.7);
+    wavePath.cubicTo(w * 0.92, h * 0.84, w * 0.22, h * 0.94, w * 0.45, h);
+    wavePath.lineTo(w, h);
+    wavePath.lineTo(w, 0);
+    wavePath.close();
+    canvas.drawPath(wavePath, waveFillPaint);
+
+    // Layer 3: Vibrant glowing fluid contour line with cyan-to-electric-blue gradient
+    final strokePaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Color(0xFF38BDF8),
+          Color(0xFF60A5FA),
+          Color(0xFF1D5CFF),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, w, h))
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.6
+      ..strokeCap = StrokeCap.round;
+
+    final linePath = Path();
+    linePath.moveTo(w * 0.45, 0);
+    linePath.cubicTo(w * 0.88, h * 0.18, w * 0.12, h * 0.44, w * 0.78, h * 0.7);
+    linePath.cubicTo(w * 0.92, h * 0.84, w * 0.22, h * 0.94, w * 0.45, h);
+    canvas.drawPath(linePath, strokePaint);
+
+    // Subtle luminous droplet accents along the wave curve
+    final dotPaint = Paint()..color = const Color(0xFF38BDF8).withValues(alpha: 0.65);
+    canvas.drawCircle(Offset(w * 0.74, h * 0.21), 3.4, dotPaint);
+    canvas.drawCircle(Offset(w * 0.24, h * 0.46), 2.8, dotPaint);
+    canvas.drawCircle(Offset(w * 0.69, h * 0.73), 3.6, dotPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
 
 /// High-performance 3D Lottie animation with controlled cycle pacing and hold interval.
 /// Showcases the complete model on screen by pausing at full completion before restarting.
