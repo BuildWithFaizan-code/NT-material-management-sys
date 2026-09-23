@@ -15,6 +15,5 @@ namespace MMSERP.Api.Services
         Task<ApiResponse<IEnumerable<SessionDto>>> GetActiveSessionsAsync(int userId, string? currentToken);
         Task<ApiResponse<bool>> RevokeSessionAsync(int userId, int tokenId);
         Task<ApiResponse<bool>> RevokeAllSessionsAsync(int userId);
-        Task<ApiResponse<UserInfoDto>> GetCurrentUserAsync(int userId);
     }
 }

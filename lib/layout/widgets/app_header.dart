@@ -877,22 +877,8 @@ class _AnimativeAdminProfileState extends State<_AnimativeAdminProfile>
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: AuthService.instance,
-      builder: (context, _) {
-        final user = AuthService.instance.currentUser;
-        final displayName = user?.username.isNotEmpty == true ? user!.username : 'User';
-        final displayEmail = user?.email.isNotEmpty == true ? user!.email : '';
-        final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U';
-        final isAdmin = user?.isAdmin == true;
-        final roleBadge = isAdmin
-            ? 'ADMIN'
-            : (user?.roleName?.trim().isNotEmpty == true
-                ? user!.roleName!.trim().toUpperCase()
-                : 'USER');
-
-        return PopupMenuButton<String>(
-          tooltip: isAdmin ? 'Admin Account & System Roles' : 'My Account',
+    return PopupMenuButton<String>(
+      tooltip: 'Admin Account & System Roles',
       offset: const Offset(0, 46),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       color: Colors.white,
@@ -916,6 +902,11 @@ class _AnimativeAdminProfileState extends State<_AnimativeAdminProfile>
         }
       },
       itemBuilder: (context) {
+        final user = AuthService.instance.currentUser;
+        final displayName = user?.username.isNotEmpty == true ? user!.username : 'Admin User';
+        final displayEmail = user?.email.isNotEmpty == true ? user!.email : 'admin@newtechmms.com';
+        final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'A';
+
         return [
           // Profile Header in Dropdown
           PopupMenuItem(
@@ -954,11 +945,10 @@ class _AnimativeAdminProfileState extends State<_AnimativeAdminProfile>
                         color: Color(0xFF0F172A),
                       ),
                     ),
-                    if (displayEmail.isNotEmpty)
-                      Text(
-                        displayEmail,
-                        style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
-                      ),
+                    Text(
+                      displayEmail,
+                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                    ),
                   ],
                 ),
               ],
@@ -967,10 +957,8 @@ class _AnimativeAdminProfileState extends State<_AnimativeAdminProfile>
           const PopupMenuDivider(),
           _buildProfileMenuItem('mfa', 'Two-Factor Auth (MFA)', Icons.security_rounded),
           _buildProfileMenuItem('profile', 'Account Settings', Icons.person_outline_rounded),
-          if (isAdmin) ...[
-            _buildProfileMenuItem('roles', 'Role & Access Control', Icons.admin_panel_settings_outlined),
-            _buildProfileMenuItem('audit', 'System Audit Trail', Icons.history_rounded),
-          ],
+          _buildProfileMenuItem('roles', 'Role & Access Control', Icons.admin_panel_settings_outlined),
+          _buildProfileMenuItem('audit', 'System Audit Trail', Icons.history_rounded),
           const PopupMenuDivider(),
           _buildProfileMenuItem('logout', 'Sign Out', Icons.logout_rounded, isDestructive: true),
         ];
@@ -1037,10 +1025,10 @@ class _AnimativeAdminProfileState extends State<_AnimativeAdminProfile>
                                     ],
                                   ),
                                 ),
-                                child: Center(
+                                child: const Center(
                                   child: Text(
-                                    initial,
-                                    style: const TextStyle(
+                                    'A',
+                                    style: TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w900,
                                       fontSize: 14,
@@ -1081,39 +1069,35 @@ class _AnimativeAdminProfileState extends State<_AnimativeAdminProfile>
                   children: [
                     Row(
                       mainAxisSize: MainAxisSize.min,
-                      children: [
+                      children: const [
                         Text(
-                          displayName,
-                          style: const TextStyle(
+                          'Admin User',
+                          style: TextStyle(
                             color: Color(0xFF0F172A),
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        if (isAdmin) ...[
-                          const SizedBox(width: 4),
-                          const Icon(
-                            Icons.verified_rounded,
-                            size: 13,
-                            color: Color(0xFF10B981),
-                          ),
-                        ],
+                        SizedBox(width: 4),
+                        Icon(
+                          Icons.verified_rounded,
+                          size: 13,
+                          color: Color(0xFF10B981),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 1.5),
-                    // Written corporate capsule badge
+                    // Written "ADMIN" corporate capsule badge
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 5.5, vertical: 1.5),
                       decoration: BoxDecoration(
-                        color: isAdmin
-                            ? const Color(0xFF0F172A)
-                            : const Color(0xFF1E3A8A),
+                        color: const Color(0xFF0F172A),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Text(
-                        roleBadge,
-                        style: const TextStyle(
+                      child: const Text(
+                        'ADMIN',
+                        style: TextStyle(
                           color: Colors.white,
                           fontSize: 8.5,
                           fontWeight: FontWeight.w800,
@@ -1134,8 +1118,6 @@ class _AnimativeAdminProfileState extends State<_AnimativeAdminProfile>
           ),
         ),
       ),
-        );
-      },
     );
   }
 

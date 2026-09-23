@@ -124,18 +124,8 @@ class Sidebar extends StatelessWidget {
           isMasterSelected: currentIndex == 1,
           activeSubItem: activeSubItem,
           onMasterHeaderTap: () {
-            final user = AuthService.instance.currentUser;
-            final isAllowedCurrent = activeSubItem.isNotEmpty &&
-                (user?.hasModuleAccess(activeSubItem) ?? false);
-            if (!isAllowedCurrent) {
-              final defaultItem = user?.isAdmin == true
-                  ? 'Project Master'
-                  : (user?.permittedModules.isNotEmpty == true
-                      ? user!.permittedModules.first
-                      : '');
-              if (defaultItem.isNotEmpty) {
-                onSubItemSelected?.call(defaultItem);
-              }
+            if (activeSubItem.isEmpty) {
+              onSubItemSelected?.call('Project Master');
             }
             onItemSelected(1);
           },

@@ -103,29 +103,6 @@ namespace MMSERP.Api.Controllers
         }
 
         /// <summary>
-        /// GET /api/auth/me
-        /// Returns the current authenticated user's profile and permitted modules.
-        /// </summary>
-        [HttpGet("me")]
-        [Authorize]
-        public async Task<IActionResult> GetCurrentUser()
-        {
-            var userId = GetCurrentUserId();
-            if (userId == null)
-            {
-                return Unauthorized(ApiResponse<UserInfoDto>.Fail("Unauthorized session."));
-            }
-
-            var result = await _authService.GetCurrentUserAsync(userId.Value);
-            if (!result.Success)
-            {
-                return NotFound(result);
-            }
-
-            return Ok(result);
-        }
-
-        /// <summary>
         /// POST /api/auth/refresh
         /// Native / desktop client token rotation path (Refresh Token passed in body).
         /// </summary>

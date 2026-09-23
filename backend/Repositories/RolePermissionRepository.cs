@@ -69,19 +69,6 @@ namespace MMSERP.Api.Repositories
             return rows.ToHashSet();
         }
 
-        public async Task<List<string>> GetPermittedModuleNamesByRoleAsync(int roleId)
-        {
-            using var connection = CreateConnection();
-            const string sql = @"
-                SELECT DISTINCT m.ModuleName
-                FROM RolePermissions rp
-                INNER JOIN Modules m ON rp.ModuleId = m.ModuleId
-                WHERE rp.RoleId = @RoleId;";
-
-            var rows = await connection.QueryAsync<string>(sql, new { RoleId = roleId });
-            return rows.AsList();
-        }
-
         public async Task<int?> GetUserRoleIdAsync(int userId)
         {
             using var connection = CreateConnection();

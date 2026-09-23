@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../design/app_dimensions.dart';
-import '../services/auth_service.dart';
 
 enum ScreenSize { small, large }
 
@@ -45,13 +44,7 @@ class LayoutState extends ChangeNotifier {
 
   void setPage(int index) {
     if (index == 1 && _selectedMasterSubItem.isEmpty) {
-      final user = AuthService.instance.currentUser;
-      final defaultItem = user?.isAdmin == true
-          ? 'Project Master'
-          : (user?.permittedModules.isNotEmpty == true
-              ? user!.permittedModules.first
-              : 'Project Master');
-      _selectedMasterSubItem = defaultItem;
+      _selectedMasterSubItem = 'Project Master';
     }
     if (index == 2 && _selectedTransactionSubItem.isEmpty) {
       _selectedTransactionSubItem = 'Bill of Material (BOM)';

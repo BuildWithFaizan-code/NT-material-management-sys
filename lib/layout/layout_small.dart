@@ -9,8 +9,6 @@ import '../pages/project_master_page.dart';
 
 import '../pages/placeholder_module_pages.dart';
 import '../pages/user_management_page.dart';
-import '../widgets/access_restricted_view.dart';
-import '../services/auth_service.dart';
 
 class SmallScreenLayout extends StatelessWidget {
   final LayoutState layoutState;
@@ -49,14 +47,7 @@ class SmallScreenLayout extends StatelessWidget {
       case 0:
         return const DashboardPage();
       case 1:
-        final user = AuthService.instance.currentUser;
-        if (user?.hasModuleAccess('Project Master') ?? false) {
-          return const ProjectMasterPage();
-        }
-        return AccessRestrictedView(
-          moduleName: 'Project Master',
-          onReturnHome: () => layoutState.setPage(0),
-        );
+        return const ProjectMasterPage();
       case 2:
         return const TransactionsPage();
       case 3:

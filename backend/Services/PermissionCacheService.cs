@@ -39,29 +39,11 @@ namespace MMSERP.Api.Services
             return permissions.Contains((moduleId, actionId));
         }
 
-        public async Task<List<string>> GetPermittedModulesByRoleAsync(int roleId)
-        {
-            var cacheKey = $"role_modules_{roleId}";
-
-            if (!_cache.TryGetValue<List<string>>(cacheKey, out var moduleNames) || moduleNames == null)
-            {
-                _logger.LogDebug("Cache miss for RoleId {RoleId} permitted modules. Loading from repository.", roleId);
-                moduleNames = await _repository.GetPermittedModuleNamesByRoleAsync(roleId);
-
-                _cache.Set(cacheKey, moduleNames, new MemoryCacheEntryOptions
-                {
-                    AbsoluteExpirationRelativeToNow = DefaultTtl
-                });
-            }
-
-            return moduleNames;
-        }
-
         public void InvalidateRole(int roleId)
         {
-            _cache.Remove($"role_perms_{roleId}");
-            _cache.Remove($"role_modules_{roleId}");
-            _logger.LogInformation("Invalidated permission and module cache for RoleId {RoleId}.", roleId);
+            var cacheKey = $"role_perms_{roleId}";
+            _cache.Remove(cacheKey);
+            _logger.LogInformation("Invalidated permission cache for RoleId {RoleId}.", roleId);
         }
 
         public async Task<int?> GetUserRoleIdAsync(int userId)

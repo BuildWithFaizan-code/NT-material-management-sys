@@ -12,24 +12,15 @@ namespace MMSERP.Api.Services
     public class AuthService : IAuthService
     {
         private readonly IAuthRepository _authRepository;
-        private readonly IRolePermissionRepository _roleRepository;
-        private readonly IPermissionCacheService _cacheService;
         private readonly ILogger<AuthService> _logger;
         private readonly byte[] _jwtKeyBytes;
         private const int AccessTokenLifetimeMinutes = 15;
         private const int RefreshTokenLifetimeDays = 7;
         private const int MfaChallengeLifetimeMinutes = 5;
 
-        public AuthService(
-            IAuthRepository authRepository,
-            IRolePermissionRepository roleRepository,
-            IPermissionCacheService cacheService,
-            IConfiguration configuration,
-            ILogger<AuthService> logger)
+        public AuthService(IAuthRepository authRepository, IConfiguration configuration, ILogger<AuthService> logger)
         {
             _authRepository = authRepository;
-            _roleRepository = roleRepository;
-            _cacheService = cacheService;
             _logger = logger;
 
             var jwtKey = Environment.GetEnvironmentVariable("JWT_SIGNING_KEY")
@@ -144,7 +135,7 @@ namespace MMSERP.Api.Services
             // Reset failed login count and update last login
             await _authRepository.UpdateLoginSuccessAsync(user.UserId);
 
-            var userInfo = await BuildUserInfoDtoAsync(user);
+            var userInfo = new UserInfoDto(user.UserId, user.Username, user.Email, user.IsAdmin);
 
             // MFA Check
             if (user.MfaEnabled && !string.IsNullOrWhiteSpace(user.MfaSecret))
@@ -290,7 +281,7 @@ namespace MMSERP.Api.Services
                 Detail = $"TokenId {storedToken.TokenId} rotated to {newTokenId}"
             });
 
-            var userInfo = await BuildUserInfoDtoAsync(user);
+            var userInfo = new UserInfoDto(user.UserId, user.Username, user.Email, user.IsAdmin);
 
             return ApiResponse<LoginResponse>.Ok(new LoginResponse(
                 AccessToken: newAccessToken,
@@ -553,7 +544,7 @@ namespace MMSERP.Api.Services
                 Detail = "MFA authentication completed"
             });
 
-            var userInfo = await BuildUserInfoDtoAsync(user);
+            var userInfo = new UserInfoDto(user.UserId, user.Username, user.Email, user.IsAdmin);
 
             return ApiResponse<LoginResponse>.Ok(new LoginResponse(
                 AccessToken: accessToken,
@@ -725,61 +716,6 @@ namespace MMSERP.Api.Services
             }
 
             return (true, string.Empty);
-        }
-
-        public async Task<ApiResponse<UserInfoDto>> GetCurrentUserAsync(int userId)
-        {
-            var user = await _authRepository.GetUserByIdAsync(userId);
-            if (user == null || !user.IsActive)
-            {
-                return ApiResponse<UserInfoDto>.Fail("User not found or inactive.");
-            }
-
-            var userInfo = await BuildUserInfoDtoAsync(user);
-            return ApiResponse<UserInfoDto>.Ok(userInfo, "User profile retrieved successfully.");
-        }
-
-        private async Task<UserInfoDto> BuildUserInfoDtoAsync(User user)
-        {
-            if (user.IsAdmin)
-            {
-                var allModules = await _roleRepository.GetAllModulesAsync();
-                var masterModules = allModules
-                    .Where(m => string.Equals(m.ModuleGroup, "Master", StringComparison.OrdinalIgnoreCase))
-                    .Select(m => m.ModuleName)
-                    .OrderBy(n => n)
-                    .ToList();
-
-                return new UserInfoDto(
-                    UserId: user.UserId,
-                    Username: user.Username,
-                    Email: user.Email,
-                    IsAdmin: true,
-                    RoleId: user.RoleId,
-                    RoleName: "System Administrator",
-                    PermittedModules: masterModules
-                );
-            }
-
-            string? roleName = null;
-            List<string> permittedModules = new();
-
-            if (user.RoleId.HasValue)
-            {
-                var role = await _roleRepository.GetRoleByIdAsync(user.RoleId.Value);
-                roleName = role?.RoleName;
-                permittedModules = await _cacheService.GetPermittedModulesByRoleAsync(user.RoleId.Value);
-            }
-
-            return new UserInfoDto(
-                UserId: user.UserId,
-                Username: user.Username,
-                Email: user.Email,
-                IsAdmin: false,
-                RoleId: user.RoleId,
-                RoleName: roleName ?? "Standard User",
-                PermittedModules: permittedModules
-            );
         }
 
         #endregion

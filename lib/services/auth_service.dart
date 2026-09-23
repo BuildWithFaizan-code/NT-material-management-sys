@@ -9,44 +9,20 @@ class UserInfo {
   final String username;
   final String email;
   final bool isAdmin;
-  final int? roleId;
-  final String? roleName;
-  final List<String> permittedModules;
 
   const UserInfo({
     required this.userId,
     required this.username,
     required this.email,
     required this.isAdmin,
-    this.roleId,
-    this.roleName,
-    this.permittedModules = const [],
   });
 
-  /// Checks if the user is authorized to access a given Master module.
-  /// Administrators have unrestricted bypass across all modules.
-  bool hasModuleAccess(String moduleTitle) {
-    if (isAdmin) return true;
-    return permittedModules.contains(moduleTitle);
-  }
-
   factory UserInfo.fromJson(Map<String, dynamic> json) {
-    final rawPerms = json['permittedModules'];
-    final List<String> perms = [];
-    if (rawPerms is List) {
-      for (final item in rawPerms) {
-        if (item != null) perms.add(item.toString());
-      }
-    }
-
     return UserInfo(
       userId: json['userId'] as int? ?? 0,
       username: json['username'] as String? ?? '',
       email: json['email'] as String? ?? '',
       isAdmin: json['isAdmin'] as bool? ?? false,
-      roleId: json['roleId'] as int?,
-      roleName: json['roleName'] as String?,
-      permittedModules: perms,
     );
   }
 }
@@ -107,7 +83,6 @@ class AuthService extends ChangeNotifier {
         final token = await TokenStorageService.instance.getAccessToken();
         if (token != null && token.isNotEmpty) {
           _isLoggedIn = true;
-          await fetchCurrentUser();
         }
       }
     } catch (_) {
@@ -116,23 +91,6 @@ class AuthService extends ChangeNotifier {
       _isInitialized = true;
       notifyListeners();
     }
-  }
-
-  /// Fetches the current authenticated user's profile and active permissions from /api/auth/me.
-  Future<UserInfo?> fetchCurrentUser() async {
-    try {
-      final response = await ApiClient.instance.get('$_authBaseUrl/me');
-      final body = ApiClient.instance.decodeResponse(response);
-      final success = body['success'] as bool? ?? false;
-      final data = body['data'] as Map<String, dynamic>?;
-
-      if (success && data != null) {
-        _currentUser = UserInfo.fromJson(data);
-        notifyListeners();
-        return _currentUser;
-      }
-    } catch (_) {}
-    return null;
   }
 
   /// Authenticates user with username & password.
