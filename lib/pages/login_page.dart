@@ -1733,6 +1733,40 @@ class _HeaderHoverActionButtonState extends State<_HeaderHoverActionButton>
   Widget build(BuildContext context) {
     return Tooltip(
       message: widget.tooltip,
+      waitDuration: const Duration(milliseconds: 100),
+      showDuration: const Duration(milliseconds: 2500),
+      verticalOffset: 28,
+      preferBelow: true,
+      decoration: ShapeDecoration(
+        color: Colors.white,
+        shadows: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.10),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+        shape: const _TooltipBubbleBorder(
+          arrowWidth: 12,
+          arrowHeight: 6,
+          borderRadius: 10,
+          borderColor: Color(0xFFE2E8F0),
+          borderWidth: 1.0,
+          arrowOnTop: true,
+        ),
+      ),
+      textStyle: GoogleFonts.poppins(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: const Color(0xFF1E293B),
+        letterSpacing: 0.2,
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
       child: MouseRegion(
         onEnter: _onEnter,
         onExit: _onExit,
@@ -1823,4 +1857,97 @@ class _HeaderHoverActionButtonState extends State<_HeaderHoverActionButton>
     );
   }
 }
+
+/// Elegant Speech Bubble ShapeBorder with a centered caret/notch pointer
+class _TooltipBubbleBorder extends ShapeBorder {
+  final double arrowWidth;
+  final double arrowHeight;
+  final double borderRadius;
+  final Color borderColor;
+  final double borderWidth;
+  final bool arrowOnTop;
+
+  const _TooltipBubbleBorder({
+    this.arrowWidth = 12.0,
+    this.arrowHeight = 6.0,
+    this.borderRadius = 10.0,
+    this.borderColor = const Color(0xFFE2E8F0),
+    this.borderWidth = 1.0,
+    this.arrowOnTop = true,
+  });
+
+  @override
+  EdgeInsetsGeometry get dimensions => EdgeInsets.only(
+        top: arrowOnTop ? arrowHeight : 0,
+        bottom: arrowOnTop ? 0 : arrowHeight,
+      );
+
+  @override
+  Path getInnerPath(Rect rect, {TextDirection? textDirection}) {
+    return getOuterPath(rect, textDirection: textDirection);
+  }
+
+  @override
+  Path getOuterPath(Rect rect, {TextDirection? textDirection}) {
+    final r = borderRadius;
+    final path = Path();
+    final arrowH = arrowHeight;
+    final arrowW = arrowWidth;
+    final midX = rect.center.dx;
+
+    if (arrowOnTop) {
+      final top = rect.top + arrowH;
+      path.moveTo(rect.left + r, top);
+      // Top edge with upward pointing arrow notch
+      path.lineTo(midX - arrowW / 2, top);
+      path.lineTo(midX, rect.top);
+      path.lineTo(midX + arrowW / 2, top);
+      path.lineTo(rect.right - r, top);
+      path.quadraticBezierTo(rect.right, top, rect.right, top + r);
+      // Right edge
+      path.lineTo(rect.right, rect.bottom - r);
+      path.quadraticBezierTo(rect.right, rect.bottom, rect.right - r, rect.bottom);
+      // Bottom edge
+      path.lineTo(rect.left + r, rect.bottom);
+      path.quadraticBezierTo(rect.left, rect.bottom, rect.left, rect.bottom - r);
+      // Left edge
+      path.lineTo(rect.left, top + r);
+      path.quadraticBezierTo(rect.left, top, rect.left + r, top);
+    } else {
+      final bottom = rect.bottom - arrowH;
+      path.moveTo(rect.left + r, rect.top);
+      // Top edge
+      path.lineTo(rect.right - r, rect.top);
+      path.quadraticBezierTo(rect.right, rect.top, rect.right, rect.top + r);
+      // Right edge
+      path.lineTo(rect.right, bottom - r);
+      path.quadraticBezierTo(rect.right, bottom, rect.right - r, bottom);
+      // Bottom edge with downward pointing arrow notch
+      path.lineTo(midX + arrowW / 2, bottom);
+      path.lineTo(midX, rect.bottom);
+      path.lineTo(midX - arrowW / 2, bottom);
+      path.lineTo(rect.left + r, bottom);
+      path.quadraticBezierTo(rect.left, bottom, rect.left, bottom - r);
+      // Left edge
+      path.lineTo(rect.left, rect.top + r);
+      path.quadraticBezierTo(rect.left, rect.top, rect.left + r, rect.top);
+    }
+    path.close();
+    return path;
+  }
+
+  @override
+  void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {
+    if (borderWidth <= 0) return;
+    final paint = Paint()
+      ..color = borderColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = borderWidth;
+    canvas.drawPath(getOuterPath(rect, textDirection: textDirection), paint);
+  }
+
+  @override
+  ShapeBorder scale(double t) => this;
+}
+
 
