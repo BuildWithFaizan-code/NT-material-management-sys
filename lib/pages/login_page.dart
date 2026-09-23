@@ -496,144 +496,69 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  /// AI Button: Curvy round shape circle with AI logo and distinct "AI" mark written on it
+  /// AI Button: Pink robot with hover animation and AI badge mark
   Widget _buildAiButton(BuildContext context) {
-    return Tooltip(
-      message: 'NewTech AI Assistant',
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _showAiAssistantDialog(context),
-          borderRadius: BorderRadius.circular(24),
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white,
-              border: Border.all(
-                color: const Color(0xFF1D5CFF).withValues(alpha: 0.35),
-                width: 1.2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF1D5CFF).withValues(alpha: 0.10),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+    return _HeaderHoverActionButton(
+      tooltip: 'NewTech AI Assistant',
+      icon: Icons.smart_toy_rounded,
+      primaryColor: const Color(0xFFEC4899),
+      darkIconColor: const Color(0xFFDB2777),
+      lightBgColor: const Color(0xFFFDF2F8),
+      borderColor: const Color(0xFFFBCFE8),
+      animType: _HoverAnimType.robotWiggle,
+      onTap: () => _showAiAssistantDialog(context),
+      badge: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEC4899),
+          borderRadius: BorderRadius.circular(5),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFEC4899).withValues(alpha: 0.4),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
             ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                const Icon(
-                  Icons.auto_awesome_rounded,
-                  color: Color(0xFF1D5CFF),
-                  size: 20,
-                ),
-                // Prominent "AI" text mark written directly on the button
-                Positioned(
-                  top: 3,
-                  right: 3,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 3.5, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1D5CFF),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      'AI',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 7.5,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.4,
-                        height: 1.0,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          ],
+        ),
+        child: const Text(
+          'AI',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 7.5,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.4,
+            height: 1.0,
           ),
         ),
       ),
     );
   }
 
-  /// Customer Care Button: Curvy round shape circle with customer care headset icon
+  /// Customer Care Button: Yellow/Amber support agent headset with attentive nodding hover animation
   Widget _buildCustomerCareButton(BuildContext context) {
-    return Tooltip(
-      message: 'Customer Care & Support',
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _showCustomerCareDialog(context),
-          borderRadius: BorderRadius.circular(24),
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white,
-              border: Border.all(
-                color: const Color(0xFFE2E8F0),
-                width: 1.2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF0F172A).withValues(alpha: 0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.support_agent_rounded,
-              color: Color(0xFF475569),
-              size: 22,
-            ),
-          ),
-        ),
-      ),
+    return _HeaderHoverActionButton(
+      tooltip: 'Customer Care & Support',
+      icon: Icons.support_agent_rounded,
+      primaryColor: const Color(0xFFF59E0B),
+      darkIconColor: const Color(0xFFD97706),
+      lightBgColor: const Color(0xFFFEFCE8),
+      borderColor: const Color(0xFFFDE68A),
+      animType: _HoverAnimType.headsetNod,
+      onTap: () => _showCustomerCareDialog(context),
     );
   }
 
-  /// About App Button: Curvy round shape circle with about/info icon
+  /// About App Button: Green solid badge logo with dynamic tilt hover animation
   Widget _buildAboutAppButton(BuildContext context) {
-    return Tooltip(
-      message: 'About NewTech MMS',
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _showAboutAppDialog(context),
-          borderRadius: BorderRadius.circular(24),
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white,
-              border: Border.all(
-                color: const Color(0xFFE2E8F0),
-                width: 1.2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF0F172A).withValues(alpha: 0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.info_outline_rounded,
-              color: Color(0xFF475569),
-              size: 21,
-            ),
-          ),
-        ),
-      ),
+    return _HeaderHoverActionButton(
+      tooltip: 'About NewTech MMS',
+      icon: Icons.info_rounded,
+      primaryColor: const Color(0xFF10B981),
+      darkIconColor: const Color(0xFF059669),
+      lightBgColor: const Color(0xFFECFDF5),
+      borderColor: const Color(0xFFA7F3D0),
+      animType: _HoverAnimType.badgeTilt,
+      onTap: () => _showAboutAppDialog(context),
     );
   }
 
@@ -647,10 +572,10 @@ class _LoginPageState extends State<LoginPage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
+                color: const Color(0xFFFDF2F8),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF1D5CFF), size: 22),
+              child: const Icon(Icons.smart_toy_rounded, color: Color(0xFFEC4899), size: 22),
             ),
             const SizedBox(width: 12),
             Text(
@@ -678,7 +603,7 @@ class _LoginPageState extends State<LoginPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Close', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: const Color(0xFF1D5CFF))),
+            child: Text('Close', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: const Color(0xFFEC4899))),
           ),
         ],
       ),
@@ -689,7 +614,7 @@ class _LoginPageState extends State<LoginPage> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18, color: const Color(0xFF1D5CFF)),
+        Icon(icon, size: 18, color: const Color(0xFFEC4899)),
         const SizedBox(width: 10),
         Expanded(
           child: Column(
@@ -714,10 +639,10 @@ class _LoginPageState extends State<LoginPage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFF0FDF4),
+                color: const Color(0xFFFEFCE8),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.support_agent_rounded, color: Color(0xFF16A34A), size: 22),
+              child: const Icon(Icons.support_agent_rounded, color: Color(0xFFD97706), size: 22),
             ),
             const SizedBox(width: 12),
             Text(
@@ -745,7 +670,7 @@ class _LoginPageState extends State<LoginPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Close', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: const Color(0xFF16A34A))),
+            child: Text('Close', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: const Color(0xFFD97706))),
           ),
         ],
       ),
@@ -778,10 +703,10 @@ class _LoginPageState extends State<LoginPage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF7ED),
+                color: const Color(0xFFECFDF5),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.info_outline_rounded, color: Color(0xFFFF6400), size: 22),
+              child: const Icon(Icons.info_rounded, color: Color(0xFF059669), size: 22),
             ),
             const SizedBox(width: 12),
             Text(
@@ -818,7 +743,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.shield_outlined, size: 16, color: Color(0xFF2563EB)),
+                  const Icon(Icons.shield_outlined, size: 16, color: Color(0xFF10B981)),
                   const SizedBox(width: 8),
                   Text(
                     '256-bit AES Encrypted • MFA Enforced',
@@ -832,7 +757,7 @@ class _LoginPageState extends State<LoginPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Close', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: const Color(0xFFFF6400))),
+            child: Text('Close', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: const Color(0xFF059669))),
           ),
         ],
       ),
@@ -1679,6 +1604,180 @@ class _Paced3DLottieModelState extends State<_Paced3DLottieModel>
           frameRate: FrameRate.max,
           options: LottieOptions(enableMergePaths: true),
           filterQuality: FilterQuality.medium,
+        ),
+      ),
+    );
+  }
+}
+
+enum _HoverAnimType {
+  robotWiggle,
+  headsetNod,
+  badgeTilt,
+}
+
+/// Interactive Header Action Bubble with hover transitions and custom icon animations
+class _HeaderHoverActionButton extends StatefulWidget {
+  final String tooltip;
+  final IconData icon;
+  final Color primaryColor;
+  final Color darkIconColor;
+  final Color lightBgColor;
+  final Color borderColor;
+  final Widget? badge;
+  final _HoverAnimType animType;
+  final VoidCallback onTap;
+
+  const _HeaderHoverActionButton({
+    required this.tooltip,
+    required this.icon,
+    required this.primaryColor,
+    required this.darkIconColor,
+    required this.lightBgColor,
+    required this.borderColor,
+    this.badge,
+    required this.animType,
+    required this.onTap,
+  });
+
+  @override
+  State<_HeaderHoverActionButton> createState() => _HeaderHoverActionButtonState();
+}
+
+class _HeaderHoverActionButtonState extends State<_HeaderHoverActionButton>
+    with SingleTickerProviderStateMixin {
+  bool _isHovered = false;
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 650),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onEnter(dynamic _) {
+    setState(() => _isHovered = true);
+    _controller.repeat(reverse: true);
+  }
+
+  void _onExit(dynamic _) {
+    setState(() => _isHovered = false);
+    _controller.stop();
+    _controller.animateTo(0.0, duration: const Duration(milliseconds: 180));
+  }
+
+  Widget _buildAnimatedIcon() {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        if (!_isHovered) return child!;
+        switch (widget.animType) {
+          case _HoverAnimType.robotWiggle:
+            // Lively robot head wiggle + cute bounce
+            final angle = (_controller.value - 0.5) * 0.38;
+            final offsetY = -2.5 * _controller.value;
+            return Transform.translate(
+              offset: Offset(0, offsetY),
+              child: Transform.rotate(
+                angle: angle,
+                child: child,
+              ),
+            );
+          case _HoverAnimType.headsetNod:
+            // Attentive support agent nod & slight pulse
+            final offsetY = (_controller.value - 0.5) * 3.5;
+            final scale = 1.0 + (_controller.value * 0.08);
+            return Transform.translate(
+              offset: Offset(0, offsetY),
+              child: Transform.scale(
+                scale: scale,
+                child: child,
+              ),
+            );
+          case _HoverAnimType.badgeTilt:
+            // Dynamic badge tilt & scale
+            final angle = (_controller.value - 0.5) * 0.40;
+            final scale = 1.0 + (_controller.value * 0.10);
+            return Transform.rotate(
+              angle: angle,
+              child: Transform.scale(
+                scale: scale,
+                child: child,
+              ),
+            );
+        }
+      },
+      child: Icon(
+        widget.icon,
+        color: _isHovered ? widget.darkIconColor : widget.darkIconColor.withValues(alpha: 0.88),
+        size: 21,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: widget.tooltip,
+      child: MouseRegion(
+        onEnter: _onEnter,
+        onExit: _onExit,
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: AnimatedScale(
+            scale: _isHovered ? 1.12 : 1.0,
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutBack,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _isHovered ? widget.lightBgColor : Colors.white,
+                border: Border.all(
+                  color: _isHovered ? widget.primaryColor : widget.borderColor,
+                  width: _isHovered ? 1.8 : 1.2,
+                ),
+                boxShadow: [
+                  if (_isHovered)
+                    BoxShadow(
+                      color: widget.primaryColor.withValues(alpha: 0.38),
+                      blurRadius: 14,
+                      offset: const Offset(0, 4),
+                    )
+                  else
+                    BoxShadow(
+                      color: widget.primaryColor.withValues(alpha: 0.08),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                ],
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  _buildAnimatedIcon(),
+                  if (widget.badge != null)
+                    Positioned(
+                      top: 2,
+                      right: 2,
+                      child: widget.badge!,
+                    ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
