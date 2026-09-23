@@ -268,124 +268,171 @@ class _LoginPageState extends State<LoginPage> {
 
         // Split Screen Dividing Line
         // Right Pane: Dedicated Full-Height Modern Sidebar with Glassmorphism
-        SizedBox(
-          width: 480,
-          height: constraints.maxHeight,
-          child: Stack(
-            children: [
-              // Ambient Luminous Gradient Orbs for Authentic Glass Refraction
-              Positioned(
-                top: -40,
-                right: -30,
-                child: Container(
-                  width: 250,
-                  height: 250,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        const Color(0xFF3B82F6).withValues(alpha: 0.18),
-                        const Color(0xFF60A5FA).withValues(alpha: 0.0),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 30,
-                left: -40,
-                child: Container(
-                  width: 240,
-                  height: 240,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        const Color(0xFF06B6D4).withValues(alpha: 0.14),
-                        const Color(0xFF38BDF8).withValues(alpha: 0.0),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                top: constraints.maxHeight * 0.45,
-                right: 30,
-                child: Container(
-                  width: 200,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        const Color(0xFF818CF8).withValues(alpha: 0.12),
-                        const Color(0xFFA5B4FC).withValues(alpha: 0.0),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-              // Frosted Glass Layer
-              ClipRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
-                  child: Container(
-                    width: 480,
+        Builder(
+          builder: (context) {
+            final rightPaneWidth = (constraints.maxWidth * 0.40).clamp(520.0, 580.0);
+            return SizedBox(
+              width: rightPaneWidth,
+              height: constraints.maxHeight,
+              child: Stack(
+                children: [
+                  // Ambient modern tinted base mesh gradient
+                  Container(
+                    width: rightPaneWidth,
                     height: constraints.maxHeight,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.68),
-                      border: const Border(
-                        left: BorderSide(
-                          color: Color(0xFFE2E8F0),
-                          width: 1.2,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Color(0xFFF1F5F9),
+                          Color(0xFFE2E8F0),
+                          Color(0xFFEDE9FE),
+                          Color(0xFFE0F2FE),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                  ),
+
+                  // Ambient Luminous Gradient Orbs for Authentic Glass Refraction
+                  Positioned(
+                    top: -50,
+                    right: -40,
+                    child: Container(
+                      width: 320,
+                      height: 320,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            const Color(0xFF3B82F6).withValues(alpha: 0.38),
+                            const Color(0xFF60A5FA).withValues(alpha: 0.0),
+                          ],
                         ),
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF0F172A).withValues(alpha: 0.03),
-                          blurRadius: 20,
-                          offset: const Offset(-4, 0),
-                        ),
-                      ],
                     ),
-                    child: Center(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 44, vertical: 36),
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 410),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 34, vertical: 36),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(
-                                color: const Color(0xFFE2E8F0),
-                                width: 1.2,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF0F172A).withValues(alpha: 0.06),
-                                  blurRadius: 28,
-                                  offset: const Offset(0, 10),
-                                ),
-                                BoxShadow(
-                                  color: AppColors.brandBlue.withValues(alpha: 0.04),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
+                  ),
+                  Positioned(
+                    bottom: -40,
+                    left: -30,
+                    child: Container(
+                      width: 300,
+                      height: 300,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            const Color(0xFF06B6D4).withValues(alpha: 0.32),
+                            const Color(0xFF38BDF8).withValues(alpha: 0.0),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: constraints.maxHeight * 0.42,
+                    right: 20,
+                    child: Container(
+                      width: 260,
+                      height: 260,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            const Color(0xFF818CF8).withValues(alpha: 0.28),
+                            const Color(0xFFA5B4FC).withValues(alpha: 0.0),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: constraints.maxHeight * 0.18,
+                    left: 10,
+                    child: Container(
+                      width: 220,
+                      height: 220,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            const Color(0xFFF472B6).withValues(alpha: 0.22),
+                            const Color(0xFFF43F5E).withValues(alpha: 0.0),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Frosted Glass Layer with BackdropFilter
+                  ClipRect(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+                      child: Container(
+                        width: rightPaneWidth,
+                        height: constraints.maxHeight,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Colors.white.withValues(alpha: 0.65),
+                              Colors.white.withValues(alpha: 0.42),
+                            ],
+                          ),
+                          border: Border(
+                            left: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.85),
+                              width: 1.5,
                             ),
-                            child: _buildContent(),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+                              blurRadius: 28,
+                              offset: const Offset(-5, 0),
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 36),
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 470),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 42, vertical: 46),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(28),
+                                  border: Border.all(
+                                    color: const Color(0xFFE2E8F0),
+                                    width: 1.2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF0F172A).withValues(alpha: 0.08),
+                                      blurRadius: 36,
+                                      offset: const Offset(0, 14),
+                                    ),
+                                    BoxShadow(
+                                      color: AppColors.brandBlue.withValues(alpha: 0.05),
+                                      blurRadius: 16,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: _buildContent(),
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
       ],
     );
@@ -433,26 +480,26 @@ class _LoginPageState extends State<LoginPage> {
           // Centered Form Card
           Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 430),
+              constraints: const BoxConstraints(maxWidth: 460),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 38),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(28),
                   border: Border.all(
                     color: const Color(0xFFE2E8F0),
                     width: 1.2,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF0F172A).withValues(alpha: 0.06),
-                      blurRadius: 24,
-                      offset: const Offset(0, 8),
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.07),
+                      blurRadius: 28,
+                      offset: const Offset(0, 10),
                     ),
                     BoxShadow(
-                      color: AppColors.brandBlue.withValues(alpha: 0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
+                      color: AppColors.brandBlue.withValues(alpha: 0.04),
+                      blurRadius: 14,
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
@@ -898,27 +945,28 @@ class _LoginPageState extends State<LoginPage> {
           Text(
             'Welcome Back',
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 24,
+              fontSize: 27,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF0F172A),
-              letterSpacing: -0.4,
+              letterSpacing: -0.5,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 10),
           Text(
             'Sign in to continue to your workspace.',
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 13.5,
+              fontSize: 14,
               fontWeight: FontWeight.w400,
               color: const Color(0xFF64748B),
+              height: 1.35,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
 
           // Error Message Banner
           if (_errorMessage != null) ...[
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: AppColors.errorLight,
                 borderRadius: BorderRadius.circular(AppDimensions.borderRadiusMd),
@@ -941,24 +989,24 @@ class _LoginPageState extends State<LoginPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 22),
           ],
 
           // Username Field
           Text(
             'Username or Email',
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 13,
+              fontSize: 13.5,
               fontWeight: FontWeight.w600,
               color: const Color(0xFF334155),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           TextFormField(
             controller: _usernameController,
             textInputAction: TextInputAction.next,
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 14,
+              fontSize: 14.5,
               color: const Color(0xFF0F172A),
               fontWeight: FontWeight.w500,
             ),
@@ -970,25 +1018,25 @@ class _LoginPageState extends State<LoginPage> {
               ),
               filled: true,
               fillColor: const Color(0xFFF8FAFC),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 borderSide: const BorderSide(color: AppColors.brandBlue, width: 1.8),
               ),
               errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 borderSide: const BorderSide(color: AppColors.error, width: 1.2),
               ),
               focusedErrorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 borderSide: const BorderSide(color: AppColors.error, width: 1.8),
               ),
             ),
@@ -997,25 +1045,25 @@ class _LoginPageState extends State<LoginPage> {
               return null;
             },
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 26),
 
           // Password Field
           Text(
             'Password',
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 13,
+              fontSize: 13.5,
               fontWeight: FontWeight.w600,
               color: const Color(0xFF334155),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           TextFormField(
             controller: _passwordController,
             obscureText: _obscurePassword,
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _handleLogin(),
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 14,
+              fontSize: 14.5,
               color: const Color(0xFF0F172A),
               fontWeight: FontWeight.w500,
             ),
@@ -1036,25 +1084,25 @@ class _LoginPageState extends State<LoginPage> {
               ),
               filled: true,
               fillColor: const Color(0xFFF8FAFC),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 borderSide: const BorderSide(color: AppColors.brandBlue, width: 1.8),
               ),
               errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 borderSide: const BorderSide(color: AppColors.error, width: 1.2),
               ),
               focusedErrorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 borderSide: const BorderSide(color: AppColors.error, width: 1.8),
               ),
             ),
@@ -1063,7 +1111,7 @@ class _LoginPageState extends State<LoginPage> {
               return null;
             },
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 20),
 
           // Remember Me Checkbox
           InkWell(
@@ -1075,8 +1123,8 @@ class _LoginPageState extends State<LoginPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   SizedBox(
-                    width: 18,
-                    height: 18,
+                    width: 19,
+                    height: 19,
                     child: Checkbox(
                       value: _rememberMe,
                       onChanged: (val) => setState(() => _rememberMe = val ?? false),
@@ -1088,11 +1136,11 @@ class _LoginPageState extends State<LoginPage> {
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 9),
                   Text(
                     'Remember device',
                     style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12.5,
+                      fontSize: 13,
                       fontWeight: FontWeight.w500,
                       color: const Color(0xFF64748B),
                     ),
@@ -1101,7 +1149,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
 
           // Action Buttons: Clear & Sign In
           Row(
@@ -1110,7 +1158,7 @@ class _LoginPageState extends State<LoginPage> {
               Expanded(
                 flex: 2,
                 child: SizedBox(
-                  height: 44,
+                  height: 48,
                   child: OutlinedButton(
                     onPressed: _isLoading
                         ? null
@@ -1127,23 +1175,23 @@ class _LoginPageState extends State<LoginPage> {
                       backgroundColor: const Color(0xFFF8FAFC),
                       side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Icon(
                           Icons.refresh_rounded,
-                          size: 16,
+                          size: 17,
                           color: Color(0xFF64748B),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 7),
                         Text(
                           'Clear',
                           style: GoogleFonts.plusJakartaSans(
-                            fontSize: 13,
+                            fontSize: 13.5,
                             fontWeight: FontWeight.w600,
                             color: const Color(0xFF475569),
                           ),
@@ -1153,12 +1201,12 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               // Sign In Button
               Expanded(
                 flex: 3,
                 child: SizedBox(
-                  height: 44,
+                  height: 48,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: _isLoading
@@ -1169,21 +1217,21 @@ class _LoginPageState extends State<LoginPage> {
                               end: Alignment.bottomRight,
                             ),
                       color: _isLoading ? const Color(0xFF93C5FD) : null,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
                       boxShadow: _isLoading
                           ? []
                           : [
                               BoxShadow(
-                                color: const Color(0xFF2563EB).withValues(alpha: 0.3),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
+                                color: const Color(0xFF2563EB).withValues(alpha: 0.32),
+                                blurRadius: 14,
+                                offset: const Offset(0, 5),
                               ),
                             ],
                     ),
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(14),
                         onTap: _isLoading ? null : _handleLogin,
                         child: Center(
                           child: _isLoading
@@ -1201,16 +1249,16 @@ class _LoginPageState extends State<LoginPage> {
                                     Text(
                                       'Sign In',
                                       style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 13.5,
+                                        fontSize: 14,
                                         fontWeight: FontWeight.w600,
                                         color: Colors.white,
                                         letterSpacing: 0.2,
                                       ),
                                     ),
-                                    const SizedBox(width: 6),
+                                    const SizedBox(width: 7),
                                     const Icon(
                                       Icons.arrow_forward_rounded,
-                                      size: 16,
+                                      size: 17,
                                       color: Colors.white,
                                     ),
                                   ],
@@ -1223,7 +1271,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 28),
 
           // Security Trust Footer
           Row(
@@ -1231,14 +1279,14 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               const Icon(
                 Icons.lock_rounded,
-                size: 13,
+                size: 14,
                 color: Color(0xFF94A3B8),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 7),
               Text(
                 '256-bit TLS Encrypted Session',
                 style: GoogleFonts.plusJakartaSans(
-                  fontSize: 11.5,
+                  fontSize: 12,
                   fontWeight: FontWeight.w500,
                   color: const Color(0xFF94A3B8),
                 ),
