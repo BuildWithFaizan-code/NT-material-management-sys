@@ -30,6 +30,8 @@ import '../pages/transactions/transaction_placeholder_page.dart';
 import '../pages/user_management_page.dart';
 
 import 'widgets/modern_collapsed_rail.dart';
+import '../widgets/access_restricted_view.dart';
+import '../services/auth_service.dart';
 
 class LargeScreenLayout extends StatelessWidget {
   final LayoutState layoutState;
@@ -95,7 +97,19 @@ class LargeScreenLayout extends StatelessWidget {
                   currentIndex: layoutState.currentPageIndex,
                   onItemSelected: (idx) {
                     if (idx == 1) {
-                      layoutState.setMasterSubItem('Project Master');
+                      final user = AuthService.instance.currentUser;
+                      final isAllowedCurrent = layoutState.selectedMasterSubItem.isNotEmpty &&
+                          (user?.hasModuleAccess(layoutState.selectedMasterSubItem) ?? false);
+                      if (!isAllowedCurrent) {
+                        final defaultItem = user?.isAdmin == true
+                            ? 'Project Master'
+                            : (user?.permittedModules.isNotEmpty == true
+                                ? user!.permittedModules.first
+                                : 'Project Master');
+                        layoutState.setMasterSubItem(defaultItem);
+                      } else {
+                        layoutState.setPage(1);
+                      }
                     } else if (idx == 2) {
                       layoutState.setTransactionSubItem(
                         layoutState.selectedTransactionSubItem.isNotEmpty
@@ -451,7 +465,19 @@ class LargeScreenLayout extends StatelessWidget {
   }
 
   Widget _buildMasterPage() {
-    final sub = layoutState.selectedMasterSubItem;
+    final sub = layoutState.selectedMasterSubItem.isNotEmpty
+        ? layoutState.selectedMasterSubItem
+        : 'Project Master';
+
+    final user = AuthService.instance.currentUser;
+    final bool hasAccess = user?.hasModuleAccess(sub) ?? false;
+    if (!hasAccess) {
+      return AccessRestrictedView(
+        moduleName: sub,
+        onReturnHome: () => layoutState.setPage(0),
+      );
+    }
+
     if (sub == 'Location Master') return const LocationMasterPage();
     if (sub == 'Store Master') return const StoreMasterPage();
     if (sub == 'Operator Master') return const OperatorMasterPage();

@@ -10,7 +10,10 @@ namespace MMSERP.Api.Models
         int UserId,
         string Username,
         string Email,
-        bool IsAdmin
+        bool IsAdmin,
+        int? RoleId = null,
+        string? RoleName = null,
+        List<string>? PermittedModules = null
     );
 
     public record LoginResponse(

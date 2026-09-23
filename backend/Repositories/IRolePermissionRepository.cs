@@ -9,6 +9,7 @@ namespace MMSERP.Api.Repositories
         Task<ActionItem?> GetActionByHttpVerbAsync(string verb);
         Task<IEnumerable<ActionItem>> GetAllActionsAsync();
         Task<HashSet<(int ModuleId, int ActionId)>> GetRolePermissionsAsync(int roleId);
+        Task<List<string>> GetPermittedModuleNamesByRoleAsync(int roleId);
         Task<int?> GetUserRoleIdAsync(int userId);
         Task<IEnumerable<Role>> GetRolesAsync();
         Task<Role?> GetRoleByIdAsync(int roleId);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'expandable_nav_accordion.dart';
+import '../../services/auth_service.dart';
 
 /// Data class representing a Master sub-navigation section.
 class MasterSubSection {
@@ -56,32 +57,49 @@ class MasterNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ExpandableNavAccordion(
-      icon: Icons.inventory_2_outlined,
-      title: 'Master',
-      isSelected: isMasterSelected,
-      onHeaderTap: onMasterHeaderTap,
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: masterSubSections.map((sub) {
-          if (sub.isSkuGroup) {
-            return _SkuMasterNestedGroup(
-              subSection: sub,
-              activeSubItem: activeSubItem,
-              onSubItemSelected: onSubItemSelected,
-            );
-          }
+    return ListenableBuilder(
+      listenable: AuthService.instance,
+      builder: (context, _) {
+        final currentUser = AuthService.instance.currentUser;
+        final bool isAdmin = currentUser?.isAdmin ?? false;
+        final List<MasterSubSection> visibleSections = isAdmin
+            ? masterSubSections
+            : masterSubSections
+                .where((sub) => currentUser?.hasModuleAccess(sub.title) ?? false)
+                .toList();
 
-          final bool isSubSelected = activeSubItem == sub.title;
-          return NavSubItemTile(
-            icon: sub.icon,
-            title: sub.title,
-            isSelected: isSubSelected,
-            onTap: () => onSubItemSelected(sub.title),
-          );
-        }).toList(),
-      ),
+        if (visibleSections.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return ExpandableNavAccordion(
+          icon: Icons.inventory_2_outlined,
+          title: 'Master',
+          isSelected: isMasterSelected,
+          onHeaderTap: onMasterHeaderTap,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: visibleSections.map((sub) {
+              if (sub.isSkuGroup) {
+                return _SkuMasterNestedGroup(
+                  subSection: sub,
+                  activeSubItem: activeSubItem,
+                  onSubItemSelected: onSubItemSelected,
+                );
+              }
+
+              final bool isSubSelected = activeSubItem == sub.title;
+              return NavSubItemTile(
+                icon: sub.icon,
+                title: sub.title,
+                isSelected: isSubSelected,
+                onTap: () => onSubItemSelected(sub.title),
+              );
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 }
