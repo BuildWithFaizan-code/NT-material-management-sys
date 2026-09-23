@@ -218,30 +218,30 @@ class _LoginPageState extends State<LoginPage> {
       children: [
         // Left Pane: 3D Model & Brand Header
         Expanded(
-          flex: 5,
+          flex: 11,
           child: Container(
             color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 36),
+            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Top Brand Header: Logo Badge + "NewTech" (Sharp, No subtitle, on left)
-                _buildBrandHeader(center: false),
-                const SizedBox(height: 16),
+                // Top Brand Header: Logo Badge + "NewTech" (Centered with model)
+                _buildBrandHeader(center: true),
+                const SizedBox(height: 12),
 
-                // 3D Lottie Animation: Big, Centered, High Performance & Paced Cycle
+                // 3D Lottie Animation: Bigger, Centered, High Performance & Paced Cycle
                 Expanded(
                   child: Center(
                     child: RepaintBoundary(
                       child: _Paced3DLottieModel(
-                        maxWidth: 620,
-                        maxHeight: constraints.maxHeight * 0.64,
+                        maxWidth: 720,
+                        maxHeight: constraints.maxHeight * 0.76,
                       ),
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 // Left Pane Footer Badges
                 Center(child: _buildLeftPaneFooter()),
               ],
@@ -249,13 +249,23 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
 
-        // Right Pane: Modern Form Box with Fields
+        // Clean Split Screen Center Dividing Line
+        Container(
+          width: 1.2,
+          height: constraints.maxHeight * 0.88,
+          decoration: BoxDecoration(
+            color: const Color(0xFFE2E8F0),
+            borderRadius: BorderRadius.circular(1),
+          ),
+        ),
+
+        // Right Pane: Modern Form Box with Fields (Pushed a bit to the right)
         Expanded(
-          flex: 5,
+          flex: 10,
           child: Container(
             color: Colors.white,
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+            alignment: const Alignment(0.25, 0.0), // push a little bit to the right
+            padding: const EdgeInsets.only(left: 48, right: 64, top: 24, bottom: 24),
             child: SingleChildScrollView(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 440),
@@ -347,53 +357,60 @@ class _LoginPageState extends State<LoginPage> {
       mainAxisAlignment: center ? MainAxisAlignment.center : MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Brand Gold Medal Badge Logo with Long X-Forming Ribbon (properly aligned with text)
-        Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: Image.asset(
-            'assets/images/newtech_logo_badge.png',
-            height: 52,
-            fit: BoxFit.contain,
-            filterQuality: FilterQuality.high,
-          ),
+        // Brand Gold Medal Badge Logo with Long X-Forming Ribbon
+        Image.asset(
+          'assets/images/newtech_logo_badge.png',
+          height: 60,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
         ),
         const SizedBox(width: 14),
-        // Sharp Modern "NewTech" Italic Typography
+        // Sharp "NewTech" Italic Typography with Specifically Enlarged 'N' and 'T'
         RichText(
           text: TextSpan(
             children: [
+              // Large Sharp 'N'
               TextSpan(
-                text: 'New',
-                style: GoogleFonts.chakraPetch(
-                  fontSize: 44,
-                  fontWeight: FontWeight.w700,
+                text: 'N',
+                style: GoogleFonts.kanit(
+                  fontSize: 52,
+                  fontWeight: FontWeight.w900,
+                  fontStyle: FontStyle.italic,
+                  color: const Color(0xFF1D5CFF),
+                  letterSpacing: -1.0,
+                ),
+              ),
+              // Sharp 'ew'
+              TextSpan(
+                text: 'ew',
+                style: GoogleFonts.kanit(
+                  fontSize: 38,
+                  fontWeight: FontWeight.w800,
                   fontStyle: FontStyle.italic,
                   color: const Color(0xFF1D5CFF),
                   letterSpacing: -0.5,
-                  shadows: [
-                    Shadow(
-                      color: const Color(0xFF1D5CFF).withValues(alpha: 0.15),
-                      blurRadius: 14,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
                 ),
               ),
+              // Large Sharp 'T'
               TextSpan(
-                text: 'Tech',
-                style: GoogleFonts.chakraPetch(
-                  fontSize: 44,
-                  fontWeight: FontWeight.w700,
+                text: 'T',
+                style: GoogleFonts.kanit(
+                  fontSize: 52,
+                  fontWeight: FontWeight.w900,
                   fontStyle: FontStyle.italic,
-                  color: const Color(0xFFFF5500),
+                  color: const Color(0xFFFF6400),
+                  letterSpacing: -1.0,
+                ),
+              ),
+              // Sharp 'ech'
+              TextSpan(
+                text: 'ech',
+                style: GoogleFonts.kanit(
+                  fontSize: 38,
+                  fontWeight: FontWeight.w800,
+                  fontStyle: FontStyle.italic,
+                  color: const Color(0xFFFF6400),
                   letterSpacing: -0.5,
-                  shadows: [
-                    Shadow(
-                      color: const Color(0xFFFF5500).withValues(alpha: 0.15),
-                      blurRadius: 14,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
                 ),
               ),
             ],
