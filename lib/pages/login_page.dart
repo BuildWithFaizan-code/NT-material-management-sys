@@ -1150,12 +1150,6 @@ class _CloudyFluidWavePainter extends CustomPainter {
     linePath.cubicTo(w * 0.88, h * 0.18, w * 0.12, h * 0.44, w * 0.78, h * 0.7);
     linePath.cubicTo(w * 0.92, h * 0.84, w * 0.22, h * 0.94, w * 0.45, h);
     canvas.drawPath(linePath, strokePaint);
-
-    // Subtle luminous droplet accents along the wave curve
-    final dotPaint = Paint()..color = const Color(0xFF38BDF8).withValues(alpha: 0.65);
-    canvas.drawCircle(Offset(w * 0.74, h * 0.21), 3.4, dotPaint);
-    canvas.drawCircle(Offset(w * 0.24, h * 0.46), 2.8, dotPaint);
-    canvas.drawCircle(Offset(w * 0.69, h * 0.73), 3.6, dotPaint);
   }
 
   @override
