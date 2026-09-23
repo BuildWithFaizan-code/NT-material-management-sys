@@ -216,18 +216,17 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildDualPanelLayout(BoxConstraints constraints) {
     return Row(
       children: [
-        // Left Pane: Centered Brand & 3D Model Showcase
+        // Left Pane: Shifted to Left Corner Brand Header & Centered 3D Model Showcase
         Expanded(
           child: Container(
             color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 36),
+            padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 32),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top Brand Header: Logo Badge + "NewTech" (Fully centered)
-                _buildBrandHeader(center: true),
-                const SizedBox(height: 16),
+                // Top Brand Header shifted to Left Corner with Subtext (No logo badge)
+                _buildBrandHeader(center: false),
+                const SizedBox(height: 12),
 
                 // 3D Lottie Animation: Big, Perfectly Centered
                 Expanded(
@@ -235,13 +234,13 @@ class _LoginPageState extends State<LoginPage> {
                     child: RepaintBoundary(
                       child: _Paced3DLottieModel(
                         maxWidth: 740,
-                        maxHeight: constraints.maxHeight * 0.76,
+                        maxHeight: constraints.maxHeight * 0.74,
                       ),
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 // Left Pane Footer Badges (Centered)
                 Center(child: _buildLeftPaneFooter()),
               ],
@@ -270,37 +269,59 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ],
           ),
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 44, vertical: 48),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 390),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 36),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: AppColors.divider.withValues(alpha: 0.8),
-                      width: 1.0,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF0F172A).withValues(alpha: 0.05),
-                        blurRadius: 24,
-                        offset: const Offset(0, 8),
-                      ),
-                      BoxShadow(
-                        color: AppColors.brandBlue.withValues(alpha: 0.03),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: _buildContent(),
+          child: Column(
+            children: [
+              // Top Right Action Buttons: AI, Customer Care, About App (Curvy round circles)
+              Padding(
+                padding: const EdgeInsets.only(top: 24, right: 32, left: 32),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    _buildAiButton(context),
+                    const SizedBox(width: 12),
+                    _buildCustomerCareButton(context),
+                    const SizedBox(width: 12),
+                    _buildAboutAppButton(context),
+                  ],
                 ),
               ),
-            ),
+
+              // Centered Form Card
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 44, vertical: 24),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 390),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 36),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: AppColors.divider.withValues(alpha: 0.8),
+                            width: 1.0,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+                              blurRadius: 24,
+                              offset: const Offset(0, 8),
+                            ),
+                            BoxShadow(
+                              color: AppColors.brandBlue.withValues(alpha: 0.03),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: _buildContent(),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -312,43 +333,63 @@ class _LoginPageState extends State<LoginPage> {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildBrandHeader(center: true),
-          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildBrandHeader(center: false),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildAiButton(context),
+                  const SizedBox(width: 8),
+                  _buildCustomerCareButton(context),
+                  const SizedBox(width: 8),
+                  _buildAboutAppButton(context),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
 
           // Compact Paced 3D Animation for Mobile
-          RepaintBoundary(
-            child: SizedBox(
-              height: 220,
-              child: _Paced3DLottieModel(
-                maxHeight: 220,
+          Center(
+            child: RepaintBoundary(
+              child: SizedBox(
+                height: 220,
+                child: _Paced3DLottieModel(
+                  maxHeight: 220,
+                ),
               ),
             ),
           ),
           const SizedBox(height: 20),
 
           // Centered Form Card
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: AppColors.divider.withValues(alpha: 0.8),
-                  width: 1.2,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF0F172A).withValues(alpha: 0.05),
-                    blurRadius: 20,
-                    offset: const Offset(0, 6),
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.divider.withValues(alpha: 0.8),
+                    width: 1.2,
                   ),
-                ],
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: _buildContent(),
               ),
-              child: _buildContent(),
             ),
           ),
         ],
@@ -356,106 +397,436 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  /// Unique Brand Header: Bespoke 3D Isometric Tech Brandmark + Futuristic Wordmark
+  /// Professional Brand Header: Left Corner, No Logo Badge, with Material Management System subtext
   Widget _buildBrandHeader({bool center = false}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-          width: 1.2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: center ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+      children: [
+        // Sharp "NewTech" Italic Typography with Specifically Enlarged 'N' and 'T'
+        RichText(
+          text: TextSpan(
+            children: [
+              // Large Sharp 'N'
+              TextSpan(
+                text: 'N',
+                style: GoogleFonts.kanit(
+                  fontSize: 48,
+                  fontWeight: FontWeight.w900,
+                  fontStyle: FontStyle.italic,
+                  color: const Color(0xFF1D5CFF),
+                  letterSpacing: -1.0,
+                ),
+              ),
+              // Sharp 'ew'
+              TextSpan(
+                text: 'ew',
+                style: GoogleFonts.kanit(
+                  fontSize: 34,
+                  fontWeight: FontWeight.w800,
+                  fontStyle: FontStyle.italic,
+                  color: const Color(0xFF1D5CFF),
+                  letterSpacing: -0.5,
+                ),
+              ),
+              // Large Sharp 'T'
+              TextSpan(
+                text: 'T',
+                style: GoogleFonts.kanit(
+                  fontSize: 48,
+                  fontWeight: FontWeight.w900,
+                  fontStyle: FontStyle.italic,
+                  color: const Color(0xFFFF6400),
+                  letterSpacing: -1.0,
+                ),
+              ),
+              // Sharp 'ech'
+              TextSpan(
+                text: 'ech',
+                style: GoogleFonts.kanit(
+                  fontSize: 34,
+                  fontWeight: FontWeight.w800,
+                  fontStyle: FontStyle.italic,
+                  color: const Color(0xFFFF6400),
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ],
           ),
-          BoxShadow(
-            color: const Color(0xFF1D5CFF).withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 1),
+        ),
+        const SizedBox(height: 6),
+        // Professional Structured Subtext
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 3,
+              height: 11,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF1D5CFF),
+                    Color(0xFFFF6400),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'MATERIAL MANAGEMENT SYSTEM',
+              style: GoogleFonts.poppins(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 2.2,
+                color: const Color(0xFF64748B),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// AI Button: Curvy round shape circle with AI logo and distinct "AI" mark written on it
+  Widget _buildAiButton(BuildContext context) {
+    return Tooltip(
+      message: 'NewTech AI Assistant',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showAiAssistantDialog(context),
+          borderRadius: BorderRadius.circular(24),
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              border: Border.all(
+                color: const Color(0xFF1D5CFF).withValues(alpha: 0.35),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF1D5CFF).withValues(alpha: 0.10),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                const Icon(
+                  Icons.auto_awesome_rounded,
+                  color: Color(0xFF1D5CFF),
+                  size: 20,
+                ),
+                // Prominent "AI" text mark written directly on the button
+                Positioned(
+                  top: 3,
+                  right: 3,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 3.5, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1D5CFF),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'AI',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 7.5,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.4,
+                        height: 1.0,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Customer Care Button: Curvy round shape circle with customer care headset icon
+  Widget _buildCustomerCareButton(BuildContext context) {
+    return Tooltip(
+      message: 'Customer Care & Support',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showCustomerCareDialog(context),
+          borderRadius: BorderRadius.circular(24),
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              border: Border.all(
+                color: const Color(0xFFE2E8F0),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.support_agent_rounded,
+              color: Color(0xFF475569),
+              size: 22,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// About App Button: Curvy round shape circle with about/info icon
+  Widget _buildAboutAppButton(BuildContext context) {
+    return Tooltip(
+      message: 'About NewTech MMS',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showAboutAppDialog(context),
+          borderRadius: BorderRadius.circular(24),
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              border: Border.all(
+                color: const Color(0xFFE2E8F0),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.info_outline_rounded,
+              color: Color(0xFF475569),
+              size: 21,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAiAssistantDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF1D5CFF), size: 22),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'NewTech AI Assistant',
+              style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Powered by Intelligent Material Intelligence:',
+              style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF334155)),
+            ),
+            const SizedBox(height: 12),
+            _buildAiFeatureRow(Icons.trending_up_rounded, 'Predictive Stock Reordering', 'Automated purchase triggers based on consumption velocity.'),
+            const SizedBox(height: 10),
+            _buildAiFeatureRow(Icons.analytics_outlined, 'Anomaly & Cost Variance Detection', 'Real-time alert on abnormal material costing and consumption.'),
+            const SizedBox(height: 10),
+            _buildAiFeatureRow(Icons.inventory_2_outlined, 'Smart Warehouse Optimization', 'Dynamic allocation of bin and location storage efficiency.'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text('Close', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: const Color(0xFF1D5CFF))),
           ),
         ],
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: center ? MainAxisAlignment.center : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // 3D Isometric Tech Brandmark (Thematic custom-painted icon)
-          const _IsometricTechBrandmark(size: 40),
-          const SizedBox(width: 14),
+    );
+  }
 
-          // Unique Futuristic Wordmark: "NewTech" using Unbounded
-          RichText(
-            text: TextSpan(
-              children: [
-                TextSpan(
-                  text: 'New',
-                  style: GoogleFonts.unbounded(
-                    fontSize: 27,
-                    fontWeight: FontWeight.w900,
-                    color: const Color(0xFF1D5CFF),
-                    letterSpacing: -0.8,
-                  ),
-                ),
-                TextSpan(
-                  text: 'Tech',
-                  style: GoogleFonts.unbounded(
-                    fontSize: 27,
-                    fontWeight: FontWeight.w900,
-                    color: const Color(0xFFFF6400),
-                    letterSpacing: -0.8,
-                  ),
-                ),
-              ],
-            ),
+  Widget _buildAiFeatureRow(IconData icon, String title, String desc) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: const Color(0xFF1D5CFF)),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: GoogleFonts.poppins(fontSize: 12.5, fontWeight: FontWeight.w600, color: const Color(0xFF0F172A))),
+              Text(desc, style: GoogleFonts.poppins(fontSize: 11.5, color: const Color(0xFF64748B))),
+            ],
           ),
+        ),
+      ],
+    );
+  }
 
-          const SizedBox(width: 14),
-
-          // Subtle Vertical Micro-Divider
-          Container(
-            width: 1.2,
-            height: 22,
-            color: const Color(0xFFE2E8F0),
+  void _showCustomerCareDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.support_agent_rounded, color: Color(0xFF16A34A), size: 22),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Customer Care & Support',
+              style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Need help with your workspace or login credentials?',
+              style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF475569)),
+            ),
+            const SizedBox(height: 16),
+            _buildContactRow(Icons.email_outlined, 'Email Support', 'support@newtechinfosol.com'),
+            const SizedBox(height: 10),
+            _buildContactRow(Icons.phone_in_talk_outlined, 'Helpline', '+91 (0) 800-NEWTECH'),
+            const SizedBox(height: 10),
+            _buildContactRow(Icons.schedule_outlined, 'Hours', 'Mon - Sat, 9:00 AM - 7:00 PM IST'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text('Close', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: const Color(0xFF16A34A))),
           ),
-          const SizedBox(width: 12),
+        ],
+      ),
+    );
+  }
 
-          // Live Enterprise Cloud Pill Chip
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+  Widget _buildContactRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: const Color(0xFF64748B)),
+        const SizedBox(width: 10),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFF94A3B8))),
+            Text(value, style: GoogleFonts.poppins(fontSize: 12.5, fontWeight: FontWeight.w600, color: const Color(0xFF0F172A))),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _showAboutAppDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF7ED),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.info_outline_rounded, color: Color(0xFFFF6400), size: 22),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF10B981),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'ENTERPRISE',
-                  style: GoogleFonts.spaceGrotesk(
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2,
-                    color: const Color(0xFF475569),
-                  ),
-                ),
-              ],
+            const SizedBox(width: 12),
+            Text(
+              'About NewTech MMS',
+              style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700),
             ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'NewTech Material Management System',
+              style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF0F172A)),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Version 1.0.0 Enterprise Build',
+              style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              'Enterprise-grade inventory, multi-tier procurement workflows, costing master controls, department tracking, and automated stock reconciliation for manufacturing facilities.',
+              style: GoogleFonts.poppins(fontSize: 12.5, color: const Color(0xFF334155), height: 1.45),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.shield_outlined, size: 16, color: Color(0xFF2563EB)),
+                  const SizedBox(width: 8),
+                  Text(
+                    '256-bit AES Encrypted • MFA Enforced',
+                    style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w500, color: const Color(0xFF475569)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text('Close', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: const Color(0xFFFF6400))),
           ),
         ],
       ),
@@ -929,148 +1300,6 @@ class _LoginPageState extends State<LoginPage> {
       ],
     );
   }
-}
-
-/// Bespoke 3D Isometric Tech Brandmark custom-painted to match the 3D model theme.
-class _IsometricTechBrandmark extends StatelessWidget {
-  final double size;
-
-  const _IsometricTechBrandmark({this.size = 40});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: size,
-      height: size,
-      child: CustomPaint(
-        painter: _IsometricTechPainter(),
-      ),
-    );
-  }
-}
-
-class _IsometricTechPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final cx = size.width / 2;
-    final cy = size.height * 0.48;
-    final r = size.width * 0.42;
-
-    // 1. Ambient Ground Glow / Drop Shadow
-    final shadowPaint = Paint()
-      ..color = const Color(0xFF1D5CFF).withValues(alpha: 0.18)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(cx, size.height * 0.88),
-        width: size.width * 0.65,
-        height: size.height * 0.22,
-      ),
-      shadowPaint,
-    );
-
-    // 30-degree isometric projection math
-    const cos30 = 0.866025;
-    const sin30 = 0.5;
-    final dx = r * cos30;
-    final dy = r * sin30;
-
-    final centerPt = Offset(cx, cy);
-    final topPt = Offset(cx, cy - r);
-    final topRightPt = Offset(cx + dx, cy - dy);
-    final bottomRightPt = Offset(cx + dx, cy + dy);
-    final bottomPt = Offset(cx, cy + r);
-    final bottomLeftPt = Offset(cx - dx, cy + dy);
-    final topLeftPt = Offset(cx - dx, cy - dy);
-
-    // 2. Top Isometric Facet (Sky to Cyan Blue Gradient)
-    final topPaint = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          Color(0xFF38BDF8),
-          Color(0xFF0EA5E9),
-          Color(0xFF0284C7),
-        ],
-      ).createShader(Rect.fromPoints(topLeftPt, topRightPt))
-      ..style = PaintingStyle.fill;
-
-    final topPath = Path()
-      ..moveTo(topPt.dx, topPt.dy)
-      ..lineTo(topRightPt.dx, topRightPt.dy)
-      ..lineTo(centerPt.dx, centerPt.dy)
-      ..lineTo(topLeftPt.dx, topLeftPt.dy)
-      ..close();
-    canvas.drawPath(topPath, topPaint);
-
-    // 3. Left Isometric Facet (Vivid Royal Tech Blue Gradient)
-    final leftPaint = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Color(0xFF2563EB),
-          Color(0xFF1D5CFF),
-          Color(0xFF1E3A8A),
-        ],
-      ).createShader(Rect.fromPoints(topLeftPt, bottomPt))
-      ..style = PaintingStyle.fill;
-
-    final leftPath = Path()
-      ..moveTo(topLeftPt.dx, topLeftPt.dy)
-      ..lineTo(centerPt.dx, centerPt.dy)
-      ..lineTo(bottomPt.dx, bottomPt.dy)
-      ..lineTo(bottomLeftPt.dx, bottomLeftPt.dy)
-      ..close();
-    canvas.drawPath(leftPath, leftPaint);
-
-    // 4. Right Isometric Facet (Radiant Sunset Orange Gradient)
-    final rightPaint = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Color(0xFFFF7A18),
-          Color(0xFFFF6400),
-          Color(0xFFDC2626),
-        ],
-      ).createShader(Rect.fromPoints(topRightPt, bottomPt))
-      ..style = PaintingStyle.fill;
-
-    final rightPath = Path()
-      ..moveTo(topRightPt.dx, topRightPt.dy)
-      ..lineTo(centerPt.dx, centerPt.dy)
-      ..lineTo(bottomPt.dx, bottomPt.dy)
-      ..lineTo(bottomRightPt.dx, bottomRightPt.dy)
-      ..close();
-    canvas.drawPath(rightPath, rightPaint);
-
-    // 5. Internal Circuit Lines & Glowing Central Vertex
-    final edgeHighlightPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.85)
-      ..strokeWidth = 1.3
-      ..style = PaintingStyle.stroke;
-
-    canvas.drawLine(centerPt, topPt, edgeHighlightPaint);
-    canvas.drawLine(centerPt, bottomLeftPt, edgeHighlightPaint);
-    canvas.drawLine(centerPt, bottomRightPt, edgeHighlightPaint);
-
-    // Glowing Central Core Node
-    final glowCorePaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(centerPt, 2.8, glowCorePaint);
-
-    final auraCorePaint = Paint()
-      ..color = const Color(0xFF38BDF8).withValues(alpha: 0.6)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.4;
-    canvas.drawCircle(centerPt, 4.5, auraCorePaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 /// High-performance 3D Lottie animation with controlled cycle pacing and hold interval.
