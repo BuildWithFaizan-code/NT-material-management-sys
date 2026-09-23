@@ -266,72 +266,136 @@ class _LoginPageState extends State<LoginPage> {
         ),
 
         // Split Screen Dividing Line
-        // Right Pane: Dedicated Full-Height Modern Sidebar with Unified Scenic Vector Background
+        // Right Pane: Dedicated Full-Height Modern Sidebar with Anchored Scenery & Clouds
         SizedBox(
           width: 480,
           height: constraints.maxHeight,
           child: Stack(
             clipBehavior: Clip.hardEdge,
             children: [
-              // 1. High-Resolution Unified Scenic Artwork (Top Clouds -> Middle Sky -> Bottom City & Car)
-              Positioned.fill(
-                child: Image.asset(
-                  'assets/images/login_right_pane_bg.png',
-                  fit: BoxFit.cover,
-                  alignment: Alignment.center,
-                  filterQuality: FilterQuality.high,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
+              // 1. Serene Sky Gradient Base matching both clouds and city
+              Container(
+                width: 480,
+                height: constraints.maxHeight,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xFFBCE3FB), // matching top sky & clouds
+                      Color(0xFFE4F3FD), // soft open airy center
+                      Color(0xFFCEEAFA), // matching bottom city sky
+                    ],
+                    stops: [0.0, 0.45, 1.0],
+                  ),
+                ),
+              ),
+
+              // 2. Top Header Clouds (anchored to top: 0, never cropped)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: IgnorePointer(
+                  child: ShaderMask(
+                    shaderCallback: (Rect bounds) {
+                      return const LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Color(0xFFEFF6FF), Color(0xFFE0F2FE)],
-                      ),
+                        colors: [
+                          Colors.white,
+                          Colors.white,
+                          Colors.transparent,
+                        ],
+                        stops: [0.0, 0.65, 1.0],
+                      ).createShader(bounds);
+                    },
+                    blendMode: BlendMode.dstIn,
+                    child: Image.asset(
+                      'assets/images/header_clouds.png',
+                      fit: BoxFit.cover,
+                      alignment: Alignment.topCenter,
+                      height: 145,
+                      filterQuality: FilterQuality.high,
+                      errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
                     ),
                   ),
                 ),
               ),
 
-              // 2. Subtle Glass Translucent Sheen & Border Divider
+              // 3. Bottom Cityscape & Sports Car (firmly anchored to bottom: 0, never cropped or disappearing)
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: IgnorePointer(
+                  child: ShaderMask(
+                    shaderCallback: (Rect bounds) {
+                      return const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.white,
+                          Colors.white,
+                        ],
+                        stops: [0.0, 0.16, 1.0],
+                      ).createShader(bounds);
+                    },
+                    blendMode: BlendMode.dstIn,
+                    child: Image.asset(
+                      'assets/images/login_city_illustration.png',
+                      fit: BoxFit.cover,
+                      alignment: Alignment.bottomCenter,
+                      height: 185,
+                      filterQuality: FilterQuality.high,
+                      errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                    ),
+                  ),
+                ),
+              ),
+
+              // 4. Subtle Border Divider
               Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.08),
-                    border: const Border(
-                      left: BorderSide(
-                        color: Color(0xFFE2E8F0),
-                        width: 1.2,
+                child: IgnorePointer(
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        left: BorderSide(
+                          color: Color(0xFFE2E8F0),
+                          width: 1.2,
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
 
-              // 3. Centered Elevated Pure White Login Card
+              // 5. Centered Elevated Pure White Login Card
               Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 28),
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 404),
+                    constraints: const BoxConstraints(maxWidth: 400),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 34, vertical: 36),
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 26),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(22),
+                        borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: const Color(0xFFE2E8F0),
                           width: 1.2,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF0F172A).withValues(alpha: 0.08),
-                            blurRadius: 30,
-                            offset: const Offset(0, 10),
+                            color: const Color(0xFF0F172A).withValues(alpha: 0.10),
+                            blurRadius: 28,
+                            offset: const Offset(0, 8),
                           ),
                           BoxShadow(
-                            color: const Color(0xFF38BDF8).withValues(alpha: 0.06),
+                            color: const Color(0xFF38BDF8).withValues(alpha: 0.08),
                             blurRadius: 14,
-                            offset: const Offset(0, 3),
+                            offset: const Offset(0, 2),
                           ),
                         ],
                       ),
@@ -869,7 +933,7 @@ class _LoginPageState extends State<LoginPage> {
               color: const Color(0xFF64748B),
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 22),
 
           // Error Message Banner
           if (_errorMessage != null) ...[
@@ -897,7 +961,7 @@ class _LoginPageState extends State<LoginPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
           ],
 
           // Username Field
@@ -910,7 +974,7 @@ class _LoginPageState extends State<LoginPage> {
               letterSpacing: 0.1,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 7),
           TextFormField(
             controller: _usernameController,
             textInputAction: TextInputAction.next,
@@ -954,7 +1018,7 @@ class _LoginPageState extends State<LoginPage> {
               return null;
             },
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 18),
 
           // Password Field
           Text(
@@ -966,7 +1030,7 @@ class _LoginPageState extends State<LoginPage> {
               letterSpacing: 0.1,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 7),
           TextFormField(
             controller: _passwordController,
             obscureText: _obscurePassword,
@@ -1021,7 +1085,7 @@ class _LoginPageState extends State<LoginPage> {
               return null;
             },
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 14),
 
           // Remember Me Checkbox
           InkWell(
@@ -1059,7 +1123,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 20),
 
           // Action Buttons: Clear & Sign In (Classy & Small)
           Row(
@@ -1181,7 +1245,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ],
           ),
-          const SizedBox(height: 26),
+          const SizedBox(height: 18),
 
           // Security Trust Footer
           Row(
