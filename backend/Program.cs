@@ -1,7 +1,9 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
 using MMSERP.Api.Common;
 using MMSERP.Api.Middleware;
@@ -37,16 +39,22 @@ if (keyBytes.Length < 32)
 }
 
 // ============================================================================
-// 2. Controllers & JSON Options
+// 2. Caching, Controllers & JSON Options with Global Permission Filter
 // ============================================================================
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.PropertyNamingPolicy =
-            System.Text.Json.JsonNamingPolicy.CamelCase;
-        options.JsonSerializerOptions.DictionaryKeyPolicy =
-            System.Text.Json.JsonNamingPolicy.CamelCase;
-    });
+builder.Services.AddMemoryCache();
+
+builder.Services.AddControllers(options =>
+{
+    // Global convention-based authorization filter
+    options.Filters.Add<PermissionAuthorizationFilter>();
+})
+.AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.PropertyNamingPolicy =
+        System.Text.Json.JsonNamingPolicy.CamelCase;
+    options.JsonSerializerOptions.DictionaryKeyPolicy =
+        System.Text.Json.JsonNamingPolicy.CamelCase;
+});
 
 // ============================================================================
 // 3. CORS Configuration (Explicit Allowlist + AllowCredentials)
@@ -148,6 +156,11 @@ builder.Services.AddAuthorization(options =>
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .Build();
+
+    // Reusable AdminOnly policy protecting user management and role endpoints
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireAssertion(ctx =>
+            string.Equals(ctx.User.FindFirst("isAdmin")?.Value, "true", StringComparison.OrdinalIgnoreCase)));
 });
 
 // Register Option A Development Bypass ONLY in Development environment
@@ -161,6 +174,10 @@ if (builder.Environment.IsDevelopment())
 // ============================================================================
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+builder.Services.AddScoped<IRolePermissionRepository, RolePermissionRepository>();
+builder.Services.AddScoped<IUserManagementRepository, UserManagementRepository>();
+builder.Services.AddScoped<IPermissionCacheService, PermissionCacheService>();
 
 builder.Services.AddScoped<IDashboardRepository, SqlDashboardRepository>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
@@ -204,9 +221,9 @@ builder.Services.AddScoped<IGroupMasterDefinitionService, GroupMasterDefinitionS
 var app = builder.Build();
 
 // ============================================================================
-// 7.5 One-Time Admin Account Provisioning (CLI Flag or Environment Variable)
+// 7.5 Consolidated One-Time Client Provisioning (CLI Flag or Environment Variable)
 // ============================================================================
-if (await HandleAdminProvisioningAsync(args, app.Services, app.Logger))
+if (await HandleAdminProvisioningAsync(args, app.Services, app.Configuration, app.Logger))
 {
     return;
 }
@@ -248,11 +265,12 @@ app.UseCors();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();
 
-static async Task<bool> HandleAdminProvisioningAsync(string[] args, IServiceProvider services, ILogger logger)
+static async Task<bool> HandleAdminProvisioningAsync(string[] args, IServiceProvider services, IConfiguration configuration, ILogger logger)
 {
     string? adminUsername = null;
     string? adminEmail = null;
@@ -317,6 +335,18 @@ static async Task<bool> HandleAdminProvisioningAsync(string[] args, IServiceProv
 
     try
     {
+        var connectionString = DbConnectionHelper.ResolveConnectionString(configuration);
+
+        // ====================================================================
+        // Step 1: Run 001_CreateAuthTables.sql (if not applied)
+        // Step 2: Run 002_CreateRolePermissionTables.sql (Phase 1)
+        // Step 3: Seed Actions & Modules
+        // ====================================================================
+        await RunDatabaseMigrationsAsync(connectionString, isCliCommand, logger);
+
+        // ====================================================================
+        // Step 4: Create or Update Initial Admin User
+        // ====================================================================
         using var scope = services.CreateScope();
         var authRepo = scope.ServiceProvider.GetRequiredService<IAuthRepository>();
 
@@ -336,10 +366,12 @@ static async Task<bool> HandleAdminProvisioningAsync(string[] args, IServiceProv
             existing.PasswordHash = hash;
             existing.IsActive = true;
             existing.IsAdmin = true;
+            existing.RoleId = null; // Admins bypass permission system, RoleId is null
             existing.MustChangePassword = true;
             existing.FailedLoginCount = 0;
             existing.LockedUntil = null;
             await authRepo.UpdateUserAsync(existing);
+            await authRepo.UpdatePasswordAsync(existing.UserId, hash);
             userId = existing.UserId;
         }
         else
@@ -351,6 +383,7 @@ static async Task<bool> HandleAdminProvisioningAsync(string[] args, IServiceProv
                 PasswordHash = hash,
                 IsActive = true,
                 IsAdmin = true,
+                RoleId = null,
                 MustChangePassword = true,
                 CreatedAt = DateTime.UtcNow
             };
@@ -366,7 +399,7 @@ static async Task<bool> HandleAdminProvisioningAsync(string[] args, IServiceProv
             Timestamp = DateTime.UtcNow
         });
 
-        var successMsg = $"Admin user '{adminUsername}' successfully provisioned with MustChangePassword = true.";
+        var successMsg = $"Admin user '{adminUsername}' successfully provisioned with MustChangePassword = true, IsAdmin = true, RoleId = NULL.";
         if (isCliCommand)
         {
             Console.ForegroundColor = ConsoleColor.Green;
@@ -380,7 +413,7 @@ static async Task<bool> HandleAdminProvisioningAsync(string[] args, IServiceProv
     }
     catch (Exception ex)
     {
-        var failMsg = $"Failed to provision admin: {ex.Message}";
+        var failMsg = $"Failed to provision admin and database: {ex.Message}";
         if (isCliCommand)
         {
             Console.ForegroundColor = ConsoleColor.Red;
@@ -396,3 +429,64 @@ static async Task<bool> HandleAdminProvisioningAsync(string[] args, IServiceProv
     return isCliCommand;
 }
 
+static async Task RunDatabaseMigrationsAsync(string connectionString, bool isCli, ILogger logger)
+{
+    // Search possible locations for Scripts directory
+    var candidates = new[]
+    {
+        Path.Combine(AppContext.BaseDirectory, "Scripts"),
+        Path.Combine(Directory.GetCurrentDirectory(), "Scripts"),
+        Path.Combine(Directory.GetCurrentDirectory(), "backend", "Scripts")
+    };
+
+    var scriptsDir = candidates.FirstOrDefault(Directory.Exists);
+    if (scriptsDir == null)
+    {
+        throw new DirectoryNotFoundException("Scripts directory could not be located in application base or working directories.");
+    }
+
+    var migrationFiles = new[]
+    {
+        "001_CreateAuthTables.sql",
+        "002_CreateRolePermissionTables.sql"
+    };
+
+    using var connection = new SqlConnection(connectionString);
+    await connection.OpenAsync();
+
+    foreach (var file in migrationFiles)
+    {
+        var filePath = Path.Combine(scriptsDir, file);
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException($"Migration script '{file}' not found at path '{filePath}'.");
+        }
+
+        var scriptContent = await File.ReadAllTextAsync(filePath);
+        // Split on SQL Server GO batches
+        var batches = Regex.Split(scriptContent, @"^\s*GO\s*$", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+
+        foreach (var rawBatch in batches)
+        {
+            var batch = rawBatch.Trim();
+            if (string.IsNullOrWhiteSpace(batch)) continue;
+
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = batch;
+            cmd.CommandTimeout = 60;
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        var msg = $"Migration script '{file}' executed successfully.";
+        if (isCli)
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"✔ {msg}");
+            Console.ResetColor();
+        }
+        else
+        {
+            logger.LogInformation(msg);
+        }
+    }
+}

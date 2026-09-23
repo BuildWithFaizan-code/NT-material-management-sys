@@ -8,6 +8,7 @@ import '../pages/dashboard_page.dart';
 import '../pages/project_master_page.dart';
 
 import '../pages/placeholder_module_pages.dart';
+import '../pages/user_management_page.dart';
 
 class SmallScreenLayout extends StatelessWidget {
   final LayoutState layoutState;
@@ -59,6 +60,8 @@ class SmallScreenLayout extends StatelessWidget {
         return const LiveUpdatesPage();
       case 7:
         return const DownloadPage();
+      case 8:
+        return const UserManagementPage();
       default:
         return const DashboardPage();
     }

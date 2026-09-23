@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../design/app_dimensions.dart';
 import 'modern_navbar_theme.dart';
+import '../../services/auth_service.dart';
 
 /// Collapsed vertical navigation rail matching the left bar in the reference image.
 /// Features a stadium-pill shape, sparkle logo, white rounded active icon pill with shadow,
@@ -155,6 +156,17 @@ class ModernCollapsedRail extends StatelessWidget {
                         isSelected: currentIndex == 7,
                         onTap: () => onItemSelected(7),
                       ),
+
+                      // 8: User Management (Admin Only)
+                      if (AuthService.instance.currentUser?.isAdmin ?? false) ...[
+                        const SizedBox(height: 8),
+                        _RailIconButton(
+                          icon: Icons.manage_accounts_outlined,
+                          tooltip: 'User Management',
+                          isSelected: currentIndex == 8,
+                          onTap: () => onItemSelected(8),
+                        ),
+                      ],
                     ],
                   ),
                 ),

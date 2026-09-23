@@ -27,6 +27,7 @@ import '../pages/group_master_definition_page.dart';
 // import '../pages/charges_master_page.dart';
 import '../pages/placeholder_module_pages.dart';
 import '../pages/transactions/transaction_placeholder_page.dart';
+import '../pages/user_management_page.dart';
 
 import 'widgets/modern_collapsed_rail.dart';
 
@@ -154,6 +155,8 @@ class LargeScreenLayout extends StatelessWidget {
         return 'Live Updates';
       case 7:
         return 'Download';
+      case 8:
+        return 'User Management';
       default:
         return 'Dashboard';
     }
@@ -183,6 +186,8 @@ class LargeScreenLayout extends StatelessWidget {
         return const LiveUpdatesPage(key: ValueKey('live_updates_page'));
       case 7:
         return const DownloadPage(key: ValueKey('download_page'));
+      case 8:
+        return const UserManagementPage(key: ValueKey('user_management_page'));
       default:
         return const DashboardPage(key: ValueKey('default_dashboard'));
     }

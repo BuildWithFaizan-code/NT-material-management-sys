@@ -3,6 +3,7 @@ import '../../design/app_dimensions.dart';
 import 'master_nav_item.dart';
 import 'transaction_nav_item.dart';
 import 'modern_navbar_theme.dart';
+import '../../services/auth_service.dart';
 
 class Sidebar extends StatelessWidget {
   final int currentIndex;
@@ -205,6 +206,20 @@ class Sidebar extends StatelessWidget {
             onItemSelected(7);
           },
         ),
+        // Index 8: User Management (Admin Only)
+        // NOTE: Hiding this nav item is a UX convenience only. Real enforcement is the
+        // backend PermissionAuthorizationFilter and [Authorize(Policy = "AdminOnly")].
+        if (AuthService.instance.currentUser?.isAdmin ?? false) ...[
+          const SizedBox(height: 2),
+          _ModernSidebarItem(
+            icon: Icons.manage_accounts_outlined,
+            label: 'User Management',
+            selected: currentIndex == 8,
+            onTap: () {
+              onItemSelected(8);
+            },
+          ),
+        ],
       ],
     );
   }

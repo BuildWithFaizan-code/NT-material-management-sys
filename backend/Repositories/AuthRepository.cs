@@ -23,7 +23,7 @@ namespace MMSERP.Api.Repositories
                 SELECT 
                     UserId, Username, Email, PasswordHash, IsActive, IsAdmin,
                     FailedLoginCount, LockedUntil, LastLoginAt, MfaSecret, MfaEnabled,
-                    MustChangePassword, CreatedAt, CreatedBy
+                    MustChangePassword, CreatedAt, CreatedBy, RoleId
                 FROM Users
                 WHERE Username = @Username OR Email = @Username;";
             return await connection.QueryFirstOrDefaultAsync<User>(sql, new { Username = username });
@@ -36,7 +36,7 @@ namespace MMSERP.Api.Repositories
                 SELECT 
                     UserId, Username, Email, PasswordHash, IsActive, IsAdmin,
                     FailedLoginCount, LockedUntil, LastLoginAt, MfaSecret, MfaEnabled,
-                    MustChangePassword, CreatedAt, CreatedBy
+                    MustChangePassword, CreatedAt, CreatedBy, RoleId
                 FROM Users
                 WHERE UserId = @UserId;";
             return await connection.QueryFirstOrDefaultAsync<User>(sql, new { UserId = userId });
@@ -49,13 +49,13 @@ namespace MMSERP.Api.Repositories
                 INSERT INTO Users (
                     Username, Email, PasswordHash, IsActive, IsAdmin,
                     FailedLoginCount, LockedUntil, MfaSecret, MfaEnabled,
-                    MustChangePassword, CreatedAt, CreatedBy
+                    MustChangePassword, CreatedAt, CreatedBy, RoleId
                 )
                 OUTPUT INSERTED.UserId
                 VALUES (
                     @Username, @Email, @PasswordHash, @IsActive, @IsAdmin,
                     @FailedLoginCount, @LockedUntil, @MfaSecret, @MfaEnabled,
-                    @MustChangePassword, @CreatedAt, @CreatedBy
+                    @MustChangePassword, @CreatedAt, @CreatedBy, @RoleId
                 );";
             return await connection.ExecuteScalarAsync<int>(sql, user);
         }
@@ -69,6 +69,7 @@ namespace MMSERP.Api.Repositories
                     Email = @Email,
                     IsActive = @IsActive,
                     IsAdmin = @IsAdmin,
+                    RoleId = @RoleId,
                     MustChangePassword = @MustChangePassword
                 WHERE UserId = @UserId;";
             var rows = await connection.ExecuteAsync(sql, user);

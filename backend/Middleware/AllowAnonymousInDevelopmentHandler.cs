@@ -24,7 +24,11 @@ namespace MMSERP.Api.Middleware
         {
             if (_environment.IsDevelopment())
             {
-                foreach (var requirement in context.PendingRequirements.ToList())
+                // Only bypass FallbackPolicy (unauthenticated check) in Development;
+                // do NOT bypass explicit custom authorization policies like AdminOnly.
+                foreach (var requirement in context.PendingRequirements
+                             .Where(r => r is Microsoft.AspNetCore.Authorization.Infrastructure.DenyAnonymousAuthorizationRequirement)
+                             .ToList())
                 {
                     context.Succeed(requirement);
                 }

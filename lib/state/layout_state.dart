@@ -156,6 +156,11 @@ class LayoutState extends ChangeNotifier {
           case '7':
             setPage(7);
             break;
+          case 'usermanagement':
+          case 'users':
+          case '8':
+            setPage(8);
+            break;
           default:
             // Check if page parameter was a direct module slug (e.g. ?page=location)
             if (_trySetMasterBySlug(page)) return;

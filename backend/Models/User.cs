@@ -16,5 +16,6 @@ namespace MMSERP.Api.Models
         public bool MustChangePassword { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public int? CreatedBy { get; set; }
+        public int? RoleId { get; set; }
     }
 }

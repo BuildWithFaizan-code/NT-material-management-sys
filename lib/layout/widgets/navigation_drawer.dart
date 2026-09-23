@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../design/app_dimensions.dart';
 import 'modern_navbar_theme.dart';
+import '../../services/auth_service.dart';
 
 class NavigationDrawerWidget extends StatelessWidget {
   final int currentIndex;
@@ -36,25 +37,35 @@ class NavigationDrawerWidget extends StatelessWidget {
               children: [
                 _buildDrawerHeader(context),
                 const SizedBox(height: 6),
-                Expanded(
-                  child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    itemCount: _menuItems.length,
-                    separatorBuilder: (_, index) => const SizedBox(height: 3),
-                    itemBuilder: (context, index) {
-                      final item = _menuItems[index];
-                      final selected = index == currentIndex;
-                      return _DrawerItem(
-                        icon: item.icon,
-                        label: item.label,
-                        selected: selected,
-                        onTap: () {
-                          onItemSelected(index);
-                          Navigator.of(context).pop();
+                Builder(
+                  builder: (context) {
+                    final bool isAdmin = AuthService.instance.currentUser?.isAdmin ?? false;
+                    final items = [
+                      ..._menuItems,
+                      if (isAdmin)
+                        const _MenuItem(icon: Icons.manage_accounts_outlined, label: 'User Management'),
+                    ];
+                    return Expanded(
+                      child: ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        itemCount: items.length,
+                        separatorBuilder: (_, index) => const SizedBox(height: 3),
+                        itemBuilder: (context, index) {
+                          final item = items[index];
+                          final selected = index == currentIndex;
+                          return _DrawerItem(
+                            icon: item.icon,
+                            label: item.label,
+                            selected: selected,
+                            onTap: () {
+                              onItemSelected(index);
+                              Navigator.of(context).pop();
+                            },
+                          );
                         },
-                      );
-                    },
-                  ),
+                      ),
+                    );
+                  },
                 ),
                 _buildFooter(),
               ],
