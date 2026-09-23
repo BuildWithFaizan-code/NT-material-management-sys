@@ -288,27 +288,27 @@ class _LoginPageState extends State<LoginPage> {
           ),
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 44, vertical: 36),
+              padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 36),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 410),
+                constraints: const BoxConstraints(maxWidth: 420),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 34, vertical: 36),
+                  padding: const EdgeInsets.symmetric(horizontal: 38, vertical: 42),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
                       color: const Color(0xFFE2E8F0),
-                      width: 1.2,
+                      width: 1.0,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF0F172A).withValues(alpha: 0.06),
-                        blurRadius: 28,
-                        offset: const Offset(0, 10),
+                        color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+                        blurRadius: 30,
+                        offset: const Offset(0, 12),
                       ),
                       BoxShadow(
-                        color: AppColors.brandBlue.withValues(alpha: 0.03),
-                        blurRadius: 10,
+                        color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+                        blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),
                     ],
@@ -365,25 +365,25 @@ class _LoginPageState extends State<LoginPage> {
           // Centered Form Card
           Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 430),
+              constraints: const BoxConstraints(maxWidth: 420),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 34),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                     color: const Color(0xFFE2E8F0),
-                    width: 1.2,
+                    width: 1.0,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.05),
                       blurRadius: 24,
-                      offset: const Offset(0, 8),
+                      offset: const Offset(0, 10),
                     ),
                     BoxShadow(
-                      color: AppColors.brandBlue.withValues(alpha: 0.03),
-                      blurRadius: 10,
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+                      blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
                   ],
@@ -826,57 +826,20 @@ class _LoginPageState extends State<LoginPage> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Enterprise Security Badge
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: const Color(0xFFBFDBFE),
-                  width: 1.0,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.verified_user_rounded,
-                    size: 13,
-                    color: AppColors.brandBlue,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'SECURE ENTERPRISE PORTAL',
-                    style: GoogleFonts.poppins(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.8,
-                      color: AppColors.brandBlue,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
           // Greeting Title
           Text(
-            'WELCOME BACK!',
+            'Welcome back',
             style: GoogleFonts.poppins(
-              fontSize: 23,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.4,
+              fontSize: 26,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.5,
               color: const Color(0xFF0F172A),
               height: 1.2,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(
-            'Enter your credentials to access your workspace.',
+            'Please enter your credentials to access your workspace.',
             style: GoogleFonts.poppins(
               fontSize: 13.5,
               fontWeight: FontWeight.w400,
@@ -884,7 +847,7 @@ class _LoginPageState extends State<LoginPage> {
               height: 1.4,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
 
           // Error Message Banner
           if (_errorMessage != null) ...[
@@ -912,7 +875,7 @@ class _LoginPageState extends State<LoginPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 20),
           ],
 
           // Username Field
@@ -920,11 +883,11 @@ class _LoginPageState extends State<LoginPage> {
             'Username or Email',
             style: GoogleFonts.poppins(
               fontSize: 13,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w500,
               color: const Color(0xFF334155),
             ),
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: 8),
           TextFormField(
             controller: _usernameController,
             textInputAction: TextInputAction.next,
@@ -942,31 +905,31 @@ class _LoginPageState extends State<LoginPage> {
               ),
               prefixIcon: const Icon(
                 Icons.person_outline_rounded,
-                size: 20,
-                color: Color(0xFF64748B),
+                size: 19,
+                color: Color(0xFF94A3B8),
               ),
               filled: true,
-              fillColor: const Color(0xFFF8FAFC),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.0),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.0),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: AppColors.brandBlue, width: 1.8),
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFF0F172A), width: 1.6),
               ),
               errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: AppColors.error, width: 1.2),
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.error, width: 1.0),
               ),
               focusedErrorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: AppColors.error, width: 1.8),
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.error, width: 1.6),
               ),
             ),
             validator: (val) {
@@ -974,7 +937,7 @@ class _LoginPageState extends State<LoginPage> {
               return null;
             },
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
 
           // Password Field
           Row(
@@ -984,13 +947,13 @@ class _LoginPageState extends State<LoginPage> {
                 'Password',
                 style: GoogleFonts.poppins(
                   fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                   color: const Color(0xFF334155),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: 8),
           TextFormField(
             controller: _passwordController,
             obscureText: _obscurePassword,
@@ -1002,7 +965,7 @@ class _LoginPageState extends State<LoginPage> {
               fontWeight: FontWeight.w500,
             ),
             decoration: InputDecoration(
-              hintText: 'Enter your account password',
+              hintText: 'Enter your password',
               hintStyle: GoogleFonts.poppins(
                 fontSize: 13.5,
                 color: const Color(0xFF94A3B8),
@@ -1010,40 +973,40 @@ class _LoginPageState extends State<LoginPage> {
               ),
               prefixIcon: const Icon(
                 Icons.lock_outline_rounded,
-                size: 20,
-                color: Color(0xFF64748B),
+                size: 19,
+                color: Color(0xFF94A3B8),
               ),
               suffixIcon: IconButton(
                 splashRadius: 20,
                 icon: Icon(
                   _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                  size: 20,
-                  color: const Color(0xFF64748B),
+                  size: 19,
+                  color: const Color(0xFF94A3B8),
                 ),
                 onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
               ),
               filled: true,
-              fillColor: const Color(0xFFF8FAFC),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.0),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.0),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: AppColors.brandBlue, width: 1.8),
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFF0F172A), width: 1.6),
               ),
               errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: AppColors.error, width: 1.2),
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.error, width: 1.0),
               ),
               focusedErrorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: AppColors.error, width: 1.8),
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.error, width: 1.6),
               ),
             ),
             validator: (val) {
@@ -1051,7 +1014,7 @@ class _LoginPageState extends State<LoginPage> {
               return null;
             },
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
 
           // Remember Me & Forgot Password
           Wrap(
@@ -1073,11 +1036,11 @@ class _LoginPageState extends State<LoginPage> {
                         child: Checkbox(
                           value: _rememberMe,
                           onChanged: (val) => setState(() => _rememberMe = val ?? false),
-                          activeColor: AppColors.brandBlue,
+                          activeColor: const Color(0xFF0F172A),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.4),
+                          side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.3),
                           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                       ),
@@ -1086,7 +1049,7 @@ class _LoginPageState extends State<LoginPage> {
                         'Remember device',
                         style: GoogleFonts.poppins(
                           fontSize: 12.5,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w400,
                           color: const Color(0xFF64748B),
                         ),
                       ),
@@ -1109,51 +1072,44 @@ class _LoginPageState extends State<LoginPage> {
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 child: Text(
-                  'Forgot Password?',
+                  'Forgot password?',
                   style: GoogleFonts.poppins(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.brandBlue,
+                    color: const Color(0xFF0F172A),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
 
-          // Primary Sign In Button with tech gradient & ambient glow
+          // Primary Sign In Button
           Container(
             height: 50,
             decoration: BoxDecoration(
-              gradient: _isLoading
-                  ? null
-                  : const LinearGradient(
-                      colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-              color: _isLoading ? const Color(0xFF93C5FD) : null,
-              borderRadius: BorderRadius.circular(14),
+              color: _isLoading ? const Color(0xFF475569) : const Color(0xFF0F172A),
+              borderRadius: BorderRadius.circular(12),
               boxShadow: _isLoading
                   ? []
                   : [
                       BoxShadow(
-                        color: const Color(0xFF2563EB).withValues(alpha: 0.35),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
+                        color: const Color(0xFF0F172A).withValues(alpha: 0.16),
+                        blurRadius: 14,
+                        offset: const Offset(0, 4),
                       ),
                     ],
             ),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(12),
                 onTap: _isLoading ? null : _handleLogin,
                 child: Center(
                   child: _isLoading
                       ? const SizedBox(
-                          width: 22,
-                          height: 22,
+                          width: 20,
+                          height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.2,
                             color: Colors.white,
@@ -1163,18 +1119,18 @@ class _LoginPageState extends State<LoginPage> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              'Sign In to Workspace',
+                              'Sign in to Workspace',
                               style: GoogleFonts.poppins(
                                 fontSize: 14.5,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w600,
                                 color: Colors.white,
-                                letterSpacing: 0.3,
+                                letterSpacing: 0.2,
                               ),
                             ),
                             const SizedBox(width: 8),
                             const Icon(
                               Icons.arrow_forward_rounded,
-                              size: 18,
+                              size: 17,
                               color: Colors.white,
                             ),
                           ],
@@ -1182,28 +1138,6 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 22),
-
-          // Security Trust Footer
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.lock_rounded,
-                size: 13,
-                color: Color(0xFF94A3B8),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                '256-bit TLS Encrypted Session',
-                style: GoogleFonts.poppins(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF94A3B8),
-                ),
-              ),
-            ],
           ),
         ],
       ),
