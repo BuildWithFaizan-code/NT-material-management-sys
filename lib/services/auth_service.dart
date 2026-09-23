@@ -43,35 +43,6 @@ class LoginResult {
   });
 }
 
-class ActiveSession {
-  final int tokenId;
-  final String deviceInfo;
-  final String? ipAddress;
-  final DateTime issuedAt;
-  final DateTime expiresAt;
-  final bool isCurrent;
-
-  ActiveSession({
-    required this.tokenId,
-    required this.deviceInfo,
-    this.ipAddress,
-    required this.issuedAt,
-    required this.expiresAt,
-    required this.isCurrent,
-  });
-
-  factory ActiveSession.fromJson(Map<String, dynamic> json) {
-    return ActiveSession(
-      tokenId: json['tokenId'] as int? ?? 0,
-      deviceInfo: json['deviceInfo'] as String? ?? 'Unknown Device',
-      ipAddress: json['ipAddress'] as String?,
-      issuedAt: DateTime.tryParse(json['issuedAt'] as String? ?? '') ?? DateTime.now(),
-      expiresAt: DateTime.tryParse(json['expiresAt'] as String? ?? '') ?? DateTime.now(),
-      isCurrent: json['isCurrent'] as bool? ?? false,
-    );
-  }
-}
-
 /// Central authentication state management service for NT-MMS.
 /// Follows existing Controller->Service architecture conventions with ApiResponse unwrapping.
 class AuthService extends ChangeNotifier {
@@ -360,32 +331,6 @@ class AuthService extends ChangeNotifier {
     );
     final body = ApiClient.instance.decodeResponse(response);
     return body['success'] as bool? ?? false;
-  }
-
-  /// Fetches all active sessions for current user.
-  Future<List<ActiveSession>> getActiveSessions() async {
-    final response = await ApiClient.instance.get('$_authBaseUrl/sessions');
-    final body = ApiClient.instance.decodeResponse(response);
-    final dataList = body['data'] as List<dynamic>? ?? [];
-    return dataList.map((e) => ActiveSession.fromJson(e as Map<String, dynamic>)).toList();
-  }
-
-  /// Revokes a specific session.
-  Future<bool> revokeSession(int tokenId) async {
-    final response = await ApiClient.instance.delete('$_authBaseUrl/sessions/$tokenId');
-    final body = ApiClient.instance.decodeResponse(response);
-    return body['success'] as bool? ?? false;
-  }
-
-  /// Revokes all active sessions for current user.
-  Future<bool> revokeAllSessions() async {
-    final response = await ApiClient.instance.delete('$_authBaseUrl/sessions');
-    final body = ApiClient.instance.decodeResponse(response);
-    final success = body['success'] as bool? ?? false;
-    if (success) {
-      await logout();
-    }
-    return success;
   }
 
   void _handleSessionExpired() {

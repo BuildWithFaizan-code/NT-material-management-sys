@@ -1112,7 +1112,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Remember device',
+                    'Remember me',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,

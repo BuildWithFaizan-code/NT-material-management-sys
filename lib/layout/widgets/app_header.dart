@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../design/app_dimensions.dart';
 import '../../services/auth_service.dart';
-import '../../pages/active_sessions_page.dart';
 import '../../pages/mfa_setup_dialog.dart';
 
 class AppHeader extends StatelessWidget {
@@ -887,10 +886,6 @@ class _AnimativeAdminProfileState extends State<_AnimativeAdminProfile>
       onSelected: (val) async {
         if (val == 'logout') {
           await AuthService.instance.logout();
-        } else if (val == 'sessions') {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const ActiveSessionsPage()),
-          );
         } else if (val == 'mfa') {
           showDialog(
             context: context,
@@ -960,7 +955,6 @@ class _AnimativeAdminProfileState extends State<_AnimativeAdminProfile>
             ),
           ),
           const PopupMenuDivider(),
-          _buildProfileMenuItem('sessions', 'My Devices & Sessions', Icons.devices_rounded),
           _buildProfileMenuItem('mfa', 'Two-Factor Auth (MFA)', Icons.security_rounded),
           _buildProfileMenuItem('profile', 'Account Settings', Icons.person_outline_rounded),
           _buildProfileMenuItem('roles', 'Role & Access Control', Icons.admin_panel_settings_outlined),
