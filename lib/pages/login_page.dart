@@ -249,125 +249,75 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
 
-        // Center Divider: Cloudy and Fluid Border
-        const FluidWaveDivider(),
-
-        // Right Pane: Blue Gradient Background matching reference image + Floating Modern White Login Box
+        // Right Pane: Blue Gradient Background with large rounded bottom-left corner matching Image 2
         Expanded(
           flex: 5,
-          child: Container(
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/images/login_blue_gradient_bg.jpg'),
-                fit: BoxFit.cover,
-                alignment: Alignment.center,
-              ),
+          child: ClipRRect(
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(84),
             ),
-            child: Stack(
-              children: [
-                // Subtle ambient glow & gradient overlay to match theme perfectly
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          const Color(0xFFCFA7FB).withValues(alpha: 0.12),
-                          Colors.transparent,
-                          const Color(0xFF1E3A8A).withValues(alpha: 0.28),
-                        ],
-                      ),
-                    ),
-                  ),
+            child: Container(
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('assets/images/login_blue_gradient_bg.jpg'),
+                  fit: BoxFit.cover,
+                  alignment: Alignment.center,
                 ),
-
-                // Main Center Scrollable Content: White Modern Login Box
-                Center(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 48),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 440),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 38),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(26),
-                              border: Border.all(
-                                color: const Color(0xFFE2E8F0),
-                                width: 1.0,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF0F172A).withValues(alpha: 0.22),
-                                  blurRadius: 40,
-                                  offset: const Offset(0, 18),
-                                ),
-                                BoxShadow(
-                                  color: const Color(0xFF1E3A8A).withValues(alpha: 0.15),
-                                  blurRadius: 18,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            child: _buildContent(),
-                          ),
-                        ),
-                        // Bottom margin so box doesn't overlap footer
-                        const SizedBox(height: 36),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // Right Pane Bottom Footer: Translucent White Links & Moon Toggle (matches reference image)
-                Positioned(
-                  left: 24,
-                  right: 24,
-                  bottom: 16,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Footer Navigation Links in soft translucent white
-                      Wrap(
-                        spacing: 14,
-                        runSpacing: 4,
-                        children: [
-                          _buildRightPaneFooterLink('Integrations'),
-                          _buildRightPaneFooterLink('License'),
-                          _buildRightPaneFooterLink('Terms of Use'),
-                          _buildRightPaneFooterLink('Privacy'),
-                        ],
-                      ),
-                      // Moon / Night Mode Circular Glass Button (as shown in reference image)
-                      Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.20),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.15),
-                              blurRadius: 10,
-                              offset: const Offset(0, 3),
-                            ),
+              ),
+              child: Stack(
+                children: [
+                  // Subtle ambient glow & gradient overlay to match theme perfectly
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            const Color(0xFFCFA7FB).withValues(alpha: 0.12),
+                            Colors.transparent,
+                            const Color(0xFF1E3A8A).withValues(alpha: 0.28),
                           ],
                         ),
-                        child: const Icon(
-                          Icons.nightlight_round,
-                          color: Colors.white,
-                          size: 15,
+                      ),
+                    ),
+                  ),
+
+                  // Main Center Scrollable Content: White Modern Login Box
+                  Center(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 48),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 440),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 38),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(26),
+                            border: Border.all(
+                              color: const Color(0xFFE2E8F0),
+                              width: 1.0,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF0F172A).withValues(alpha: 0.22),
+                                blurRadius: 40,
+                                offset: const Offset(0, 18),
+                              ),
+                              BoxShadow(
+                                color: const Color(0xFF1E3A8A).withValues(alpha: 0.15),
+                                blurRadius: 18,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: _buildContent(),
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -412,35 +362,30 @@ class _LoginPageState extends State<LoginPage> {
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(32),
                 topRight: Radius.circular(32),
+                bottomLeft: Radius.circular(56),
               ),
             ),
-            child: Column(
-              children: [
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 440),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(22),
-                      border: Border.all(
-                        color: const Color(0xFFE2E8F0),
-                        width: 1.0,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF0F172A).withValues(alpha: 0.18),
-                          blurRadius: 28,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: _buildContent(),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(
+                    color: const Color(0xFFE2E8F0),
+                    width: 1.0,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.18),
+                      blurRadius: 28,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 24),
-                _buildMobileRightPaneFooter(),
-              ],
+                child: _buildContent(),
+              ),
             ),
           ),
         ],
@@ -558,38 +503,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildRightPaneFooterLink(String label) {
-    return TextButton(
-      onPressed: () {},
-      style: TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        minimumSize: Size.zero,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
-      child: Text(
-        label,
-        style: GoogleFonts.poppins(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: Colors.white.withValues(alpha: 0.75),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMobileRightPaneFooter() {
-    return Wrap(
-      alignment: WrapAlignment.center,
-      spacing: 12,
-      runSpacing: 4,
-      children: [
-        _buildRightPaneFooterLink('Integrations'),
-        _buildRightPaneFooterLink('License'),
-        _buildRightPaneFooterLink('Terms of Use'),
-        _buildRightPaneFooterLink('Privacy'),
-      ],
-    );
-  }
 
   Widget _buildContent() {
     if (_isChangePasswordStep) {
@@ -1051,100 +964,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-/// Cloudy and Fluid Wave Divider separating Left and Right Panes
-class FluidWaveDivider extends StatelessWidget {
-  const FluidWaveDivider({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 54,
-      height: double.infinity,
-      child: CustomPaint(
-        painter: _CloudyFluidWavePainter(),
-      ),
-    );
-  }
-}
-
-class _CloudyFluidWavePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-
-    // Fill left side with pure white (matching Left Pane)
-    final whitePaint = Paint()..color = Colors.white;
-    canvas.drawRect(Rect.fromLTWH(0, 0, w, h), whitePaint);
-
-    // Layer 1: Soft shadow aura
-    final shadowPaint = Paint()
-      ..color = const Color(0xFF1E40AF).withValues(alpha: 0.12)
-      ..style = PaintingStyle.fill
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
-
-    final auraPath = Path();
-    auraPath.moveTo(w * 0.45, 0);
-    auraPath.cubicTo(w * 0.9, h * 0.18, w * 0.1, h * 0.45, w * 0.8, h * 0.72);
-    auraPath.cubicTo(w * 0.95, h * 0.86, w * 0.2, h * 0.94, w * 0.45, h);
-    auraPath.lineTo(w, h);
-    auraPath.lineTo(w, 0);
-    auraPath.close();
-    canvas.drawPath(auraPath, shadowPaint);
-
-    // Layer 2: Deep vibrant blue gradient matching the Right Pane background
-    final wavePaint = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Color(0xFF2563EB),
-          Color(0xFF1D4ED8),
-          Color(0xFF1E40AF),
-        ],
-      ).createShader(Rect.fromLTWH(0, 0, w, h))
-      ..style = PaintingStyle.fill;
-
-    final cloudPath = Path();
-    cloudPath.moveTo(w * 0.45, 0);
-    cloudPath.cubicTo(w * 0.88, h * 0.18, w * 0.12, h * 0.44, w * 0.78, h * 0.7);
-    cloudPath.cubicTo(w * 0.92, h * 0.84, w * 0.22, h * 0.94, w * 0.45, h);
-    cloudPath.lineTo(w, h);
-    cloudPath.lineTo(w, 0);
-    cloudPath.close();
-    canvas.drawPath(cloudPath, wavePaint);
-
-    // Layer 3: Vibrant fluid contour line with glowing electric cyan/sky blue gradient
-    final strokePaint = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Color(0xFF93C5FD),
-          Color(0xFF38BDF8),
-          Color(0xFF60A5FA),
-        ],
-      ).createShader(Rect.fromLTWH(0, 0, w, h))
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.4
-      ..strokeCap = StrokeCap.round;
-
-    final linePath = Path();
-    linePath.moveTo(w * 0.45, 0);
-    linePath.cubicTo(w * 0.88, h * 0.18, w * 0.12, h * 0.44, w * 0.78, h * 0.7);
-    linePath.cubicTo(w * 0.92, h * 0.84, w * 0.22, h * 0.94, w * 0.45, h);
-    canvas.drawPath(linePath, strokePaint);
-
-    // Subtle glowing droplets along the wave curve
-    final dotPaint = Paint()..color = const Color(0xFF60A5FA).withValues(alpha: 0.6);
-    canvas.drawCircle(Offset(w * 0.74, h * 0.21), 3.2, dotPaint);
-    canvas.drawCircle(Offset(w * 0.24, h * 0.46), 2.6, dotPaint);
-    canvas.drawCircle(Offset(w * 0.69, h * 0.73), 3.4, dotPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
 
 /// High-performance 3D Lottie animation with controlled cycle pacing and hold interval.
 /// Showcases the complete model on screen by pausing at full completion before restarting.
