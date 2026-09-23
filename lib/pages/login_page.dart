@@ -216,77 +216,83 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildDualPanelLayout(BoxConstraints constraints) {
     return Row(
       children: [
-        // Left Pane: 3D Model & Brand Header
+        // Left Pane: Centered Brand & 3D Model Showcase
         Expanded(
-          flex: 11,
           child: Container(
             color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
+            padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 36),
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Top Brand Header: Logo Badge + "NewTech" (Centered with model)
+                // Top Brand Header: Logo Badge + "NewTech" (Fully centered)
                 _buildBrandHeader(center: true),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
 
-                // 3D Lottie Animation: Bigger, Centered, High Performance & Paced Cycle
+                // 3D Lottie Animation: Big, Perfectly Centered
                 Expanded(
                   child: Center(
                     child: RepaintBoundary(
                       child: _Paced3DLottieModel(
-                        maxWidth: 720,
+                        maxWidth: 740,
                         maxHeight: constraints.maxHeight * 0.76,
                       ),
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 12),
-                // Left Pane Footer Badges
+                const SizedBox(height: 16),
+                // Left Pane Footer Badges (Centered)
                 Center(child: _buildLeftPaneFooter()),
               ],
             ),
           ),
         ),
 
-        // Clean Split Screen Center Dividing Line
+        // Split Screen Dividing Line
         Container(
           width: 1.2,
-          height: constraints.maxHeight * 0.88,
-          decoration: BoxDecoration(
-            color: const Color(0xFFE2E8F0),
-            borderRadius: BorderRadius.circular(1),
-          ),
+          height: constraints.maxHeight,
+          color: const Color(0xFFE2E8F0),
         ),
 
-        // Right Pane: Modern Form Box with Fields (Pushed a bit to the right)
-        Expanded(
-          flex: 10,
-          child: Container(
-            color: Colors.white,
-            alignment: const Alignment(0.25, 0.0), // push a little bit to the right
-            padding: const EdgeInsets.only(left: 48, right: 64, top: 24, bottom: 24),
+        // Right Pane: Dedicated Full-Height Modern Sidebar
+        Container(
+          width: 480,
+          height: constraints.maxHeight,
+          decoration: BoxDecoration(
+            color: const Color(0xFFFAFAFA),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+                blurRadius: 20,
+                offset: const Offset(-4, 0),
+              ),
+            ],
+          ),
+          child: Center(
             child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 44, vertical: 48),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 440),
+                constraints: const BoxConstraints(maxWidth: 390),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 40),
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 36),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: AppColors.divider.withValues(alpha: 0.8),
-                      width: 1.2,
+                      width: 1.0,
                     ),
                     boxShadow: [
                       BoxShadow(
                         color: const Color(0xFF0F172A).withValues(alpha: 0.05),
-                        blurRadius: 28,
-                        offset: const Offset(0, 10),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
                       ),
                       BoxShadow(
                         color: AppColors.brandBlue.withValues(alpha: 0.03),
-                        blurRadius: 10,
+                        blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
                     ],
