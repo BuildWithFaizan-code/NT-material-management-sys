@@ -252,41 +252,122 @@ class _LoginPageState extends State<LoginPage> {
         // Center Divider: Cloudy and Fluid Border
         const FluidWaveDivider(),
 
-        // Right Pane: Modern Form Box with Fields
+        // Right Pane: Blue Gradient Background matching reference image + Floating Modern White Login Box
         Expanded(
           flex: 5,
           child: Container(
-            color: Colors.white,
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
-            child: SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 440),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 40),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: AppColors.divider.withValues(alpha: 0.8),
-                      width: 1.2,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF0F172A).withValues(alpha: 0.05),
-                        blurRadius: 28,
-                        offset: const Offset(0, 10),
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/images/login_blue_gradient_bg.jpg'),
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+              ),
+            ),
+            child: Stack(
+              children: [
+                // Subtle ambient glow & gradient overlay to match theme perfectly
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          const Color(0xFFCFA7FB).withValues(alpha: 0.12),
+                          Colors.transparent,
+                          const Color(0xFF1E3A8A).withValues(alpha: 0.28),
+                        ],
                       ),
-                      BoxShadow(
-                        color: AppColors.brandBlue.withValues(alpha: 0.03),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
+                    ),
+                  ),
+                ),
+
+                // Main Center Scrollable Content: White Modern Login Box
+                Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 48),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 440),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 38),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(26),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                                width: 1.0,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF0F172A).withValues(alpha: 0.22),
+                                  blurRadius: 40,
+                                  offset: const Offset(0, 18),
+                                ),
+                                BoxShadow(
+                                  color: const Color(0xFF1E3A8A).withValues(alpha: 0.15),
+                                  blurRadius: 18,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: _buildContent(),
+                          ),
+                        ),
+                        // Bottom margin so box doesn't overlap footer
+                        const SizedBox(height: 36),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Right Pane Bottom Footer: Translucent White Links & Moon Toggle (matches reference image)
+                Positioned(
+                  left: 24,
+                  right: 24,
+                  bottom: 16,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Footer Navigation Links in soft translucent white
+                      Wrap(
+                        spacing: 14,
+                        runSpacing: 4,
+                        children: [
+                          _buildRightPaneFooterLink('Integrations'),
+                          _buildRightPaneFooterLink('License'),
+                          _buildRightPaneFooterLink('Terms of Use'),
+                          _buildRightPaneFooterLink('Privacy'),
+                        ],
+                      ),
+                      // Moon / Night Mode Circular Glass Button (as shown in reference image)
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.20),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.15),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.nightlight_round,
+                          color: Colors.white,
+                          size: 15,
+                        ),
                       ),
                     ],
                   ),
-                  child: _buildContent(),
                 ),
-              ),
+              ],
             ),
           ),
         ),
@@ -297,45 +378,69 @@ class _LoginPageState extends State<LoginPage> {
   /// Compact Mobile / Narrow Screen Layout
   Widget _buildMobileLayout(BoxConstraints constraints) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _buildBrandHeader(center: true),
-          const SizedBox(height: 16),
-
-          // Compact Paced 3D Animation for Mobile
-          RepaintBoundary(
-            child: SizedBox(
-              height: 220,
-              child: _Paced3DLottieModel(
-                maxHeight: 220,
-              ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            child: Column(
+              children: [
+                _buildBrandHeader(center: true),
+                const SizedBox(height: 16),
+                RepaintBoundary(
+                  child: SizedBox(
+                    height: 220,
+                    child: _Paced3DLottieModel(
+                      maxHeight: 220,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 20),
 
-          // Centered Form Card
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: AppColors.divider.withValues(alpha: 0.8),
-                  width: 1.2,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF0F172A).withValues(alpha: 0.05),
-                    blurRadius: 20,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+          // Mobile Blue Gradient Container with Floating Modern White Box
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/images/login_blue_gradient_bg.jpg'),
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
               ),
-              child: _buildContent(),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(32),
+                topRight: Radius.circular(32),
+              ),
+            ),
+            child: Column(
+              children: [
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 440),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(
+                        color: const Color(0xFFE2E8F0),
+                        width: 1.0,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF0F172A).withValues(alpha: 0.18),
+                          blurRadius: 28,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: _buildContent(),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                _buildMobileRightPaneFooter(),
+              ],
             ),
           ),
         ],
@@ -453,6 +558,39 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  Widget _buildRightPaneFooterLink(String label) {
+    return TextButton(
+      onPressed: () {},
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.poppins(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: Colors.white.withValues(alpha: 0.75),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileRightPaneFooter() {
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 12,
+      runSpacing: 4,
+      children: [
+        _buildRightPaneFooterLink('Integrations'),
+        _buildRightPaneFooterLink('License'),
+        _buildRightPaneFooterLink('Terms of Use'),
+        _buildRightPaneFooterLink('Privacy'),
+      ],
+    );
+  }
+
   Widget _buildContent() {
     if (_isChangePasswordStep) {
       return _buildChangePasswordView();
@@ -470,13 +608,44 @@ class _LoginPageState extends State<LoginPage> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Capsule Security Indicator
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.brandBlue.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.brandBlue.withValues(alpha: 0.18),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.shield_outlined, size: 13, color: AppColors.brandBlue),
+                    const SizedBox(width: 5),
+                    Text(
+                      'Secure Enterprise Portal',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.brandBlue,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           // Greeting Title
           Text(
-            'WELCOME BACK!',
+            'Sign In to Your Workspace',
             style: GoogleFonts.poppins(
               fontSize: 22,
               fontWeight: FontWeight.w800,
-              letterSpacing: 0.5,
+              letterSpacing: -0.4,
               color: AppColors.neutralDark,
             ),
           ),
@@ -486,7 +655,7 @@ class _LoginPageState extends State<LoginPage> {
             style: GoogleFonts.poppins(
               fontSize: 13,
               fontWeight: FontWeight.w400,
-              color: AppColors.neutralDark.withValues(alpha: 0.65),
+              color: const Color(0xFF64748B),
             ),
           ),
           const SizedBox(height: 24),
@@ -904,11 +1073,15 @@ class _CloudyFluidWavePainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
-    // Layer 1: Soft cloud shadow aura
+    // Fill left side with pure white (matching Left Pane)
+    final whitePaint = Paint()..color = Colors.white;
+    canvas.drawRect(Rect.fromLTWH(0, 0, w, h), whitePaint);
+
+    // Layer 1: Soft shadow aura
     final shadowPaint = Paint()
-      ..color = const Color(0xFF0284C7).withValues(alpha: 0.05)
+      ..color = const Color(0xFF1E40AF).withValues(alpha: 0.12)
       ..style = PaintingStyle.fill
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
 
     final auraPath = Path();
     auraPath.moveTo(w * 0.45, 0);
@@ -919,15 +1092,15 @@ class _CloudyFluidWavePainter extends CustomPainter {
     auraPath.close();
     canvas.drawPath(auraPath, shadowPaint);
 
-    // Layer 2: Cloudy soft gradient fluid wave
-    final cloudWavePaint = Paint()
+    // Layer 2: Deep vibrant blue gradient matching the Right Pane background
+    final wavePaint = Paint()
       ..shader = const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          Color(0xFFF0F9FF),
-          Color(0xFFE0F2FE),
-          Color(0xFFF8FAFC),
+          Color(0xFF2563EB),
+          Color(0xFF1D4ED8),
+          Color(0xFF1E40AF),
         ],
       ).createShader(Rect.fromLTWH(0, 0, w, h))
       ..style = PaintingStyle.fill;
@@ -939,17 +1112,17 @@ class _CloudyFluidWavePainter extends CustomPainter {
     cloudPath.lineTo(w, h);
     cloudPath.lineTo(w, 0);
     cloudPath.close();
-    canvas.drawPath(cloudPath, cloudWavePaint);
+    canvas.drawPath(cloudPath, wavePaint);
 
-    // Layer 3: Vibrant fluid contour line with gradient
+    // Layer 3: Vibrant fluid contour line with glowing electric cyan/sky blue gradient
     final strokePaint = Paint()
       ..shader = const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
+          Color(0xFF93C5FD),
           Color(0xFF38BDF8),
-          Color(0xFF0284C7),
-          Color(0xFF0EA5E9),
+          Color(0xFF60A5FA),
         ],
       ).createShader(Rect.fromLTWH(0, 0, w, h))
       ..style = PaintingStyle.stroke
@@ -962,8 +1135,8 @@ class _CloudyFluidWavePainter extends CustomPainter {
     linePath.cubicTo(w * 0.92, h * 0.84, w * 0.22, h * 0.94, w * 0.45, h);
     canvas.drawPath(linePath, strokePaint);
 
-    // Subtle cloud bubble droplets along the wave curve
-    final dotPaint = Paint()..color = const Color(0xFF0284C7).withValues(alpha: 0.35);
+    // Subtle glowing droplets along the wave curve
+    final dotPaint = Paint()..color = const Color(0xFF60A5FA).withValues(alpha: 0.6);
     canvas.drawCircle(Offset(w * 0.74, h * 0.21), 3.2, dotPaint);
     canvas.drawCircle(Offset(w * 0.24, h * 0.46), 2.6, dotPaint);
     canvas.drawCircle(Offset(w * 0.69, h * 0.73), 3.4, dotPaint);

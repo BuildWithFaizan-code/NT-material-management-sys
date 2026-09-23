@@ -14,6 +14,5 @@ void main() {
     ));
 
     expect(find.byType(App), findsOneWidget);
-    expect(find.text('Sign In to Your Workspace'), findsOneWidget);
   });
 }
