@@ -224,8 +224,24 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top Brand Header shifted to Left Corner with Subtext (No logo badge)
-                _buildBrandHeader(center: false),
+                // Top Header Row: Brand Identity on Left, Utility Buttons on the Empty Right Space
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _buildBrandHeader(center: false),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildAiButton(context),
+                        const SizedBox(width: 12),
+                        _buildCustomerCareButton(context),
+                        const SizedBox(width: 12),
+                        _buildAboutAppButton(context),
+                      ],
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 12),
 
                 // 3D Lottie Animation: Big, Perfectly Centered
@@ -269,59 +285,37 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ],
           ),
-          child: Column(
-            children: [
-              // Top Right Action Buttons: AI, Customer Care, About App (Curvy round circles)
-              Padding(
-                padding: const EdgeInsets.only(top: 24, right: 32, left: 32),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    _buildAiButton(context),
-                    const SizedBox(width: 12),
-                    _buildCustomerCareButton(context),
-                    const SizedBox(width: 12),
-                    _buildAboutAppButton(context),
-                  ],
-                ),
-              ),
-
-              // Centered Form Card
-              Expanded(
-                child: Center(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 44, vertical: 24),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 390),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 36),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: AppColors.divider.withValues(alpha: 0.8),
-                            width: 1.0,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF0F172A).withValues(alpha: 0.05),
-                              blurRadius: 24,
-                              offset: const Offset(0, 8),
-                            ),
-                            BoxShadow(
-                              color: AppColors.brandBlue.withValues(alpha: 0.03),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: _buildContent(),
-                      ),
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 44, vertical: 36),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 390),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 36),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppColors.divider.withValues(alpha: 0.8),
+                      width: 1.0,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
+                      ),
+                      BoxShadow(
+                        color: AppColors.brandBlue.withValues(alpha: 0.03),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
+                  child: _buildContent(),
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ],
