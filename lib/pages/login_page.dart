@@ -501,22 +501,27 @@ class _LoginPageState extends State<LoginPage> {
     return _HeaderHoverActionButton(
       tooltip: 'NewTech AI Assistant',
       icon: Icons.smart_toy_rounded,
-      primaryColor: const Color(0xFFEC4899),
-      darkIconColor: const Color(0xFFDB2777),
-      lightBgColor: const Color(0xFFFDF2F8),
-      borderColor: const Color(0xFFFBCFE8),
+      primaryColor: const Color(0xFFF43F5E),
+      darkIconColor: const Color(0xFFE11D48),
+      lightBgColor: const Color(0xFFFFF1F2),
+      borderColor: const Color(0xFFFDA4AF),
       animType: _HoverAnimType.robotWiggle,
       onTap: () => _showAiAssistantDialog(context),
       badge: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
         decoration: BoxDecoration(
-          color: const Color(0xFFEC4899),
-          borderRadius: BorderRadius.circular(5),
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFB7185), Color(0xFFE11D48)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.white, width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFEC4899).withValues(alpha: 0.4),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
+              color: const Color(0xFFE11D48).withValues(alpha: 0.40),
+              blurRadius: 5,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -526,7 +531,7 @@ class _LoginPageState extends State<LoginPage> {
             color: Colors.white,
             fontSize: 7.5,
             fontWeight: FontWeight.w900,
-            letterSpacing: 0.4,
+            letterSpacing: 0.5,
             height: 1.0,
           ),
         ),
@@ -541,8 +546,8 @@ class _LoginPageState extends State<LoginPage> {
       icon: Icons.support_agent_rounded,
       primaryColor: const Color(0xFFF59E0B),
       darkIconColor: const Color(0xFFD97706),
-      lightBgColor: const Color(0xFFFEFCE8),
-      borderColor: const Color(0xFFFDE68A),
+      lightBgColor: const Color(0xFFFFFBEB),
+      borderColor: const Color(0xFFFCD34D),
       animType: _HoverAnimType.headsetNod,
       onTap: () => _showCustomerCareDialog(context),
     );
@@ -552,11 +557,11 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildAboutAppButton(BuildContext context) {
     return _HeaderHoverActionButton(
       tooltip: 'About NewTech MMS',
-      icon: Icons.info_rounded,
+      icon: Icons.info_outline_rounded,
       primaryColor: const Color(0xFF10B981),
       darkIconColor: const Color(0xFF059669),
       lightBgColor: const Color(0xFFECFDF5),
-      borderColor: const Color(0xFFA7F3D0),
+      borderColor: const Color(0xFF6EE7B7),
       animType: _HoverAnimType.badgeTilt,
       onTap: () => _showAboutAppDialog(context),
     );
@@ -1718,8 +1723,8 @@ class _HeaderHoverActionButtonState extends State<_HeaderHoverActionButton>
       },
       child: Icon(
         widget.icon,
-        color: _isHovered ? widget.darkIconColor : widget.darkIconColor.withValues(alpha: 0.88),
-        size: 21,
+        color: _isHovered ? widget.darkIconColor : widget.darkIconColor.withValues(alpha: 0.90),
+        size: 19,
       ),
     );
   }
@@ -1735,43 +1740,78 @@ class _HeaderHoverActionButtonState extends State<_HeaderHoverActionButton>
         child: GestureDetector(
           onTap: widget.onTap,
           child: AnimatedScale(
-            scale: _isHovered ? 1.12 : 1.0,
-            duration: const Duration(milliseconds: 180),
-            curve: Curves.easeOutBack,
+            scale: _isHovered ? 1.08 : 1.0,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutCubic,
+              transform: Matrix4.translationValues(0.0, _isHovered ? -2.5 : 0.0, 0.0),
               width: 44,
               height: 44,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: _isHovered ? widget.lightBgColor : Colors.white,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: _isHovered
+                      ? [
+                          widget.lightBgColor,
+                          widget.primaryColor.withValues(alpha: 0.22),
+                        ]
+                      : [
+                          widget.lightBgColor.withValues(alpha: 0.65),
+                          widget.lightBgColor,
+                        ],
+                ),
                 border: Border.all(
                   color: _isHovered ? widget.primaryColor : widget.borderColor,
-                  width: _isHovered ? 1.8 : 1.2,
+                  width: _isHovered ? 1.8 : 1.3,
                 ),
                 boxShadow: [
-                  if (_isHovered)
-                    BoxShadow(
-                      color: widget.primaryColor.withValues(alpha: 0.38),
-                      blurRadius: 14,
-                      offset: const Offset(0, 4),
-                    )
-                  else
-                    BoxShadow(
-                      color: widget.primaryColor.withValues(alpha: 0.08),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
+                  BoxShadow(
+                    color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                  BoxShadow(
+                    color: widget.primaryColor.withValues(alpha: _isHovered ? 0.35 : 0.12),
+                    blurRadius: _isHovered ? 14 : 7,
+                    offset: Offset(0, _isHovered ? 4 : 2),
+                  ),
                 ],
               ),
               child: Stack(
+                clipBehavior: Clip.none,
                 alignment: Alignment.center,
                 children: [
-                  _buildAnimatedIcon(),
+                  // Inner Glassmorphic Floating Lens
+                  Container(
+                    width: 31,
+                    height: 31,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: _isHovered ? 0.95 : 0.88),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.90),
+                        width: 1.0,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: widget.primaryColor.withValues(alpha: 0.08),
+                          blurRadius: 3,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: _buildAnimatedIcon(),
+                    ),
+                  ),
                   if (widget.badge != null)
                     Positioned(
-                      top: 2,
-                      right: 2,
+                      top: -4,
+                      right: -4,
                       child: widget.badge!,
                     ),
                 ],
