@@ -347,60 +347,53 @@ class _LoginPageState extends State<LoginPage> {
       mainAxisAlignment: center ? MainAxisAlignment.center : MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Brand Gold Medal Badge Logo with Long X-Forming Ribbon
-        Image.asset(
-          'assets/images/newtech_logo_badge.png',
-          height: 60,
-          fit: BoxFit.contain,
-          filterQuality: FilterQuality.high,
+        // Brand Gold Medal Badge Logo with Long X-Forming Ribbon (properly aligned with text)
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Image.asset(
+            'assets/images/newtech_logo_badge.png',
+            height: 52,
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
+          ),
         ),
         const SizedBox(width: 14),
-        // Sharp "NewTech" Italic Typography with Specifically Enlarged 'N' and 'T'
+        // Sharp Modern "NewTech" Italic Typography
         RichText(
           text: TextSpan(
             children: [
-              // Large Sharp 'N'
               TextSpan(
-                text: 'N',
-                style: GoogleFonts.kanit(
-                  fontSize: 52,
-                  fontWeight: FontWeight.w900,
-                  fontStyle: FontStyle.italic,
-                  color: const Color(0xFF1D5CFF),
-                  letterSpacing: -1.0,
-                ),
-              ),
-              // Sharp 'ew'
-              TextSpan(
-                text: 'ew',
-                style: GoogleFonts.kanit(
-                  fontSize: 38,
-                  fontWeight: FontWeight.w800,
+                text: 'New',
+                style: GoogleFonts.chakraPetch(
+                  fontSize: 44,
+                  fontWeight: FontWeight.w700,
                   fontStyle: FontStyle.italic,
                   color: const Color(0xFF1D5CFF),
                   letterSpacing: -0.5,
+                  shadows: [
+                    Shadow(
+                      color: const Color(0xFF1D5CFF).withValues(alpha: 0.15),
+                      blurRadius: 14,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
               ),
-              // Large Sharp 'T'
               TextSpan(
-                text: 'T',
-                style: GoogleFonts.kanit(
-                  fontSize: 52,
-                  fontWeight: FontWeight.w900,
+                text: 'Tech',
+                style: GoogleFonts.chakraPetch(
+                  fontSize: 44,
+                  fontWeight: FontWeight.w700,
                   fontStyle: FontStyle.italic,
-                  color: const Color(0xFFFF6400),
-                  letterSpacing: -1.0,
-                ),
-              ),
-              // Sharp 'ech'
-              TextSpan(
-                text: 'ech',
-                style: GoogleFonts.kanit(
-                  fontSize: 38,
-                  fontWeight: FontWeight.w800,
-                  fontStyle: FontStyle.italic,
-                  color: const Color(0xFFFF6400),
+                  color: const Color(0xFFFF5500),
                   letterSpacing: -0.5,
+                  shadows: [
+                    Shadow(
+                      color: const Color(0xFFFF5500).withValues(alpha: 0.15),
+                      blurRadius: 14,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
               ),
             ],
