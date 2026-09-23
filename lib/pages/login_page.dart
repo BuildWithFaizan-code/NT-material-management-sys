@@ -356,73 +356,109 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  /// Sharp Brand Header: Logo Badge + "NewTech" (Sharp Italic, Enlarged 'N' and 'T')
+  /// Unique Brand Header: Bespoke 3D Isometric Tech Brandmark + Futuristic Wordmark
   Widget _buildBrandHeader({bool center = false}) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: center ? MainAxisAlignment.center : MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // Brand Gold Medal Badge Logo with Long X-Forming Ribbon
-        Image.asset(
-          'assets/images/newtech_logo_badge.png',
-          height: 60,
-          fit: BoxFit.contain,
-          filterQuality: FilterQuality.high,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+          width: 1.2,
         ),
-        const SizedBox(width: 14),
-        // Sharp "NewTech" Italic Typography with Specifically Enlarged 'N' and 'T'
-        RichText(
-          text: TextSpan(
-            children: [
-              // Large Sharp 'N'
-              TextSpan(
-                text: 'N',
-                style: GoogleFonts.kanit(
-                  fontSize: 52,
-                  fontWeight: FontWeight.w900,
-                  fontStyle: FontStyle.italic,
-                  color: const Color(0xFF1D5CFF),
-                  letterSpacing: -1.0,
-                ),
-              ),
-              // Sharp 'ew'
-              TextSpan(
-                text: 'ew',
-                style: GoogleFonts.kanit(
-                  fontSize: 38,
-                  fontWeight: FontWeight.w800,
-                  fontStyle: FontStyle.italic,
-                  color: const Color(0xFF1D5CFF),
-                  letterSpacing: -0.5,
-                ),
-              ),
-              // Large Sharp 'T'
-              TextSpan(
-                text: 'T',
-                style: GoogleFonts.kanit(
-                  fontSize: 52,
-                  fontWeight: FontWeight.w900,
-                  fontStyle: FontStyle.italic,
-                  color: const Color(0xFFFF6400),
-                  letterSpacing: -1.0,
-                ),
-              ),
-              // Sharp 'ech'
-              TextSpan(
-                text: 'ech',
-                style: GoogleFonts.kanit(
-                  fontSize: 38,
-                  fontWeight: FontWeight.w800,
-                  fontStyle: FontStyle.italic,
-                  color: const Color(0xFFFF6400),
-                  letterSpacing: -0.5,
-                ),
-              ),
-            ],
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
-        ),
-      ],
+          BoxShadow(
+            color: const Color(0xFF1D5CFF).withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: center ? MainAxisAlignment.center : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // 3D Isometric Tech Brandmark (Thematic custom-painted icon)
+          const _IsometricTechBrandmark(size: 40),
+          const SizedBox(width: 14),
+
+          // Unique Futuristic Wordmark: "NewTech" using Unbounded
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: 'New',
+                  style: GoogleFonts.unbounded(
+                    fontSize: 27,
+                    fontWeight: FontWeight.w900,
+                    color: const Color(0xFF1D5CFF),
+                    letterSpacing: -0.8,
+                  ),
+                ),
+                TextSpan(
+                  text: 'Tech',
+                  style: GoogleFonts.unbounded(
+                    fontSize: 27,
+                    fontWeight: FontWeight.w900,
+                    color: const Color(0xFFFF6400),
+                    letterSpacing: -0.8,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 14),
+
+          // Subtle Vertical Micro-Divider
+          Container(
+            width: 1.2,
+            height: 22,
+            color: const Color(0xFFE2E8F0),
+          ),
+          const SizedBox(width: 12),
+
+          // Live Enterprise Cloud Pill Chip
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF10B981),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'ENTERPRISE',
+                  style: GoogleFonts.spaceGrotesk(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                    color: const Color(0xFF475569),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -893,6 +929,148 @@ class _LoginPageState extends State<LoginPage> {
       ],
     );
   }
+}
+
+/// Bespoke 3D Isometric Tech Brandmark custom-painted to match the 3D model theme.
+class _IsometricTechBrandmark extends StatelessWidget {
+  final double size;
+
+  const _IsometricTechBrandmark({this.size = 40});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(
+        painter: _IsometricTechPainter(),
+      ),
+    );
+  }
+}
+
+class _IsometricTechPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width / 2;
+    final cy = size.height * 0.48;
+    final r = size.width * 0.42;
+
+    // 1. Ambient Ground Glow / Drop Shadow
+    final shadowPaint = Paint()
+      ..color = const Color(0xFF1D5CFF).withValues(alpha: 0.18)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(cx, size.height * 0.88),
+        width: size.width * 0.65,
+        height: size.height * 0.22,
+      ),
+      shadowPaint,
+    );
+
+    // 30-degree isometric projection math
+    const cos30 = 0.866025;
+    const sin30 = 0.5;
+    final dx = r * cos30;
+    final dy = r * sin30;
+
+    final centerPt = Offset(cx, cy);
+    final topPt = Offset(cx, cy - r);
+    final topRightPt = Offset(cx + dx, cy - dy);
+    final bottomRightPt = Offset(cx + dx, cy + dy);
+    final bottomPt = Offset(cx, cy + r);
+    final bottomLeftPt = Offset(cx - dx, cy + dy);
+    final topLeftPt = Offset(cx - dx, cy - dy);
+
+    // 2. Top Isometric Facet (Sky to Cyan Blue Gradient)
+    final topPaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Color(0xFF38BDF8),
+          Color(0xFF0EA5E9),
+          Color(0xFF0284C7),
+        ],
+      ).createShader(Rect.fromPoints(topLeftPt, topRightPt))
+      ..style = PaintingStyle.fill;
+
+    final topPath = Path()
+      ..moveTo(topPt.dx, topPt.dy)
+      ..lineTo(topRightPt.dx, topRightPt.dy)
+      ..lineTo(centerPt.dx, centerPt.dy)
+      ..lineTo(topLeftPt.dx, topLeftPt.dy)
+      ..close();
+    canvas.drawPath(topPath, topPaint);
+
+    // 3. Left Isometric Facet (Vivid Royal Tech Blue Gradient)
+    final leftPaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Color(0xFF2563EB),
+          Color(0xFF1D5CFF),
+          Color(0xFF1E3A8A),
+        ],
+      ).createShader(Rect.fromPoints(topLeftPt, bottomPt))
+      ..style = PaintingStyle.fill;
+
+    final leftPath = Path()
+      ..moveTo(topLeftPt.dx, topLeftPt.dy)
+      ..lineTo(centerPt.dx, centerPt.dy)
+      ..lineTo(bottomPt.dx, bottomPt.dy)
+      ..lineTo(bottomLeftPt.dx, bottomLeftPt.dy)
+      ..close();
+    canvas.drawPath(leftPath, leftPaint);
+
+    // 4. Right Isometric Facet (Radiant Sunset Orange Gradient)
+    final rightPaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Color(0xFFFF7A18),
+          Color(0xFFFF6400),
+          Color(0xFFDC2626),
+        ],
+      ).createShader(Rect.fromPoints(topRightPt, bottomPt))
+      ..style = PaintingStyle.fill;
+
+    final rightPath = Path()
+      ..moveTo(topRightPt.dx, topRightPt.dy)
+      ..lineTo(centerPt.dx, centerPt.dy)
+      ..lineTo(bottomPt.dx, bottomPt.dy)
+      ..lineTo(bottomRightPt.dx, bottomRightPt.dy)
+      ..close();
+    canvas.drawPath(rightPath, rightPaint);
+
+    // 5. Internal Circuit Lines & Glowing Central Vertex
+    final edgeHighlightPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.85)
+      ..strokeWidth = 1.3
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawLine(centerPt, topPt, edgeHighlightPaint);
+    canvas.drawLine(centerPt, bottomLeftPt, edgeHighlightPaint);
+    canvas.drawLine(centerPt, bottomRightPt, edgeHighlightPaint);
+
+    // Glowing Central Core Node
+    final glowCorePaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(centerPt, 2.8, glowCorePaint);
+
+    final auraCorePaint = Paint()
+      ..color = const Color(0xFF38BDF8).withValues(alpha: 0.6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4;
+    canvas.drawCircle(centerPt, 4.5, auraCorePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 /// High-performance 3D Lottie animation with controlled cycle pacing and hold interval.
