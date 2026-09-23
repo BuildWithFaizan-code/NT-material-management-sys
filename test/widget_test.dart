@@ -12,6 +12,8 @@ void main() {
     );
 
     expect(find.byType(LoginPage), findsOneWidget);
-    expect(find.text('Welcome back'), findsOneWidget);
+    expect(find.text('Welcome Back'), findsOneWidget);
+    expect(find.text('Sign In'), findsOneWidget);
+    expect(find.text('Clear'), findsOneWidget);
   });
 }
