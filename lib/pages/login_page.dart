@@ -365,7 +365,7 @@ class _LoginPageState extends State<LoginPage> {
                 child: _buildHeaderCloud(width: 60, height: 24, opacity: 0.5),
               ),
 
-              // 5. Bottom Cityscape Illustration (with soft gradient blend at top)
+              // 5. Bottom Cityscape Illustration (High-resolution corporate vector art)
               Positioned(
                 bottom: 0,
                 left: 0,
@@ -381,17 +381,18 @@ class _LoginPageState extends State<LoginPage> {
                           Colors.white,
                           Colors.white,
                         ],
-                        stops: [0.0, 0.22, 1.0],
+                        stops: [0.0, 0.16, 1.0],
                       ).createShader(bounds);
                     },
                     blendMode: BlendMode.dstIn,
                     child: Opacity(
-                      opacity: 0.88,
+                      opacity: 0.95,
                       child: Image.asset(
                         'assets/images/login_city_illustration.png',
                         fit: BoxFit.cover,
                         alignment: Alignment.bottomCenter,
-                        height: 200,
+                        height: 225,
+                        filterQuality: FilterQuality.high,
                         errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
                       ),
                     ),
