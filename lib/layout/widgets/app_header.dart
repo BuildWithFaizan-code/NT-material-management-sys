@@ -877,8 +877,14 @@ class _AnimativeAdminProfileState extends State<_AnimativeAdminProfile>
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
-      tooltip: 'Admin Account & System Roles',
+    return AnimatedBuilder(
+      animation: AuthService.instance,
+      builder: (context, _) {
+        final user = AuthService.instance.currentUser;
+        final bool isAdmin = user?.isAdmin ?? false;
+
+        return PopupMenuButton<String>(
+          tooltip: isAdmin ? 'Admin Account & System Roles' : 'User Account & Profile',
       offset: const Offset(0, 46),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       color: Colors.white,
@@ -1025,10 +1031,12 @@ class _AnimativeAdminProfileState extends State<_AnimativeAdminProfile>
                                     ],
                                   ),
                                 ),
-                                child: const Center(
+                                child: Center(
                                   child: Text(
-                                    'A',
-                                    style: TextStyle(
+                                    AuthService.instance.currentUser?.username.isNotEmpty == true
+                                        ? AuthService.instance.currentUser!.username[0].toUpperCase()
+                                        : 'A',
+                                    style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w900,
                                       fontSize: 14,
@@ -1069,35 +1077,43 @@ class _AnimativeAdminProfileState extends State<_AnimativeAdminProfile>
                   children: [
                     Row(
                       mainAxisSize: MainAxisSize.min,
-                      children: const [
+                      children: [
                         Text(
-                          'Admin User',
-                          style: TextStyle(
+                          AuthService.instance.currentUser?.username.isNotEmpty == true
+                              ? AuthService.instance.currentUser!.username
+                              : 'Admin User',
+                          style: const TextStyle(
                             color: Color(0xFF0F172A),
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        SizedBox(width: 4),
+                        const SizedBox(width: 4),
                         Icon(
                           Icons.verified_rounded,
                           size: 13,
-                          color: Color(0xFF10B981),
+                          color: (AuthService.instance.currentUser?.isAdmin ?? false)
+                              ? const Color(0xFF10B981)
+                              : const Color(0xFF3B82F6),
                         ),
                       ],
                     ),
                     const SizedBox(height: 1.5),
-                    // Written "ADMIN" corporate capsule badge
+                    // Written corporate capsule badge
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 5.5, vertical: 1.5),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0F172A),
+                        color: (AuthService.instance.currentUser?.isAdmin ?? false)
+                            ? const Color(0xFF0F172A)
+                            : const Color(0xFF2563EB),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: const Text(
-                        'ADMIN',
-                        style: TextStyle(
+                      child: Text(
+                        (AuthService.instance.currentUser?.isAdmin ?? false)
+                            ? 'ADMIN'
+                            : 'STAFF',
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 8.5,
                           fontWeight: FontWeight.w800,
@@ -1119,7 +1135,9 @@ class _AnimativeAdminProfileState extends State<_AnimativeAdminProfile>
         ),
       ),
     );
-  }
+  },
+);
+}
 
   PopupMenuItem<String> _buildProfileMenuItem(
       String value, String title, IconData icon,

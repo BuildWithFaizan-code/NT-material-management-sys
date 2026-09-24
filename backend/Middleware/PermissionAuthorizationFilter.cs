@@ -12,12 +12,19 @@ namespace MMSERP.Api.Middleware
     /// Maps executing controller to Modules table and HTTP verb to Actions table,
     /// enforcing permission matrix checks via IPermissionCacheService.
     ///
-    /// SECURITY INVARIANTS:
-    /// 1. Admin users (IsAdmin = true) bypass module matrix checks.
+    /// EXECUTION & SECURITY INVARIANTS:
+    /// 1. AllowAnonymous endpoints bypass all checks.
     /// 2. Hard exclusions (AuthController, UserManagementController, RolesController, DashboardController)
     ///    are governed by their own [Authorize] / AdminOnly policies.
-    /// 3. All non-admin requests to modules fail closed (403 Forbidden) on:
-    ///    - Unauthenticated caller
+    /// 3. Authentication verification is performed FIRST before any module/action resolution.
+    ///    Unauthenticated calls fail immediately with 401 Unauthorized.
+    /// 4. Admin users (IsAdmin = true) bypass module matrix checks IMMEDIATELY after authentication.
+    ///    WHY ADMIN BYPASS MUST PRECEDE MODULE RESOLUTION:
+    ///    If module resolution ran before admin bypass, any newly introduced controller or module
+    ///    seed row missing in the database would lock out administrators with a 403 Forbidden.
+    ///    Admins possess blanket operational access across the entire ERP and do not depend on
+    ///    the role-permission matrix or database Module seed records.
+    /// 5. Non-admin calls fail closed (403 Forbidden) on:
     ///    - User has no RoleId (null)
     ///    - Module not registered in Modules table
     ///    - HTTP verb not recognized in Actions table
@@ -49,7 +56,7 @@ namespace MMSERP.Api.Middleware
         {
             var controllerName = context.Controller.GetType().Name;
 
-            // Allow explicitly anonymous actions (e.g. login, refresh)
+            // 1. Allow explicitly anonymous actions (e.g. login, refresh)
             var endpoint = context.HttpContext.GetEndpoint();
             if (endpoint?.Metadata?.GetMetadata<IAllowAnonymous>() != null)
             {
@@ -57,7 +64,7 @@ namespace MMSERP.Api.Middleware
                 return;
             }
 
-            // Hard exclusions: dedicated management and auth controllers
+            // 2. Hard exclusions: dedicated management and auth controllers
             if (ExcludedControllers.Contains(controllerName))
             {
                 await next();
@@ -66,7 +73,29 @@ namespace MMSERP.Api.Middleware
 
             try
             {
-                // 1. Resolve Module from controller name
+                // 3. Ensure caller is authenticated (401 Unauthorized if false)
+                var user = context.HttpContext.User;
+                if (user?.Identity?.IsAuthenticated != true)
+                {
+                    _logger.LogWarning("Fail-Closed: Unauthenticated request to protected controller '{Controller}'.", controllerName);
+                    context.Result = new ObjectResult(ApiResponse<string>.Fail("Access denied: Authentication required."))
+                    {
+                        StatusCode = StatusCodes.Status401Unauthorized
+                    };
+                    return;
+                }
+
+                // 4. Admin bypass check
+                // NOTE: Must precede module resolution so administrators are never locked out
+                // by missing module seed rows or newly introduced controllers.
+                var isAdminClaim = user.FindFirst("isAdmin")?.Value;
+                if (string.Equals(isAdminClaim, "true", StringComparison.OrdinalIgnoreCase) || user.IsInRole("Admin"))
+                {
+                    await next();
+                    return;
+                }
+
+                // 5. Resolve Module from controller name (403 Forbidden if not found)
                 var module = await _permissionCacheService.GetModuleByControllerNameAsync(controllerName);
                 if (module == null)
                 {
@@ -78,7 +107,7 @@ namespace MMSERP.Api.Middleware
                     return;
                 }
 
-                // 2. Resolve Action from HTTP verb
+                // 6. Resolve Action from HTTP verb (403 Forbidden if not found)
                 var httpMethod = context.HttpContext.Request.Method;
                 var action = await _permissionCacheService.GetActionByHttpVerbAsync(httpMethod);
                 if (action == null)
@@ -91,27 +120,7 @@ namespace MMSERP.Api.Middleware
                     return;
                 }
 
-                // 3. Ensure caller is authenticated
-                var user = context.HttpContext.User;
-                if (user?.Identity?.IsAuthenticated != true)
-                {
-                    _logger.LogWarning("Fail-Closed: Unauthenticated request to protected module '{ModuleName}'.", module.ModuleName);
-                    context.Result = new ObjectResult(ApiResponse<string>.Fail("Access denied: Authentication required."))
-                    {
-                        StatusCode = StatusCodes.Status401Unauthorized
-                    };
-                    return;
-                }
-
-                // 4. Admin bypass check
-                var isAdminClaim = user.FindFirst("isAdmin")?.Value;
-                if (string.Equals(isAdminClaim, "true", StringComparison.OrdinalIgnoreCase))
-                {
-                    await next();
-                    return;
-                }
-
-                // 5. Extract UserId
+                // 7. Resolve User's RoleId (403 Forbidden if null/missing)
                 var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (!int.TryParse(userIdClaim, out var userId))
                 {
@@ -123,7 +132,6 @@ namespace MMSERP.Api.Middleware
                     return;
                 }
 
-                // 6. Resolve User's RoleId
                 var roleId = await _permissionCacheService.GetUserRoleIdAsync(userId);
                 if (!roleId.HasValue)
                 {
@@ -135,7 +143,7 @@ namespace MMSERP.Api.Middleware
                     return;
                 }
 
-                // 7. Check Role Permission Matrix
+                // 8. Check Role Permission Matrix (403 Forbidden if not granted)
                 var hasPermission = await _permissionCacheService.HasPermissionAsync(roleId.Value, module.ModuleId, action.ActionId);
                 if (!hasPermission)
                 {

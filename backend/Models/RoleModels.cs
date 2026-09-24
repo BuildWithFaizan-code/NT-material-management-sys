@@ -84,4 +84,20 @@ namespace MMSERP.Api.Models
         public int? RoleId { get; set; }
         public bool? IsActive { get; set; }
     }
+
+    public class MyPermissionItemDto
+    {
+        public int ModuleId { get; set; }
+        public int ActionId { get; set; }
+        public string ModuleName { get; set; } = string.Empty;
+        public string ActionName { get; set; } = string.Empty;
+        public string ControllerName { get; set; } = string.Empty;
+    }
+
+    public class MyPermissionsResponseDto
+    {
+        public bool IsAdmin { get; set; }
+        public int? RoleId { get; set; }
+        public List<MyPermissionItemDto> Permissions { get; set; } = new();
+    }
 }

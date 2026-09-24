@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../config/api_config.dart';
 import 'api_client.dart';
 import 'token_storage_service.dart';
+import 'role_service.dart';
 
 class UserInfo {
   final int userId;
@@ -58,11 +59,57 @@ class AuthService extends ChangeNotifier {
   bool _isLoggedIn = false;
   bool _mustChangePassword = false;
   UserInfo? _currentUser;
+  MyPermissions? _myPermissions;
 
   bool get isInitialized => _isInitialized;
   bool get isLoggedIn => _isLoggedIn;
   bool get mustChangePassword => _mustChangePassword;
   UserInfo? get currentUser => _currentUser;
+  MyPermissions? get myPermissions => _myPermissions;
+
+  /// Fetches and caches the granted permissions for the active session.
+  Future<void> refreshPermissions() async {
+    if (!_isLoggedIn) {
+      _myPermissions = null;
+      notifyListeners();
+      return;
+    }
+
+    try {
+      _myPermissions = await RoleService.fetchMyPermissions();
+    } catch (e) {
+      debugPrint('Failed to load user permissions: $e');
+      if (_currentUser?.isAdmin == true) {
+        _myPermissions = MyPermissions(isAdmin: true, permissions: []);
+      } else {
+        _myPermissions = MyPermissions(isAdmin: false, permissions: []);
+      }
+    }
+    notifyListeners();
+  }
+
+  static UserInfo? _parseUserFromJwt(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+      var normalized = base64Url.normalize(parts[1]);
+      final payloadString = utf8.decode(base64Url.decode(normalized));
+      final Map<String, dynamic> payload = jsonDecode(payloadString);
+      final userIdStr = payload['nameid'] ?? payload['sub'] ?? '0';
+      final userId = int.tryParse(userIdStr.toString()) ?? 0;
+      final username = payload['unique_name'] ?? payload['name'] ?? '';
+      final email = payload['email'] ?? '';
+      final isAdmin = payload['isAdmin'] == 'true' || payload['isAdmin'] == true;
+      return UserInfo(
+        userId: userId,
+        username: username,
+        email: email,
+        isAdmin: isAdmin,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
 
   final String _authBaseUrl = '${ApiConfig.baseUrl}/auth';
 
@@ -78,11 +125,14 @@ class AuthService extends ChangeNotifier {
         final success = await silentRefresh();
         if (success) {
           _isLoggedIn = true;
+          await refreshPermissions();
         }
       } else {
         final token = await TokenStorageService.instance.getAccessToken();
         if (token != null && token.isNotEmpty) {
           _isLoggedIn = true;
+          _currentUser ??= _parseUserFromJwt(token);
+          await refreshPermissions();
         }
       }
     } catch (_) {
@@ -141,7 +191,7 @@ class AuthService extends ChangeNotifier {
 
         _mustChangePassword = mustChange;
         _isLoggedIn = true;
-        notifyListeners();
+        await refreshPermissions();
 
         return LoginResult(
           success: true,
@@ -195,7 +245,7 @@ class AuthService extends ChangeNotifier {
 
         _mustChangePassword = mustChange;
         _isLoggedIn = true;
-        notifyListeners();
+        await refreshPermissions();
 
         return LoginResult(
           success: true,
@@ -228,6 +278,7 @@ class AuthService extends ChangeNotifier {
             if (data?['user'] != null) {
               _currentUser = UserInfo.fromJson(data!['user'] as Map<String, dynamic>);
             }
+            await refreshPermissions();
             return true;
           }
         }
@@ -256,6 +307,7 @@ class AuthService extends ChangeNotifier {
             if (data?['user'] != null) {
               _currentUser = UserInfo.fromJson(data!['user'] as Map<String, dynamic>);
             }
+            await refreshPermissions();
             return true;
           }
         }
@@ -280,6 +332,7 @@ class AuthService extends ChangeNotifier {
       await TokenStorageService.instance.clearTokens();
       _isLoggedIn = false;
       _currentUser = null;
+      _myPermissions = null;
       _mustChangePassword = false;
       notifyListeners();
     }
@@ -337,6 +390,7 @@ class AuthService extends ChangeNotifier {
     TokenStorageService.instance.clearTokens();
     _isLoggedIn = false;
     _currentUser = null;
+    _myPermissions = null;
     notifyListeners();
   }
 }

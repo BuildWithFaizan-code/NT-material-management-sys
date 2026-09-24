@@ -277,11 +277,12 @@ static async Task<bool> HandleAdminProvisioningAsync(string[] args, IServiceProv
     string? adminPassword = null;
     bool isCliCommand = false;
 
-    // Check CLI argument: --provision-admin <username> <email> <password>
+    // Check CLI argument: --provision-client or --provision-admin <username> <email> <password>
     for (int i = 0; i < args.Length; i++)
     {
-        if (args[i] == "--provision-admin")
+        if (args[i] == "--provision-client" || args[i] == "--provision-admin")
         {
+            var flag = args[i];
             isCliCommand = true;
             if (i + 3 < args.Length)
             {
@@ -292,7 +293,7 @@ static async Task<bool> HandleAdminProvisioningAsync(string[] args, IServiceProv
             else
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("Error: --provision-admin requires 3 arguments: <username> <email> <password>");
+                Console.WriteLine($"Error: {flag} requires 3 arguments: <username> <email> <password>");
                 Console.ResetColor();
                 return true; // Stop execution
             }
@@ -487,6 +488,29 @@ static async Task RunDatabaseMigrationsAsync(string connectionString, bool isCli
         else
         {
             logger.LogInformation(msg);
+        }
+    }
+
+    // Confirm modules and actions seeded
+    using (var verifyCmd = connection.CreateCommand())
+    {
+        verifyCmd.CommandText = "SELECT COUNT(*) FROM Modules; SELECT COUNT(*) FROM Actions;";
+        using var reader = await verifyCmd.ExecuteReaderAsync();
+        int moduleCount = 0;
+        int actionCount = 0;
+        if (await reader.ReadAsync()) moduleCount = reader.GetInt32(0);
+        if (await reader.NextResultAsync() && await reader.ReadAsync()) actionCount = reader.GetInt32(0);
+
+        var seedMsg = $"Database seed confirmed: {moduleCount} Modules, {actionCount} Actions active in system.";
+        if (isCli)
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"✔ {seedMsg}");
+            Console.ResetColor();
+        }
+        else
+        {
+            logger.LogInformation(seedMsg);
         }
     }
 }

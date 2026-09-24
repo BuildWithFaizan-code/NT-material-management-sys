@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/auth_service.dart';
 import 'expandable_nav_accordion.dart';
 
 /// Data class representing a Master sub-navigation section.
@@ -16,7 +17,7 @@ class MasterSubSection {
   });
 }
 
-/// The complete list of Master sub-sections.
+/// The complete list of Master sub-sections (Exactly 18 Master Modules).
 const List<MasterSubSection> masterSubSections = [
   MasterSubSection(title: 'Project Master', icon: Icons.folder_open_rounded),
   MasterSubSection(title: 'Location Master', icon: Icons.location_on_outlined),
@@ -35,11 +36,16 @@ const List<MasterSubSection> masterSubSections = [
   MasterSubSection(title: 'Main Group Master', icon: Icons.grid_view_rounded),
   MasterSubSection(title: 'Group Master', icon: Icons.category_outlined),
   MasterSubSection(title: 'Group Master Definition', icon: Icons.folder_copy_outlined),
+  MasterSubSection(title: 'Charges Master', icon: Icons.receipt_outlined),
 ];
 
 /// Collapsible accordion item for "Master" navigation tab with nested sub-items
 /// styled matching the reference image tree hierarchy with a dark pill active header
 /// and pure white elevated capsule sub-item indicator.
+///
+/// PERMISSION FILTERING:
+/// Non-admin users see ONLY the modules for which they have granted "View" permission.
+/// Administrators have blanket visibility to all 18 Master modules.
 class MasterNavItem extends StatelessWidget {
   final bool isMasterSelected;
   final String activeSubItem;
@@ -56,32 +62,63 @@ class MasterNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ExpandableNavAccordion(
-      icon: Icons.inventory_2_outlined,
-      title: 'Master',
-      isSelected: isMasterSelected,
-      onHeaderTap: onMasterHeaderTap,
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: masterSubSections.map((sub) {
-          if (sub.isSkuGroup) {
-            return _SkuMasterNestedGroup(
-              subSection: sub,
-              activeSubItem: activeSubItem,
-              onSubItemSelected: onSubItemSelected,
-            );
-          }
+    return AnimatedBuilder(
+      animation: AuthService.instance,
+      builder: (context, _) {
+        final auth = AuthService.instance;
+        final bool isAdmin = (auth.currentUser?.isAdmin ?? false) ||
+            (auth.myPermissions?.isAdmin ?? false);
+        final perms = auth.myPermissions;
 
-          final bool isSubSelected = activeSubItem == sub.title;
-          return NavSubItemTile(
-            icon: sub.icon,
-            title: sub.title,
-            isSelected: isSubSelected,
-            onTap: () => onSubItemSelected(sub.title),
-          );
-        }).toList(),
-      ),
+        // Filter sections: admins see all 18, non-admins see only modules where View permission is granted
+        final visibleSections = masterSubSections.where((sub) {
+          if (isAdmin) return true;
+          return perms?.canViewModule(sub.title) ?? false;
+        }).toList();
+
+        return ExpandableNavAccordion(
+          icon: Icons.inventory_2_outlined,
+          title: 'Master',
+          isSelected: isMasterSelected,
+          onHeaderTap: onMasterHeaderTap,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (visibleSections.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text(
+                    'No master modules assigned',
+                    style: TextStyle(
+                      color: Color(0xFF94A3B8),
+                      fontSize: 11,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                )
+              else
+                ...visibleSections.map((sub) {
+                  if (sub.isSkuGroup) {
+                    return _SkuMasterNestedGroup(
+                      subSection: sub,
+                      activeSubItem: activeSubItem,
+                      onSubItemSelected: onSubItemSelected,
+                    );
+                  }
+
+                  final bool isSubSelected = activeSubItem == sub.title;
+                  return NavSubItemTile(
+                    icon: sub.icon,
+                    title: sub.title,
+                    isSelected: isSubSelected,
+                    onTap: () => onSubItemSelected(sub.title),
+                  );
+                }),
+            ],
+          ),
+        );
+      },
     );
   }
 }

@@ -217,4 +217,74 @@ class RoleService {
     final body = ApiClient.instance.decodeResponse(response);
     return body['success'] as bool? ?? true;
   }
+
+  static Future<MyPermissions> fetchMyPermissions() async {
+    final response = await ApiClient.instance.get('$_rolesBaseUrl/my-permissions');
+    final body = ApiClient.instance.decodeResponse(response);
+    final data = body['data'] as Map<String, dynamic>? ?? {};
+    return MyPermissions.fromJson(data);
+  }
+}
+
+class UserPermissionItem {
+  final int moduleId;
+  final int actionId;
+  final String moduleName;
+  final String actionName;
+  final String controllerName;
+
+  UserPermissionItem({
+    required this.moduleId,
+    required this.actionId,
+    required this.moduleName,
+    required this.actionName,
+    required this.controllerName,
+  });
+
+  factory UserPermissionItem.fromJson(Map<String, dynamic> json) {
+    return UserPermissionItem(
+      moduleId: json['moduleId'] as int? ?? 0,
+      actionId: json['actionId'] as int? ?? 0,
+      moduleName: json['moduleName'] as String? ?? '',
+      actionName: json['actionName'] as String? ?? '',
+      controllerName: json['controllerName'] as String? ?? '',
+    );
+  }
+}
+
+class MyPermissions {
+  final bool isAdmin;
+  final int? roleId;
+  final List<UserPermissionItem> permissions;
+
+  MyPermissions({
+    required this.isAdmin,
+    this.roleId,
+    required this.permissions,
+  });
+
+  factory MyPermissions.fromJson(Map<String, dynamic> json) {
+    final permsRaw = json['permissions'] as List<dynamic>? ?? [];
+    return MyPermissions(
+      isAdmin: json['isAdmin'] as bool? ?? false,
+      roleId: json['roleId'] as int?,
+      permissions: permsRaw
+          .map((p) => UserPermissionItem.fromJson(p as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  /// Checks if user has permission to view a specific module (by ModuleName or ControllerName).
+  /// For Admins, this always returns true.
+  bool canViewModule(String moduleName) {
+    if (isAdmin) return true;
+    final normalized = moduleName.trim().toLowerCase();
+    return permissions.any((p) {
+      final isView = p.actionName.toLowerCase() == 'view';
+      if (!isView) return false;
+      final mod = p.moduleName.trim().toLowerCase();
+      final ctrl = p.controllerName.trim().toLowerCase();
+      return mod == normalized || ctrl == normalized || '$mod controller' == normalized;
+    });
+  }
 }

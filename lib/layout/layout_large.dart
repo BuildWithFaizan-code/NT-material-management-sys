@@ -24,11 +24,12 @@ import '../pages/grade_master_page.dart';
 import '../pages/main_group_master_page.dart';
 import '../pages/group_master_page.dart';
 import '../pages/group_master_definition_page.dart';
-// import '../pages/charges_master_page.dart';
+import '../pages/charges_master_page.dart';
 import '../pages/placeholder_module_pages.dart';
 import '../pages/transactions/transaction_placeholder_page.dart';
 import '../pages/user_management_page.dart';
-
+import '../services/auth_service.dart';
+import 'widgets/master_nav_item.dart';
 import 'widgets/modern_collapsed_rail.dart';
 
 class LargeScreenLayout extends StatelessWidget {
@@ -95,7 +96,20 @@ class LargeScreenLayout extends StatelessWidget {
                   currentIndex: layoutState.currentPageIndex,
                   onItemSelected: (idx) {
                     if (idx == 1) {
-                      layoutState.setMasterSubItem('Project Master');
+                      final auth = AuthService.instance;
+                      final isAdmin = (auth.currentUser?.isAdmin ?? false) ||
+                          (auth.myPermissions?.isAdmin ?? false);
+                      final perms = auth.myPermissions;
+                      String defaultModule = 'Project Master';
+                      if (!isAdmin && perms != null) {
+                        final permitted = masterSubSections
+                            .where((s) => perms.canViewModule(s.title))
+                            .toList();
+                        if (permitted.isNotEmpty) {
+                          defaultModule = permitted.first.title;
+                        }
+                      }
+                      layoutState.setMasterSubItem(defaultModule);
                     } else if (idx == 2) {
                       layoutState.setTransactionSubItem(
                         layoutState.selectedTransactionSubItem.isNotEmpty
@@ -451,7 +465,22 @@ class LargeScreenLayout extends StatelessWidget {
   }
 
   Widget _buildMasterPage() {
-    final sub = layoutState.selectedMasterSubItem;
+    final sub = layoutState.selectedMasterSubItem.isNotEmpty
+        ? layoutState.selectedMasterSubItem
+        : 'Project Master';
+
+    // Route Guard (Defense-in-depth UX enforcement):
+    // If user is non-admin and lacks View permission for the requested Master module,
+    // render access-restricted screen.
+    final auth = AuthService.instance;
+    final bool isAdmin = (auth.currentUser?.isAdmin ?? false) ||
+        (auth.myPermissions?.isAdmin ?? false);
+    final perms = auth.myPermissions;
+
+    if (!isAdmin && perms != null && !perms.canViewModule(sub)) {
+      return _buildAccessDenied(sub);
+    }
+
     if (sub == 'Location Master') return const LocationMasterPage();
     if (sub == 'Store Master') return const StoreMasterPage();
     if (sub == 'Operator Master') return const OperatorMasterPage();
@@ -510,7 +539,70 @@ class LargeScreenLayout extends StatelessWidget {
         sub == 'Non-Stockable Item Master') {
       return const NonStockableItemMasterPage();
     }
+    if (sub == 'Charges Master' || sub == 'Charges') {
+      return const ChargesMasterPage();
+    }
     return const ProjectMasterPage();
+  }
+
+  Widget _buildAccessDenied(String moduleName) {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 32),
+        constraints: const BoxConstraints(maxWidth: 480),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF2F2),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFFECACA)),
+              ),
+              child: const Icon(
+                Icons.lock_person_outlined,
+                size: 36,
+                color: Color(0xFFEF4444),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Access Restricted',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Your role does not have permission to view "$moduleName".\n'
+              'Please contact your system administrator if you require access to this section.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF64748B),
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

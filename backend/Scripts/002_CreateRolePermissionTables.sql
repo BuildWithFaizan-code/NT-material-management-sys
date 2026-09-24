@@ -108,7 +108,7 @@ IF NOT EXISTS (SELECT 1 FROM Actions WHERE ActionName = 'Delete' AND HttpVerb = 
 GO
 
 -- ============================================================================
--- Seed Data: Modules (Exactly 17 Master Modules, verified against Controller classes)
+-- Seed Data: Modules (Exactly 18 Master Modules, verified against Controller classes)
 -- ============================================================================
 MERGE INTO Modules AS target
 USING (VALUES
@@ -128,7 +128,8 @@ USING (VALUES
     ('Grade Master', 'Master', 'GradeMasterController'),
     ('Main Group Master', 'Master', 'MainGroupMasterController'),
     ('Group Master', 'Master', 'GroupMasterController'),
-    ('Group Master Definition', 'Master', 'GroupMasterDefinitionController')
+    ('Group Master Definition', 'Master', 'GroupMasterDefinitionController'),
+    ('Charges Master', 'Master', 'ChargesMasterController')
 ) AS source (ModuleName, ModuleGroup, ControllerName)
 ON target.ControllerName = source.ControllerName
 WHEN MATCHED THEN

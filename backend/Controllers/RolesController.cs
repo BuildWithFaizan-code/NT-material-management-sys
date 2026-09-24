@@ -9,7 +9,6 @@ namespace MMSERP.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Policy = "AdminOnly")]
     public class RolesController : ControllerBase
     {
         private readonly IRolePermissionRepository _repository;
@@ -33,10 +32,78 @@ namespace MMSERP.Api.Controllers
         }
 
         /// <summary>
+        /// GET /api/roles/my-permissions
+        /// Returns granted permissions for the authenticated user.
+        /// If user is Admin, returns { isAdmin: true }.
+        /// If non-admin, returns granted (ModuleId, ActionId, ModuleName, ActionName, ControllerName) tuples.
+        /// If non-admin has no role, returns empty permissions array.
+        /// </summary>
+        [HttpGet("my-permissions")]
+        [Authorize]
+        public async Task<IActionResult> GetMyPermissions()
+        {
+            var isAdminClaim = User.FindFirst("isAdmin")?.Value;
+            var isAdmin = string.Equals(isAdminClaim, "true", StringComparison.OrdinalIgnoreCase) || User.IsInRole("Admin");
+
+            if (isAdmin)
+            {
+                return Ok(ApiResponse<MyPermissionsResponseDto>.Ok(new MyPermissionsResponseDto
+                {
+                    IsAdmin = true,
+                    RoleId = null,
+                    Permissions = new List<MyPermissionItemDto>()
+                }, "Admin permissions fetched successfully."));
+            }
+
+            var userId = GetCurrentUserId();
+            var roleId = await _cacheService.GetUserRoleIdAsync(userId);
+            if (!roleId.HasValue)
+            {
+                return Ok(ApiResponse<MyPermissionsResponseDto>.Ok(new MyPermissionsResponseDto
+                {
+                    IsAdmin = false,
+                    RoleId = null,
+                    Permissions = new List<MyPermissionItemDto>()
+                }, "No role assigned to user."));
+            }
+
+            var grantedPairs = await _repository.GetRolePermissionsAsync(roleId.Value);
+            var allModules = (await _repository.GetAllModulesAsync()).ToDictionary(m => m.ModuleId);
+            var allActions = (await _repository.GetAllActionsAsync()).ToDictionary(a => a.ActionId);
+
+            var permissionsList = new List<MyPermissionItemDto>();
+            foreach (var pair in grantedPairs)
+            {
+                if (allModules.TryGetValue(pair.ModuleId, out var module) &&
+                    allActions.TryGetValue(pair.ActionId, out var action))
+                {
+                    permissionsList.Add(new MyPermissionItemDto
+                    {
+                        ModuleId = pair.ModuleId,
+                        ActionId = pair.ActionId,
+                        ModuleName = module.ModuleName,
+                        ActionName = action.ActionName,
+                        ControllerName = module.ControllerName
+                    });
+                }
+            }
+
+            var response = new MyPermissionsResponseDto
+            {
+                IsAdmin = false,
+                RoleId = roleId.Value,
+                Permissions = permissionsList
+            };
+
+            return Ok(ApiResponse<MyPermissionsResponseDto>.Ok(response, "User permissions fetched successfully."));
+        }
+
+        /// <summary>
         /// GET /api/roles
         /// Returns all roles with their assigned user counts.
         /// </summary>
         [HttpGet]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> GetAll()
         {
             var roles = await _repository.GetRolesAsync();
@@ -48,6 +115,7 @@ namespace MMSERP.Api.Controllers
         /// Returns all modules and actions for constructing the permission matrix in the UI.
         /// </summary>
         [HttpGet("matrix-metadata")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> GetMatrixMetadata()
         {
             var modules = await _repository.GetAllModulesAsync();
@@ -67,6 +135,7 @@ namespace MMSERP.Api.Controllers
         /// Returns role details and its complete set of granted permissions.
         /// </summary>
         [HttpGet("{id:int}/permissions")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> GetPermissions(int id)
         {
             var role = await _repository.GetRoleByIdAsync(id);
@@ -98,6 +167,7 @@ namespace MMSERP.Api.Controllers
         /// Creates a new role with initial permissions in a single transaction.
         /// </summary>
         [HttpPost]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Create([FromBody] CreateRoleRequest request)
         {
             if (request == null || string.IsNullOrWhiteSpace(request.RoleName))
@@ -128,6 +198,7 @@ namespace MMSERP.Api.Controllers
         /// Updates an existing role's permissions, audit-logs diffs, and synchronously invalidates the role's cache.
         /// </summary>
         [HttpPut("{id:int}/permissions")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> UpdatePermissions(int id, [FromBody] UpdateRolePermissionsRequest request)
         {
             if (request == null)
@@ -170,6 +241,7 @@ namespace MMSERP.Api.Controllers
         /// Deletes a role only if no users are currently assigned to it.
         /// </summary>
         [HttpDelete("{id:int}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(int id)
         {
             var role = await _repository.GetRoleByIdAsync(id);
