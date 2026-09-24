@@ -11,17 +11,17 @@ public static class DbConnectionHelper
     /// </summary>
     public static string ResolveConnectionString(IConfiguration configuration)
     {
-        var connStr = Environment.GetEnvironmentVariable("CONNECTION_STRING");
+        var connStr = configuration.GetConnectionString("DefaultConnection");
         if (string.IsNullOrWhiteSpace(connStr))
         {
-            connStr = configuration.GetConnectionString("DefaultConnection");
+            connStr = Environment.GetEnvironmentVariable("CONNECTION_STRING");
         }
 
         if (string.IsNullOrWhiteSpace(connStr))
         {
             throw new InvalidOperationException(
                 "Database connection string is unconfigured or empty. " +
-                "Please configure 'ConnectionStrings:DefaultConnection' in appsettings.Development.json (or appsettings.Local.json) " +
+                "Please configure 'ConnectionStrings:DefaultConnection' in appsettings.json " +
                 "or set the 'CONNECTION_STRING' environment variable.");
         }
 
