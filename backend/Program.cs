@@ -87,10 +87,32 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins(allowedOriginsList.ToArray())
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+        policy.SetIsOriginAllowed(origin =>
+        {
+            if (string.IsNullOrWhiteSpace(origin)) return false;
+            try
+            {
+                var uri = new Uri(origin);
+                if (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                    uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+                if (uri.Host.EndsWith(".netlify.app", StringComparison.OrdinalIgnoreCase) ||
+                    uri.Host.Equals("netlify.app", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+                return allowedOriginsList.Any(o => string.Equals(o, origin, StringComparison.OrdinalIgnoreCase));
+            }
+            catch
+            {
+                return false;
+            }
+        })
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
     });
 });
 
@@ -253,7 +275,10 @@ else if (app.Environment.IsDevelopment())
 // ============================================================================
 // 9. HTTP Request Pipeline
 // ============================================================================
-app.UseMiddleware<ExceptionMiddleware>();
+// UseCors must precede ExceptionMiddleware and all other middleware so that
+// CORS headers (Access-Control-Allow-Origin) are attached to all responses,
+// including errors (400, 401, 403, 500), preventing browser "Failed to fetch" errors.
+app.UseCors();
 
 if (!app.Environment.IsDevelopment())
 {
@@ -261,7 +286,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseCors();
+app.UseMiddleware<ExceptionMiddleware>();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
