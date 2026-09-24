@@ -58,8 +58,8 @@ namespace MMSERP.Api.Services
                 return ApiResponse<LoginResponse>.Fail("Invalid credentials.");
             }
 
-            // Check if account is locked
-            if (user.LockedUntil.HasValue && user.LockedUntil.Value > DateTime.UtcNow)
+            // Check if account is locked (Admin users are exempt from lockout to prevent administrator lockout DOS)
+            if (!user.IsAdmin && user.LockedUntil.HasValue && user.LockedUntil.Value > DateTime.UtcNow)
             {
                 await _authRepository.WriteAuditLogAsync(new AuthAuditLog
                 {
@@ -89,7 +89,8 @@ namespace MMSERP.Api.Services
                 var failedCount = user.FailedLoginCount + 1;
                 DateTime? lockedUntil = null;
 
-                if (failedCount >= 5)
+                // Non-admin accounts lock out after 5 consecutive failures
+                if (!user.IsAdmin && failedCount >= 5)
                 {
                     // Exponential backoff cooldown: 5 min, 15 min, 60 min
                     int cooldownMinutes = failedCount switch

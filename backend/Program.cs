@@ -108,7 +108,7 @@ builder.Services.AddRateLimiter(options =>
             partitionKey: clientIp,
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 5,
+                PermitLimit = 30,
                 Window = TimeSpan.FromMinutes(1),
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit = 0
@@ -368,7 +368,7 @@ static async Task<bool> HandleAdminProvisioningAsync(string[] args, IServiceProv
             existing.IsActive = true;
             existing.IsAdmin = true;
             existing.RoleId = null; // Admins bypass permission system, RoleId is null
-            existing.MustChangePassword = true;
+            existing.MustChangePassword = false;
             existing.FailedLoginCount = 0;
             existing.LockedUntil = null;
             await authRepo.UpdateUserAsync(existing);
@@ -385,7 +385,7 @@ static async Task<bool> HandleAdminProvisioningAsync(string[] args, IServiceProv
                 IsActive = true,
                 IsAdmin = true,
                 RoleId = null,
-                MustChangePassword = true,
+                MustChangePassword = false,
                 CreatedAt = DateTime.UtcNow
             };
             userId = await authRepo.CreateUserAsync(newUser);
@@ -400,7 +400,7 @@ static async Task<bool> HandleAdminProvisioningAsync(string[] args, IServiceProv
             Timestamp = DateTime.UtcNow
         });
 
-        var successMsg = $"Admin user '{adminUsername}' successfully provisioned with MustChangePassword = true, IsAdmin = true, RoleId = NULL.";
+        var successMsg = $"Admin user '{adminUsername}' successfully provisioned with MustChangePassword = false, IsAdmin = true, RoleId = NULL.";
         if (isCliCommand)
         {
             Console.ForegroundColor = ConsoleColor.Green;

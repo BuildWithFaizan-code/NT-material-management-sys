@@ -22,7 +22,7 @@ dotnet run --project backend/MMSERP.Api.csproj -- --provision-client <username> 
 ### Example
 
 ```bash
-dotnet run --project backend/MMSERP.Api.csproj -- --provision-client admin admin@newtechmms.com AdminSecurePass123!
+dotnet run --project backend/MMSERP.Api.csproj -- --provision-client Admin admin@newtechmms.com Admin@newtech
 ```
 
 ### Backward Compatibility
@@ -30,7 +30,7 @@ dotnet run --project backend/MMSERP.Api.csproj -- --provision-client admin admin
 The legacy flag `--provision-admin` remains fully supported and behaves identically:
 
 ```bash
-dotnet run --project backend/MMSERP.Api.csproj -- --provision-admin admin admin@newtechmms.com AdminSecurePass123!
+dotnet run --project backend/MMSERP.Api.csproj -- --provision-admin Admin admin@newtechmms.com Admin@newtech
 ```
 
 ---
