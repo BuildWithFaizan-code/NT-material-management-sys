@@ -87,37 +87,15 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.SetIsOriginAllowed(origin =>
-        {
-            if (string.IsNullOrWhiteSpace(origin)) return false;
-            try
-            {
-                var uri = new Uri(origin);
-                if (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
-                    uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-                if (uri.Host.EndsWith(".netlify.app", StringComparison.OrdinalIgnoreCase) ||
-                    uri.Host.Equals("netlify.app", StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-                return allowedOriginsList.Any(o => string.Equals(o, origin, StringComparison.OrdinalIgnoreCase));
-            }
-            catch
-            {
-                return false;
-            }
-        })
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials();
+        policy.WithOrigins(allowedOriginsList.ToArray())
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
 // ============================================================================
-// 4. IP-Based Rate Limiting for Auth Endpoints (5 attempts/minute/IP)
+// 4. IP-Based Rate Limiting for Auth Endpoints (5 attempts/minute/IP in production)
 // ============================================================================
 builder.Services.AddRateLimiter(options =>
 {
@@ -125,12 +103,13 @@ builder.Services.AddRateLimiter(options =>
     options.AddPolicy("LoginRateLimit", httpContext =>
     {
         var clientIp = IpHelper.GetClientIp(httpContext);
+        var permitLimit = builder.Environment.IsDevelopment() ? 30 : 5;
 
         return RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: clientIp,
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 30,
+                PermitLimit = permitLimit,
                 Window = TimeSpan.FromMinutes(1),
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit = 0

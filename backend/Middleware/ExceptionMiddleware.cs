@@ -59,7 +59,7 @@ namespace MMSERP.Api.Middleware
                 InvalidOperationException =>
                     (HttpStatusCode.BadRequest, "The requested operation could not be completed."),
                 _ =>
-                    (HttpStatusCode.InternalServerError, $"An unexpected server error occurred: {exception.Message}")
+                    (HttpStatusCode.InternalServerError, "An unexpected server error occurred. Please try again later.")
             };
 
             await WriteJsonResponseAsync(context, statusCode, clientMessage);

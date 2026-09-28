@@ -58,8 +58,8 @@ namespace MMSERP.Api.Services
                 return ApiResponse<LoginResponse>.Fail("Invalid credentials.");
             }
 
-            // Check if account is locked (Admin users are exempt from lockout to prevent administrator lockout DOS)
-            if (!user.IsAdmin && user.LockedUntil.HasValue && user.LockedUntil.Value > DateTime.UtcNow)
+            // Check if account is locked (Applies to all accounts, including Admin)
+            if (user.LockedUntil.HasValue && user.LockedUntil.Value > DateTime.UtcNow)
             {
                 await _authRepository.WriteAuditLogAsync(new AuthAuditLog
                 {
@@ -89,18 +89,36 @@ namespace MMSERP.Api.Services
                 var failedCount = user.FailedLoginCount + 1;
                 DateTime? lockedUntil = null;
 
-                // Non-admin accounts lock out after 5 consecutive failures
-                if (!user.IsAdmin && failedCount >= 5)
+                // Lockout protection: Non-admin accounts lock out after 5 consecutive failures.
+                // Admin accounts have a higher threshold (10 failures) and shorter initial cooldown (2 min)
+                // to prevent accidental administrative lockout during testing while still maintaining robust brute-force protection.
+                int lockoutThreshold = user.IsAdmin ? 10 : 5;
+                if (failedCount >= lockoutThreshold)
                 {
-                    // Exponential backoff cooldown: 5 min, 15 min, 60 min
-                    int cooldownMinutes = failedCount switch
+                    int cooldownMinutes;
+                    if (user.IsAdmin)
                     {
-                        5 or 6 or 7 => 5,
-                        8 or 9 or 10 or 11 => 15,
-                        _ => 60
-                    };
+                        cooldownMinutes = failedCount switch
+                        {
+                            10 or 11 or 12 => 2,
+                            13 or 14 or 15 => 10,
+                            _ => 30
+                        };
+                    }
+                    else
+                    {
+                        // Exponential backoff cooldown: 5 min, 15 min, 60 min
+                        cooldownMinutes = failedCount switch
+                        {
+                            5 or 6 or 7 => 5,
+                            8 or 9 or 10 or 11 => 15,
+                            _ => 60
+                        };
+                    }
+
                     lockedUntil = DateTime.UtcNow.AddMinutes(cooldownMinutes);
-                    _logger.LogWarning("User {UserId} locked out until {LockedUntil} after {FailedCount} failed attempts.", user.UserId, lockedUntil, failedCount);
+                    _logger.LogWarning("User {UserId} (IsAdmin: {IsAdmin}) locked out until {LockedUntil} after {FailedCount} failed attempts.",
+                        user.UserId, user.IsAdmin, lockedUntil, failedCount);
                 }
 
                 await _authRepository.RecordFailedLoginAsync(user.UserId, failedCount, lockedUntil);

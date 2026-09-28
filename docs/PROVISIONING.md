@@ -22,22 +22,39 @@ dotnet run --project backend/MMSERP.Api.csproj -- --provision-client <username> 
 ### Example
 
 ```bash
-dotnet run --project backend/MMSERP.Api.csproj -- --provision-client Admin admin@newtechmms.com Admin@newtech
+dotnet run --project backend/MMSERP.Api.csproj -- --provision-client Admin admin@newtechmms.com YourSecurePasswordHere123!
 ```
+
+> **Warning**: Never commit the actual password used in a real deployment to this file or any other file in the repository.
 
 ### Backward Compatibility
 
 The legacy flag `--provision-admin` remains fully supported and behaves identically:
 
 ```bash
-dotnet run --project backend/MMSERP.Api.csproj -- --provision-admin Admin admin@newtechmms.com Admin@newtech
+dotnet run --project backend/MMSERP.Api.csproj -- --provision-admin Admin admin@newtechmms.com YourSecurePasswordHere123!
+```
+
+---
+
+## Account Recovery & Unlocking
+
+If an administrator account is locked due to consecutive failed login attempts, re-running the provisioning CLI command with the admin credentials will immediately unlock the account:
+
+- Clears the lockout (`LockedUntil = NULL`).
+- Resets failed attempt counters (`FailedLoginCount = 0`).
+- Updates the password to the newly specified value.
+- Writes an audit log record indicating the administrator account was re-provisioned/unlocked.
+
+```bash
+dotnet run --project backend/MMSERP.Api.csproj -- --provision-client Admin admin@newtechmms.com YourNewSecurePasswordHere123!
 ```
 
 ---
 
 ## Environment Variable Mode
 
-For containerized deployments (Docker / Kubernetes / Cloud Run) where interactive CLI arguments are not used, provisioning can be triggered automatically on application startup via environment variables:
+For containerized deployments (Docker / Kubernetes / Cloud Run / Render) where interactive CLI arguments are not used, provisioning can be triggered automatically on application startup via environment variables:
 
 - `INITIAL_ADMIN_PASSWORD` (Required to trigger provisioning)
 - `INITIAL_ADMIN_USERNAME` (Optional, defaults to `admin`)
@@ -54,13 +71,14 @@ If `INITIAL_ADMIN_PASSWORD` is set and the database already contains an active a
    - Purely numeric passwords are strictly rejected.
    - Hashed using BCrypt with a work factor of 11.
 
-2. **Admin Role Isolation**:
+2. **Admin Role Isolation & Lockout Protection**:
    - Initial administrator accounts are provisioned with:
      - `IsAdmin = true`
      - `RoleId = NULL`
-     - `MustChangePassword = true`
+     - `MustChangePassword = false`
      - `IsActive = true`
    - In accordance with the system authorization model, administrators bypass the role-permission matrix.
+   - Administrator accounts are protected against brute-force attacks via account lockout (threshold of 10 failed attempts with cooldown).
 
 3. **Idempotency**:
    - Migration scripts utilize SQL Server `IF NOT EXISTS` checks and `MERGE` statements.
@@ -82,5 +100,5 @@ Successful execution outputs:
 ✔ Migration script '001_CreateAuthTables.sql' executed successfully.
 ✔ Migration script '002_CreateRolePermissionTables.sql' executed successfully.
 ✔ Database seed confirmed: 18 Modules, 4 Actions active in system.
-✔ Admin user 'admin' successfully provisioned with MustChangePassword = true, IsAdmin = true, RoleId = NULL.
+✔ Admin user 'admin' successfully provisioned with MustChangePassword = false, IsAdmin = true, RoleId = NULL.
 ```
