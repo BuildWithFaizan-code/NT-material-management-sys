@@ -8,8 +8,17 @@ import '../services/user_management_service.dart';
 
 class AddEditUserPage extends StatefulWidget {
   final UserManagementItem? user;
+  final VoidCallback? onSuccess;
+  final VoidCallback? onCancel;
+  final bool isEmbedded;
 
-  const AddEditUserPage({super.key, this.user});
+  const AddEditUserPage({
+    super.key,
+    this.user,
+    this.onSuccess,
+    this.onCancel,
+    this.isEmbedded = false,
+  });
 
   @override
   State<AddEditUserPage> createState() => _AddEditUserPageState();
@@ -258,7 +267,11 @@ class _AddEditUserPageState extends State<AddEditUserPage> {
             backgroundColor: AppColors.success,
           ),
         );
-        Navigator.pop(context, true);
+        if (widget.onSuccess != null) {
+          widget.onSuccess!();
+        } else {
+          Navigator.pop(context, true);
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -278,6 +291,35 @@ class _AddEditUserPageState extends State<AddEditUserPage> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.user != null;
+
+    final content = Column(
+      children: [
+        _buildHeader(isEditing),
+        _buildStepIndicator(),
+        Expanded(
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _errorMessage != null
+                  ? Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)))
+                  : _currentStep == 1
+                      ? _buildStepOneContent(isEditing)
+                      : _buildStepTwoContent(),
+        ),
+      ],
+    );
+
+    if (widget.isEmbedded) {
+      return Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(20),
+            bottomRight: Radius.circular(20),
+          ),
+        ),
+        child: content,
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
@@ -301,21 +343,7 @@ class _AddEditUserPageState extends State<AddEditUserPage> {
                     ),
                   ],
                 ),
-                child: Column(
-                  children: [
-                    _buildHeader(isEditing),
-                    _buildStepIndicator(),
-                    Expanded(
-                      child: _isLoading
-                          ? const Center(child: CircularProgressIndicator())
-                          : _errorMessage != null
-                              ? Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)))
-                              : _currentStep == 1
-                                  ? _buildStepOneContent(isEditing)
-                                  : _buildStepTwoContent(),
-                    ),
-                  ],
-                ),
+                child: content,
               ),
             ),
           ),
@@ -336,7 +364,13 @@ class _AddEditUserPageState extends State<AddEditUserPage> {
           IconButton(
             icon: const Icon(Icons.arrow_back_rounded, color: AppColors.primaryColor),
             tooltip: 'Back to Users',
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              if (widget.onCancel != null) {
+                widget.onCancel!();
+              } else {
+                Navigator.pop(context);
+              }
+            },
           ),
           const SizedBox(width: 8),
           Column(
