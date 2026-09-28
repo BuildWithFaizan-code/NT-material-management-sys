@@ -278,44 +278,45 @@ class _UserManagementPageState extends State<UserManagementPage> {
   }
 
   // ============================================================================
-  // Top Page Title Header
+  // Top Page Title Header (Responsive, with Expanded to prevent overflows)
   // ============================================================================
   Widget _buildPageHeader() {
     final totalCount = _users.length;
     final activeCount = _users.where((u) => u.isActive).length;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(28, 22, 28, 16),
-      decoration: const BoxDecoration(
-        color: Colors.transparent,
-      ),
+      padding: const EdgeInsets.fromLTRB(28, 20, 28, 16),
       child: Row(
         children: [
-          // Left: Title and subtitle
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'User Management',
-                style: GoogleFonts.plusJakartaSans(
-                  color: const Color(0xFF0F172A),
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.4,
+          // Left: Title and subtitle (Wrapped in Expanded so it never overflows)
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'User Management',
+                  style: GoogleFonts.plusJakartaSans(
+                    color: const Color(0xFF0F172A),
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.4,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                'Manage organization accounts, configure granular permissions, and inspect access policies.',
-                style: GoogleFonts.plusJakartaSans(
-                  color: const Color(0xFF64748B),
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w400,
+                const SizedBox(height: 3),
+                Text(
+                  'Manage organization accounts, configure granular permissions, and inspect access policies.',
+                  style: GoogleFonts.plusJakartaSans(
+                    color: const Color(0xFF64748B),
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const Spacer(),
+          const SizedBox(width: 16),
 
           // Right: Live Stats Counter Pills
           Container(
@@ -380,7 +381,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
   }
 
   // ============================================================================
-  // Browser Tab Bar (Matching Visual Language of Image 1)
+  // Browser Tab Bar (Matching Visual Language of Image 1, Horizontally Scrollable)
   // ============================================================================
   Widget _buildBrowserTabBar() {
     final addTabLabel = _editingUser != null
@@ -397,34 +398,37 @@ class _UserManagementPageState extends State<UserManagementPage> {
           ),
         ),
       ),
-      child: Row(
-        children: [
-          _buildBrowserTab(
-            index: 0,
-            label: 'Manage Users',
-            icon: Icons.manage_accounts_outlined,
-          ),
-          const SizedBox(width: 6),
-          _buildBrowserTab(
-            index: 1,
-            label: addTabLabel,
-            icon: _editingUser != null ? Icons.edit_note_rounded : Icons.person_add_alt_1_outlined,
-          ),
-          const SizedBox(width: 6),
-          _buildBrowserTab(
-            index: 2,
-            label: 'Roles & Permissions',
-            icon: Icons.security_outlined,
-            isPlaceholder: true,
-          ),
-          const SizedBox(width: 6),
-          _buildBrowserTab(
-            index: 3,
-            label: 'Activity Logs',
-            icon: Icons.history_toggle_off_rounded,
-            isPlaceholder: true,
-          ),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildBrowserTab(
+              index: 0,
+              label: 'Manage Users',
+              icon: Icons.manage_accounts_outlined,
+            ),
+            const SizedBox(width: 8),
+            _buildBrowserTab(
+              index: 1,
+              label: addTabLabel,
+              icon: _editingUser != null ? Icons.edit_note_rounded : Icons.person_add_alt_1_outlined,
+            ),
+            const SizedBox(width: 8),
+            _buildBrowserTab(
+              index: 2,
+              label: 'Roles & Permissions',
+              icon: Icons.security_outlined,
+              isPlaceholder: true,
+            ),
+            const SizedBox(width: 8),
+            _buildBrowserTab(
+              index: 3,
+              label: 'Activity Logs',
+              icon: Icons.history_toggle_off_rounded,
+              isPlaceholder: true,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -450,22 +454,15 @@ class _UserManagementPageState extends State<UserManagementPage> {
       },
       borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 0),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         decoration: BoxDecoration(
           color: isActive ? const Color(0xFFEEF2FF) : Colors.transparent,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-          border: isActive
-              ? Border(
-                  top: const BorderSide(color: Color(0xFFC7D2FE), width: 1.5),
-                  left: const BorderSide(color: Color(0xFFC7D2FE), width: 1.5),
-                  right: const BorderSide(color: Color(0xFFC7D2FE), width: 1.5),
-                  bottom: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    width: 2.0,
-                  ),
-                )
-              : null,
+          // Uniform border on all sides to avoid Flutter canvas paint exception
+          border: Border.all(
+            color: isActive ? const Color(0xFFC7D2FE) : Colors.transparent,
+            width: 1.5,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -480,7 +477,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
               label,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 13,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                 color: isActive ? const Color(0xFF4F46E5) : const Color(0xFF64748B),
               ),
             ),
@@ -584,58 +581,77 @@ class _UserManagementPageState extends State<UserManagementPage> {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          // Search Input Field
-          Expanded(
-            child: SizedBox(
-              height: 38,
-              child: TextField(
-                controller: _searchCtrl,
-                style: GoogleFonts.plusJakartaSans(fontSize: 13, color: const Color(0xFF0F172A)),
-                decoration: InputDecoration(
-                  hintText: 'Search by username, email, or role...',
-                  hintStyle: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: const Color(0xFF94A3B8)),
-                  prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
-                  suffixIcon: _searchCtrl.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, size: 16, color: Color(0xFF94A3B8)),
-                          onPressed: () => _searchCtrl.clear(),
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-
-          // Status Filter Segment
-          Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 650;
+          if (isNarrow) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildSearchInput(),
+                const SizedBox(height: 10),
+                _buildStatusFilterRow(),
+              ],
+            );
+          }
+          return Row(
             children: [
-              _buildFilterChip('ALL', 'All (${_users.length})'),
-              const SizedBox(width: 6),
-              _buildFilterChip('ACTIVE', 'Active (${_users.where((u) => u.isActive).length})'),
-              const SizedBox(width: 6),
-              _buildFilterChip('SUSPENDED', 'Suspended (${_users.where((u) => !u.isActive).length})'),
+              Expanded(child: _buildSearchInput()),
+              const SizedBox(width: 16),
+              _buildStatusFilterRow(),
             ],
-          ),
-        ],
+          );
+        },
       ),
+    );
+  }
+
+  Widget _buildSearchInput() {
+    return SizedBox(
+      height: 38,
+      child: TextField(
+        controller: _searchCtrl,
+        style: GoogleFonts.plusJakartaSans(fontSize: 13, color: const Color(0xFF0F172A)),
+        decoration: InputDecoration(
+          hintText: 'Search by username, email, or role...',
+          hintStyle: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: const Color(0xFF94A3B8)),
+          prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
+          suffixIcon: _searchCtrl.text.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear, size: 16, color: Color(0xFF94A3B8)),
+                  onPressed: () => _searchCtrl.clear(),
+                )
+              : null,
+          filled: true,
+          fillColor: const Color(0xFFF8FAFC),
+          contentPadding: const EdgeInsets.symmetric(vertical: 8),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusFilterRow() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildFilterChip('ALL', 'All (${_users.length})'),
+        const SizedBox(width: 6),
+        _buildFilterChip('ACTIVE', 'Active (${_users.where((u) => u.isActive).length})'),
+        const SizedBox(width: 6),
+        _buildFilterChip('SUSPENDED', 'Suspended (${_users.where((u) => !u.isActive).length})'),
+      ],
     );
   }
 
@@ -717,54 +733,81 @@ class _UserManagementPageState extends State<UserManagementPage> {
       );
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Table Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-            decoration: const BoxDecoration(
-              color: Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
-              border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-            ),
-            child: Row(
-              children: [
-                Expanded(flex: 4, child: _buildTableHeaderText('User')),
-                Expanded(flex: 4, child: _buildTableHeaderText('Email Address')),
-                Expanded(flex: 3, child: _buildTableHeaderText('Role')),
-                Expanded(flex: 2, child: _buildTableHeaderText('Status')),
-                Expanded(flex: 3, child: _buildTableHeaderText('Last Login')),
-                Expanded(flex: 2, child: Center(child: _buildTableHeaderText('Actions'))),
-              ],
-            ),
-          ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Stretch table to full available width if >= 900, else provide horizontal scroll at 900
+        final tableWidth = constraints.maxWidth > 900 ? constraints.maxWidth : 900.0;
 
-          // Table Rows
-          Expanded(
-            child: ListView.separated(
-              itemCount: _filteredUsers.length,
-              separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
-              itemBuilder: (context, index) {
-                final user = _filteredUsers[index];
-                return _buildUserTableRow(user);
-              },
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(
+                width: tableWidth,
+                child: Column(
+                  children: [
+                    // Table Header
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF8FAFC),
+                        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(flex: 3, child: _buildTableHeaderText('User')),
+                          Expanded(flex: 4, child: _buildTableHeaderText('Email Address')),
+                          Expanded(flex: 3, child: _buildTableHeaderText('Role')),
+                          Expanded(flex: 2, child: _buildTableHeaderText('Status')),
+                          Expanded(flex: 3, child: _buildTableHeaderText('Last Login')),
+                          const SizedBox(
+                            width: 120,
+                            child: Center(
+                              child: Text(
+                                'Actions',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                  color: Color(0xFF475569),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Table Rows
+                    Expanded(
+                      child: ListView.separated(
+                        itemCount: _filteredUsers.length,
+                        separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                        itemBuilder: (context, index) {
+                          final user = _filteredUsers[index];
+                          return _buildUserTableRow(user);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -784,12 +827,12 @@ class _UserManagementPageState extends State<UserManagementPage> {
     final formattedLastLogin = _formatDate(user.lastLoginAt);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
         children: [
           // 1. User Logo & Username
           Expanded(
-            flex: 4,
+            flex: 3,
             child: Row(
               children: [
                 // Logo / Avatar
@@ -827,7 +870,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
                           ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
 
                 // Username & Handle
                 Expanded(
@@ -975,20 +1018,22 @@ class _UserManagementPageState extends State<UserManagementPage> {
             ),
           ),
 
-          // 6. Action Buttons
-          Expanded(
-            flex: 2,
+          // 6. Action Buttons (Clean fixed width 120, compact, guaranteed ZERO overflow)
+          SizedBox(
+            width: 120,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Edit (Switches to Tab 1 with this user loaded)
                 IconButton(
-                  icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF4F46E5)),
+                  icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF4F46E5)),
                   tooltip: 'Edit User & Permissions',
+                  padding: const EdgeInsets.all(6),
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                   onPressed: () => _startEditUser(user),
                   style: IconButton.styleFrom(
                     backgroundColor: const Color(0xFFEEF2FF),
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(6),
                   ),
                 ),
                 const SizedBox(width: 6),
@@ -997,26 +1042,30 @@ class _UserManagementPageState extends State<UserManagementPage> {
                 IconButton(
                   icon: Icon(
                     user.isActive ? Icons.block_outlined : Icons.check_circle_outline_rounded,
-                    size: 18,
+                    size: 16,
                     color: user.isActive ? Colors.orange.shade800 : AppColors.success,
                   ),
                   tooltip: user.isActive ? 'Suspend Account' : 'Activate Account',
+                  padding: const EdgeInsets.all(6),
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                   onPressed: () => _toggleUserStatus(user),
                   style: IconButton.styleFrom(
                     backgroundColor: (user.isActive ? Colors.orange : Colors.green).shade50,
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(6),
                   ),
                 ),
                 const SizedBox(width: 6),
 
                 // Delete
                 IconButton(
-                  icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.redAccent),
+                  icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Colors.redAccent),
                   tooltip: 'Delete Account',
+                  padding: const EdgeInsets.all(6),
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                   onPressed: () => _confirmDeleteUser(user),
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.red.shade50,
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(6),
                   ),
                 ),
               ],
