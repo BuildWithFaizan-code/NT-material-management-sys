@@ -17,8 +17,6 @@ class _UserManagementPageState extends State<UserManagementPage> {
   // Active Tab Index:
   // 0: Manage Users
   // 1: Add User (or Edit User)
-  // 2: Roles & Permissions (Upcoming)
-  // 3: Activity Logs (Upcoming)
   int _activeTabIndex = 0;
 
   // Selected user for editing in Tab 1
@@ -413,20 +411,6 @@ class _UserManagementPageState extends State<UserManagementPage> {
               label: addTabLabel,
               icon: _editingUser != null ? Icons.edit_note_rounded : Icons.person_add_alt_1_outlined,
             ),
-            const SizedBox(width: 8),
-            _buildBrowserTab(
-              index: 2,
-              label: 'Roles & Permissions',
-              icon: Icons.security_outlined,
-              isPlaceholder: true,
-            ),
-            const SizedBox(width: 8),
-            _buildBrowserTab(
-              index: 3,
-              label: 'Activity Logs',
-              icon: Icons.history_toggle_off_rounded,
-              isPlaceholder: true,
-            ),
           ],
         ),
       ),
@@ -437,7 +421,6 @@ class _UserManagementPageState extends State<UserManagementPage> {
     required int index,
     required String label,
     required IconData icon,
-    bool isPlaceholder = false,
   }) {
     final isActive = _activeTabIndex == index;
 
@@ -481,24 +464,6 @@ class _UserManagementPageState extends State<UserManagementPage> {
                 color: isActive ? const Color(0xFF4F46E5) : const Color(0xFF64748B),
               ),
             ),
-            if (isPlaceholder) ...[
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  'Soon',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF94A3B8),
-                  ),
-                ),
-              ),
-            ],
           ],
         ),
       ),
@@ -514,10 +479,6 @@ class _UserManagementPageState extends State<UserManagementPage> {
         return _buildManageUsersTab();
       case 1:
         return _buildAddEditUserTab();
-      case 2:
-        return _buildRolesPermissionsPlaceholder();
-      case 3:
-        return _buildActivityLogsPlaceholder();
       default:
         return _buildManageUsersTab();
     }
@@ -1091,174 +1052,5 @@ class _UserManagementPageState extends State<UserManagementPage> {
       ),
     );
   }
-
-  // ============================================================================
-  // Tab 2: Roles & Permissions (Placeholder for upcoming instruction)
-  // ============================================================================
-  Widget _buildRolesPermissionsPlaceholder() {
-    return Center(
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 540),
-        padding: const EdgeInsets.all(36),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 18,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: const Color(0xFFEEF2FF),
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFC7D2FE), width: 2),
-              ),
-              child: const Icon(Icons.security_rounded, size: 32, color: Color(0xFF4F46E5)),
-            ),
-            const SizedBox(height: 18),
-            Text(
-              'Roles & Permissions Management',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF0F172A),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                'Coming in next update',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF64748B),
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              'This screen will allow configuring custom role hierarchies, permission inheritance, '
-              'and bulk role assignments across master modules.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 13,
-                height: 1.5,
-                color: const Color(0xFF64748B),
-              ),
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: () => setState(() => _activeTabIndex = 0),
-              icon: const Icon(Icons.arrow_back_rounded, size: 16),
-              label: const Text('Back to Manage Users'),
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF4F46E5),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ============================================================================
-  // Tab 3: Activity Logs (Placeholder for upcoming instruction)
-  // ============================================================================
-  Widget _buildActivityLogsPlaceholder() {
-    return Center(
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 540),
-        padding: const EdgeInsets.all(36),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 18,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEF3C7),
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFFDE68A), width: 2),
-              ),
-              child: const Icon(Icons.history_toggle_off_rounded, size: 32, color: Color(0xFFD97706)),
-            ),
-            const SizedBox(height: 18),
-            Text(
-              'User Activity & Audit Trail',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF0F172A),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                'Coming in next update',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF64748B),
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              'This screen will display real-time sign-in events, session revocations, '
-              'and audit trail logs for all administrative account changes.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 13,
-                height: 1.5,
-                color: const Color(0xFF64748B),
-              ),
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: () => setState(() => _activeTabIndex = 0),
-              icon: const Icon(Icons.arrow_back_rounded, size: 16),
-              label: const Text('Back to Manage Users'),
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF4F46E5),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
+
