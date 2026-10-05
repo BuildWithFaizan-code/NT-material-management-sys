@@ -56,3 +56,11 @@ appsettings.Local.json
 # Local preview / scratch images
 *.png
 !assets/**/*.png
+
+# Environment & Credentials
+.env
+.env.*
+*.env
+*.pem
+*.key
+

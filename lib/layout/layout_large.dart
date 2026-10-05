@@ -26,6 +26,7 @@ import '../pages/group_master_page.dart';
 import '../pages/group_master_definition_page.dart';
 import '../pages/charges_master_page.dart';
 import '../pages/placeholder_module_pages.dart';
+import '../pages/transactions/bill_of_material_page.dart';
 import '../pages/transactions/transaction_placeholder_page.dart';
 import '../pages/user_management_page.dart';
 import '../services/auth_service.dart';
@@ -215,10 +216,7 @@ class LargeScreenLayout extends StatelessWidget {
     switch (sub) {
       // Top group
       case 'Bill of Material (BOM)':
-        return const TransactionPlaceholderPage(
-          title: 'Bill of Material (BOM)',
-          icon: Icons.account_tree_outlined,
-        );
+        return const BillOfMaterialPage();
       case 'Production Order':
         return const TransactionPlaceholderPage(
           title: 'Production Order',

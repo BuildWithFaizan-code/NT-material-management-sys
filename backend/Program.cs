@@ -218,6 +218,8 @@ builder.Services.AddScoped<IGroupMasterRepository, GroupMasterRepository>();
 builder.Services.AddScoped<IGroupMasterService, GroupMasterService>();
 builder.Services.AddScoped<IGroupMasterDefinitionRepository, GroupMasterDefinitionRepository>();
 builder.Services.AddScoped<IGroupMasterDefinitionService, GroupMasterDefinitionService>();
+builder.Services.AddScoped<IBomRepository, BomRepository>();
+builder.Services.AddScoped<IBomService, BomService>();
 
 var app = builder.Build();
 
