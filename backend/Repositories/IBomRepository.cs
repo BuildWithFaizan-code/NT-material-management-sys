@@ -6,12 +6,11 @@ namespace MMSERP.Api.Repositories
 {
     public interface IBomRepository
     {
-        Task EnsureTablesCreatedAsync();
         Task<string> GetNextBomIdAsync(string mode);
         Task<IEnumerable<BomRecordSummaryDto>> GetAllSummariesAsync(string? mode = null, string? query = null);
         Task<BomCompleteRecordDto?> GetByIdAsync(string bomId);
-        Task<bool> SaveBomAsync(BomCompleteRecordDto record);
-        Task<bool> DeleteBomAsync(string bomId, string user = "ADMIN");
+        Task<string> SaveBomAsync(BomCompleteRecordDto record, string user = "SYSTEM");
+        Task<bool> DeleteBomAsync(string bomId, string user = "SYSTEM");
         Task<IEnumerable<BomStoreLookupDto>> GetStoresAsync();
         Task<IEnumerable<BomDepartmentLookupDto>> GetDepartmentsAsync();
         Task<IEnumerable<BomUnitLookupDto>> GetUnitsAsync();

@@ -63,10 +63,18 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
   bool _isSubmitting = false;
   bool _isSaveSuccess = false;
   bool _isResetting = false;
+  bool _isApproved = false;
   String? _buttonValidationMsg;
   String? _glowingBomId;
   Timer? _glowTimer;
   Timer? _validationTimer;
+
+  bool get _hasLookupMismatch {
+    final strUnmatched = _selectedStrCode != null && !_stores.any((s) => s.strCode == _selectedStrCode);
+    final depUnmatched = _selectedDepCode != null && !_departments.any((d) => d.labCode == _selectedDepCode);
+    final unitUnmatched = _selectedUnitCode != null && !_units.any((u) => u.unitCode == _selectedUnitCode);
+    return strUnmatched || depUnmatched || unitUnmatched;
+  }
 
   // Sub-items Grid Data
   final List<BomSubItemData> _subItems = [];
@@ -237,7 +245,10 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
   }
 
   Future<void> _resetForm() async {
-    setState(() => _isResetting = true);
+    setState(() {
+      _isResetting = true;
+      _isApproved = false;
+    });
 
     _selectedStrCode = null;
     _selectedDepCode = null;
@@ -510,6 +521,11 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
   Future<void> _submitBomHeader() async {
     if (_isSubmitting) return;
 
+    if (_isApproved) {
+      _showButtonValidation('This BOM is approved and locked for editing.');
+      return;
+    }
+
     if (_selectedStrCode == null) {
       _showButtonValidation('Please select Plant / Store!');
       _storeFocusNode.requestFocus();
@@ -548,6 +564,38 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
       return;
     }
 
+    if (_hasLookupMismatch) {
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Color(0xFFD97706), size: 22),
+              SizedBox(width: 8),
+              Text('Master Data Mismatch', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: const Text(
+            'One or more selected values (Plant/Store, Department, or Unit) do not match active master data records. Saving will preserve these unmatched codes.\n\nAre you sure you want to proceed?',
+            style: TextStyle(fontSize: 13),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Review Values'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD97706)),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Proceed & Save', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      );
+      if (proceed != true) return;
+    }
+
     setState(() {
       _isSubmitting = true;
       _buttonValidationMsg = null;
@@ -571,19 +619,21 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
       bomEDate: DateTime.now(),
     );
 
-    final success = await _bomService.saveBom(
+    final result = await _bomService.saveBom(
       header: header,
       items: _subItems,
     );
 
     if (mounted) {
-      if (success) {
+      if (result.success) {
+        final finalBomId = result.bomId ?? currentBomId;
         setState(() {
           _isSubmitting = false;
           _isSaveSuccess = true;
+          _bomIdCtrl.text = finalBomId;
         });
 
-        _triggerEntryGlow(currentBomId);
+        _triggerEntryGlow(finalBomId);
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -591,7 +641,7 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
               children: [
                 const Icon(Icons.check_circle_rounded, color: Color(0xFF34D399), size: 18),
                 const SizedBox(width: 8),
-                Text('BOM $currentBomId successfully registered!'),
+                Text('BOM $finalBomId successfully registered!'),
               ],
             ),
             backgroundColor: const Color(0xFF0F172A),
@@ -615,7 +665,7 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
         }
       } else {
         setState(() => _isSubmitting = false);
-        _showButtonValidation('Failed to save BOM. Check connection.');
+        _showButtonValidation(result.errorMessage ?? 'Failed to save BOM. Check connection.');
       }
     }
   }
@@ -654,28 +704,18 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
           _baseQtyCtrl.text = h.qty.toString();
           _selectedStatus = h.status;
 
-          // Store Match
-          if (_stores.any((s) => s.strCode == h.strCode)) {
-            _selectedStrCode = h.strCode;
-          } else if (_stores.isNotEmpty) {
-            _selectedStrCode = _stores.first.strCode;
-          }
+          // Store Match - retain saved code without .first fallback
+          _selectedStrCode = h.strCode;
 
-          // Department Match
-          if (_departments.any((d) => d.labCode == h.depCode)) {
-            _selectedDepCode = h.depCode;
-          } else if (_departments.isNotEmpty) {
-            _selectedDepCode = _departments.first.labCode;
-          }
+          // Department Match - retain saved code without .first fallback
+          _selectedDepCode = h.depCode;
 
-          // Unit Match
-          if (_units.any((u) => u.unitCode == h.unitCode)) {
-            _selectedUnitCode = h.unitCode;
-            _selectedUnitName = h.unitName;
-          } else if (_units.isNotEmpty) {
-            _selectedUnitCode = _units.first.unitCode;
-            _selectedUnitName = _units.first.unitName;
-          }
+          // Unit Match - retain saved code without .first fallback
+          _selectedUnitCode = h.unitCode;
+          _selectedUnitName = h.unitName;
+
+          // Freeze state check
+          _isApproved = h.status.trim().toUpperCase() == 'APPROVED';
 
           // Sub-items Grid Table
           _subItems.clear();
@@ -732,7 +772,11 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
     if (event is KeyDownEvent) {
       final isAlt = HardwareKeyboard.instance.isAltPressed;
       if (event.logicalKey == LogicalKeyboardKey.f1 || (isAlt && event.logicalKey == LogicalKeyboardKey.keyS)) {
-        _submitBomHeader();
+        if (!_isApproved) {
+          _submitBomHeader();
+        } else {
+          _showButtonValidation('This BOM is approved and locked for editing.');
+        }
       } else if (event.logicalKey == LogicalKeyboardKey.escape) {
         _resetForm();
       } else if (isAlt && (event.logicalKey == LogicalKeyboardKey.keyN || event.logicalKey == LogicalKeyboardKey.keyC)) {
@@ -740,7 +784,7 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
       } else if (isAlt && event.logicalKey == LogicalKeyboardKey.keyR) {
         _openShowRecordModal();
       } else if (event.logicalKey == LogicalKeyboardKey.delete) {
-        if (_selectedComponentIndex != null && _selectedComponentIndex! < _subItems.length) {
+        if (!_isApproved && _selectedComponentIndex != null && _selectedComponentIndex! < _subItems.length) {
           _deleteComponent(_selectedComponentIndex!);
         }
       }
@@ -994,6 +1038,60 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      if (_isApproved) ...[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF2F2),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFFCA5A5)),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.lock_rounded, size: 14, color: Color(0xFFDC2626)),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'This BOM is APPROVED and locked for editing.',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFFB91C1C),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      if (_hasLookupMismatch) ...[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFFBEB),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFFCD34D)),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.warning_amber_rounded, size: 14, color: Color(0xFFD97706)),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'One or more master data values on this record no longer exist in master data. Review Store / Department / Unit before saving.',
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFFB45309),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       // 1. PLANT / STORE DROPDOWN (COLOR 1: ROYAL BLUE)
                       _buildFormFieldCard(
                         title: 'PLANT / STORE',
@@ -1017,9 +1115,11 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                               icon: Icons.storefront_rounded,
                             );
                           }).toList(),
-                          onChanged: (val) {
-                            if (val != null) setState(() => _selectedStrCode = val);
-                          },
+                          onChanged: _isApproved
+                              ? null
+                              : (val) {
+                                  if (val != null) setState(() => _selectedStrCode = val);
+                                },
                         ),
                       ),
 
@@ -1048,9 +1148,11 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                               icon: Icons.business_center_rounded,
                             );
                           }).toList(),
-                          onChanged: (val) {
-                            if (val != null) setState(() => _selectedDepCode = val);
-                          },
+                          onChanged: _isApproved
+                              ? null
+                              : (val) {
+                                  if (val != null) setState(() => _selectedDepCode = val);
+                                },
                         ),
                       ),
 
@@ -1111,7 +1213,7 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                               borderColor: const Color(0xFF99F6E4),
                               child: _BomDateButton(
                                 dateText: _formatDate(_selectedDate),
-                                onTap: _pickDate,
+                                onTap: _isApproved ? null : _pickDate,
                               ),
                             ),
                           ),
@@ -1132,20 +1234,21 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                           child: TextField(
                             controller: _materialCodeCtrl,
                             focusNode: _materialCodeFocusNode,
+                            readOnly: _isApproved,
                             style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                             decoration: InputDecoration(
                               hintText: 'Click [...] to select Finished Good',
                               hintStyle: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
                               contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
                               filled: true,
-                              fillColor: Colors.white,
+                              fillColor: _isApproved ? const Color(0xFFF8FAFC) : Colors.white,
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(7), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
                               enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(7), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
                               focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(7)), borderSide: BorderSide(color: Color(0xFF4338CA), width: 1.5)),
                               suffixIcon: Tooltip(
                                 message: 'Open Finished Goods Lookup (SKU: ${_activeMode.skuCross})',
                                 child: _BomLookupEllipsisButton(
-                                  onTap: _openFinishedGoodLookup,
+                                  onTap: _isApproved ? null : _openFinishedGoodLookup,
                                   accentColor: const Color(0xFF4338CA),
                                   bgColor: const Color(0xFFEEF2FF),
                                   borderColor: const Color(0xFFC7D2FE),
@@ -1170,13 +1273,14 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                           child: TextField(
                             controller: _descriptionCtrl,
                             focusNode: _descriptionFocusNode,
+                            readOnly: _isApproved,
                             style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
                             decoration: InputDecoration(
                               hintText: 'Item description / title',
                               hintStyle: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
                               contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
                               filled: true,
-                              fillColor: Colors.white,
+                              fillColor: _isApproved ? const Color(0xFFF8FAFC) : Colors.white,
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(7), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
                               enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(7), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
                               focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(7)), borderSide: BorderSide(color: Color(0xFF0284C7), width: 1.5)),
@@ -1204,13 +1308,14 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                                 child: TextField(
                                   controller: _poNumberCtrl,
                                   focusNode: _poFocusNode,
+                                  readOnly: _isApproved,
                                   style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
                                   decoration: InputDecoration(
                                     hintText: 'Customer PO #',
                                     hintStyle: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
                                     contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
                                     filled: true,
-                                    fillColor: Colors.white,
+                                    fillColor: _isApproved ? const Color(0xFFF8FAFC) : Colors.white,
                                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(7), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
                                     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(7), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
                                     focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(7)), borderSide: BorderSide(color: Color(0xFFD97706), width: 1.5)),
@@ -1230,13 +1335,13 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                               icon: Icons.toggle_on_rounded,
                               accentColor: _selectedStatus == 'OPEN'
                                   ? const Color(0xFF059669)
-                                  : (_selectedStatus == 'BLOCKED' ? const Color(0xFFDC2626) : const Color(0xFF0D9488)),
+                                  : (_selectedStatus == 'BLOCKED' ? const Color(0xFFDC2626) : const Color(0xFF4338CA)),
                               bgColor: _selectedStatus == 'OPEN'
                                   ? const Color(0xFFECFDF5)
-                                  : (_selectedStatus == 'BLOCKED' ? const Color(0xFFFEF2F2) : const Color(0xFFF0FDFA)),
+                                  : (_selectedStatus == 'BLOCKED' ? const Color(0xFFFEF2F2) : const Color(0xFFEEF2FF)),
                               borderColor: _selectedStatus == 'OPEN'
                                   ? const Color(0xFFA7F3D0)
-                                  : (_selectedStatus == 'BLOCKED' ? const Color(0xFFFECACA) : const Color(0xFF99F6E4)),
+                                  : (_selectedStatus == 'BLOCKED' ? const Color(0xFFFECACA) : const Color(0xFFC7D2FE)),
                               child: _BomModernDropdown<String>(
                                 value: _selectedStatus,
                                 hintText: 'Select Status...',
@@ -1245,12 +1350,12 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                                 height: 28,
                                 accentColor: _selectedStatus == 'OPEN'
                                     ? const Color(0xFF059669)
-                                    : (_selectedStatus == 'BLOCKED' ? const Color(0xFFDC2626) : const Color(0xFF0D9488)),
+                                    : (_selectedStatus == 'BLOCKED' ? const Color(0xFFDC2626) : const Color(0xFF4338CA)),
                                 hoverBorderColor: _selectedStatus == 'OPEN'
                                     ? const Color(0xFFA7F3D0)
-                                    : (_selectedStatus == 'BLOCKED' ? const Color(0xFFFECACA) : const Color(0xFF5EEAD4)),
-                                items: const [
-                                  _BomDropdownItem<String>(
+                                    : (_selectedStatus == 'BLOCKED' ? const Color(0xFFFECACA) : const Color(0xFFC7D2FE)),
+                                items: [
+                                  const _BomDropdownItem<String>(
                                     value: 'OPEN',
                                     label: 'OPEN',
                                     subtitle: 'Active BOM',
@@ -1258,7 +1363,7 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                                     iconColor: Color(0xFF059669),
                                     badgeColor: Color(0xFFECFDF5),
                                   ),
-                                  _BomDropdownItem<String>(
+                                  const _BomDropdownItem<String>(
                                     value: 'BLOCKED',
                                     label: 'BLOCKED',
                                     subtitle: 'Locked / Hold',
@@ -1266,10 +1371,21 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                                     iconColor: Color(0xFFDC2626),
                                     badgeColor: Color(0xFFFEF2F2),
                                   ),
+                                  if (_isApproved || _selectedStatus == 'APPROVED')
+                                    const _BomDropdownItem<String>(
+                                      value: 'APPROVED',
+                                      label: 'APPROVED',
+                                      subtitle: 'Approved & Locked',
+                                      icon: Icons.lock_rounded,
+                                      iconColor: Color(0xFF4338CA),
+                                      badgeColor: Color(0xFFEEF2FF),
+                                    ),
                                 ],
-                                onChanged: (val) {
-                                  if (val != null) setState(() => _selectedStatus = val);
-                                },
+                                onChanged: _isApproved
+                                    ? null
+                                    : (val) {
+                                        if (val != null) setState(() => _selectedStatus = val);
+                                      },
                               ),
                             ),
                           ),
@@ -1295,6 +1411,7 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                                 child: TextField(
                                   controller: _baseQtyCtrl,
                                   focusNode: _qtyFocusNode,
+                                  readOnly: _isApproved,
                                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                   style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                                   decoration: InputDecoration(
@@ -1302,7 +1419,7 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                                     hintStyle: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
                                     contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
                                     filled: true,
-                                    fillColor: Colors.white,
+                                    fillColor: _isApproved ? const Color(0xFFF8FAFC) : Colors.white,
                                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(7), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
                                     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(7), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
                                     focusedBorder: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(7)), borderSide: BorderSide(color: Color(0xFFEA580C), width: 1.5)),
@@ -1325,7 +1442,7 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                               borderColor: const Color(0xFFBAE6FD),
                               child: _BomUnitTriggerButton(
                                 selectedUnitName: _selectedUnitName,
-                                onTap: _showCoolUnitPickerModal,
+                                onTap: _isApproved ? null : _showCoolUnitPickerModal,
                               ),
                             ),
                           ),
@@ -1487,12 +1604,12 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
           status: _isSubmitting
               ? ButtonStatus.loading
               : (_isSaveSuccess ? ButtonStatus.success : ButtonStatus.idle),
-          onPressed: _submitBomHeader,
-          idleText: 'Save BOM (F1)',
+          onPressed: (_isApproved || _isSubmitting) ? null : _submitBomHeader,
+          idleText: _isApproved ? 'Locked (Approved)' : 'Save BOM (F1)',
           loadingText: 'Saving BOM...',
           successText: 'BOM Saved!',
-          idleIcon: Icons.save_rounded,
-          idleBackgroundColor: AppColors.secondaryColor,
+          idleIcon: _isApproved ? Icons.lock_rounded : Icons.save_rounded,
+          idleBackgroundColor: _isApproved ? const Color(0xFF94A3B8) : AppColors.secondaryColor,
           successBackgroundColor: const Color(0xFF10B981),
           height: 30,
         ),
@@ -1804,7 +1921,7 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                                 color: const Color(0xFFEF4444),
                                 hoverBg: const Color(0xFFFEF2F2),
                                 tooltip: 'Delete Component',
-                                onPressed: () => _confirmDeleteComponent(index),
+                                onPressed: _isApproved ? null : () => _confirmDeleteComponent(index),
                               ),
                             ),
                           ),
@@ -2110,12 +2227,14 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                                                       color: const Color(0xFFEF4444),
                                                       hoverBg: const Color(0xFFFEF2F2),
                                                       tooltip: 'Delete Component',
-                                                      onPressed: () async {
-                                                        final deleted = await _confirmDeleteComponent(idx);
-                                                        if (deleted == true) {
-                                                          setModalState(() {});
-                                                        }
-                                                      },
+                                                      onPressed: _isApproved
+                                                          ? null
+                                                          : () async {
+                                                              final deleted = await _confirmDeleteComponent(idx);
+                                                              if (deleted == true) {
+                                                                setModalState(() {});
+                                                              }
+                                                            },
                                                     ),
                                                   ),
                                                 ),
@@ -2636,28 +2755,37 @@ class _BomModernDropdownState<T> extends State<_BomModernDropdown<T>>
       }
     }
 
+    final bool isEnabled = widget.onChanged != null;
+    final bool isUnmatched = widget.value != null && selectedItem == null;
+
     return CompositedTransformTarget(
       link: _layerLink,
       child: MouseRegion(
-        onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
-        cursor: SystemMouseCursors.click,
+        onEnter: (_) => isEnabled ? setState(() => _isHovered = true) : null,
+        onExit: (_) => isEnabled ? setState(() => _isHovered = false) : null,
+        cursor: isEnabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
         child: GestureDetector(
-          onTap: _toggleMenu,
+          onTap: isEnabled ? _toggleMenu : null,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             height: widget.height,
             padding: const EdgeInsets.symmetric(horizontal: 8),
             decoration: BoxDecoration(
-              color: _isOpen
-                  ? widget.accentColor.withValues(alpha: 0.04)
-                  : (_isHovered ? const Color(0xFFF8FAFC) : Colors.white),
+              color: !isEnabled
+                  ? const Color(0xFFF1F5F9)
+                  : (_isOpen
+                      ? widget.accentColor.withValues(alpha: 0.04)
+                      : (isUnmatched
+                          ? const Color(0xFFFEF2F2)
+                          : (_isHovered ? const Color(0xFFF8FAFC) : Colors.white))),
               borderRadius: BorderRadius.circular(7),
               border: Border.all(
-                color: _isOpen
-                    ? widget.accentColor
-                    : (_isHovered ? widget.hoverBorderColor : const Color(0xFFCBD5E1)),
-                width: _isOpen ? 1.4 : (_isHovered ? 1.2 : 1.0),
+                color: isUnmatched
+                    ? const Color(0xFFFCA5A5)
+                    : (_isOpen
+                        ? widget.accentColor
+                        : (_isHovered ? widget.hoverBorderColor : const Color(0xFFCBD5E1))),
+                width: _isOpen ? 1.4 : (_isHovered || isUnmatched ? 1.2 : 1.0),
               ),
               boxShadow: _isOpen
                   ? [
@@ -2667,7 +2795,7 @@ class _BomModernDropdownState<T> extends State<_BomModernDropdown<T>>
                         offset: const Offset(0, 1),
                       ),
                     ]
-                  : (_isHovered
+                  : (_isHovered && isEnabled
                       ? [
                           BoxShadow(
                             color: widget.accentColor.withValues(alpha: 0.08),
@@ -2699,6 +2827,24 @@ class _BomModernDropdownState<T> extends State<_BomModernDropdown<T>>
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                ] else if (widget.value != null) ...[
+                  const Icon(
+                    Icons.warning_amber_rounded,
+                    size: 13,
+                    color: Color(0xFFDC2626),
+                  ),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      'Unmatched (Code: ${widget.value})',
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFFDC2626),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ] else
                   Expanded(
                     child: Text(
@@ -2711,14 +2857,21 @@ class _BomModernDropdownState<T> extends State<_BomModernDropdown<T>>
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                RotationTransition(
-                  turns: _chevronAnim,
-                  child: Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    size: 17,
-                    color: _isOpen || _isHovered ? widget.accentColor : const Color(0xFF64748B),
+                if (isEnabled)
+                  RotationTransition(
+                    turns: _chevronAnim,
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 17,
+                      color: _isOpen || _isHovered ? widget.accentColor : const Color(0xFF64748B),
+                    ),
+                  )
+                else
+                  const Icon(
+                    Icons.lock_rounded,
+                    size: 13,
+                    color: Color(0xFF94A3B8),
                   ),
-                ),
               ],
             ),
           ),
@@ -3193,11 +3346,11 @@ class _BomDropdownOptionTileState<T> extends State<_BomDropdownOptionTile<T>> {
 
 class _BomDateButton extends StatefulWidget {
   final String dateText;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _BomDateButton({
     required this.dateText,
-    required this.onTap,
+    this.onTap,
   });
 
   @override
@@ -3209,10 +3362,11 @@ class _BomDateButtonState extends State<_BomDateButton> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isEnabled = widget.onTap != null;
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
+      cursor: isEnabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       child: InkWell(
         onTap: widget.onTap,
         borderRadius: BorderRadius.circular(7),
@@ -3221,13 +3375,17 @@ class _BomDateButtonState extends State<_BomDateButton> {
           height: 28,
           padding: const EdgeInsets.symmetric(horizontal: 8),
           decoration: BoxDecoration(
-            color: _isHovered ? const Color(0xFFF0FDFA) : Colors.white,
+            color: !isEnabled
+                ? const Color(0xFFF1F5F9)
+                : (_isHovered ? const Color(0xFFF0FDFA) : Colors.white),
             borderRadius: BorderRadius.circular(7),
             border: Border.all(
-              color: _isHovered ? const Color(0xFF5EEAD4) : const Color(0xFFCBD5E1),
-              width: _isHovered ? 1.3 : 1.0,
+              color: !isEnabled
+                  ? const Color(0xFFE2E8F0)
+                  : (_isHovered ? const Color(0xFF5EEAD4) : const Color(0xFFCBD5E1)),
+              width: _isHovered && isEnabled ? 1.3 : 1.0,
             ),
-            boxShadow: _isHovered
+            boxShadow: (_isHovered && isEnabled)
                 ? [
                     BoxShadow(
                       color: const Color(0xFF0D9488).withValues(alpha: 0.08),
@@ -3242,14 +3400,20 @@ class _BomDateButtonState extends State<_BomDateButton> {
               Expanded(
                 child: Text(
                   widget.dateText,
-                  style: const TextStyle(fontSize: 10.8, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                  style: TextStyle(
+                    fontSize: 10.8,
+                    fontWeight: FontWeight.w700,
+                    color: !isEnabled ? const Color(0xFF64748B) : const Color(0xFF0F172A),
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               Icon(
                 Icons.edit_calendar_rounded,
                 size: 13,
-                color: _isHovered ? const Color(0xFF0F766E) : const Color(0xFF0D9488),
+                color: !isEnabled
+                    ? const Color(0xFF94A3B8)
+                    : (_isHovered ? const Color(0xFF0F766E) : const Color(0xFF0D9488)),
               ),
             ],
           ),
@@ -3264,11 +3428,11 @@ class _BomDateButtonState extends State<_BomDateButton> {
 // ============================================================================
 class _BomUnitTriggerButton extends StatefulWidget {
   final String? selectedUnitName;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _BomUnitTriggerButton({
     required this.selectedUnitName,
-    required this.onTap,
+    this.onTap,
   });
 
   @override
@@ -3281,11 +3445,12 @@ class _BomUnitTriggerButtonState extends State<_BomUnitTriggerButton> {
   @override
   Widget build(BuildContext context) {
     final hasUnit = widget.selectedUnitName != null && widget.selectedUnitName!.isNotEmpty;
+    final bool isEnabled = widget.onTap != null;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
+      cursor: isEnabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
@@ -3293,13 +3458,17 @@ class _BomUnitTriggerButtonState extends State<_BomUnitTriggerButton> {
           height: 28,
           padding: const EdgeInsets.symmetric(horizontal: 8),
           decoration: BoxDecoration(
-            color: _isHovered ? const Color(0xFFF0F9FF) : const Color(0xFFF8FAFC),
+            color: !isEnabled
+                ? const Color(0xFFF1F5F9)
+                : (_isHovered ? const Color(0xFFF0F9FF) : const Color(0xFFF8FAFC)),
             borderRadius: BorderRadius.circular(7),
             border: Border.all(
-              color: _isHovered ? const Color(0xFF0284C7) : const Color(0xFF0284C7).withValues(alpha: 0.4),
-              width: _isHovered ? 1.3 : 1.0,
+              color: !isEnabled
+                  ? const Color(0xFFE2E8F0)
+                  : (_isHovered ? const Color(0xFF0284C7) : const Color(0xFF0284C7).withValues(alpha: 0.4)),
+              width: _isHovered && isEnabled ? 1.3 : 1.0,
             ),
-            boxShadow: _isHovered
+            boxShadow: (_isHovered && isEnabled)
                 ? [
                     BoxShadow(
                       color: const Color(0xFF0284C7).withValues(alpha: 0.12),
@@ -3314,7 +3483,7 @@ class _BomUnitTriggerButtonState extends State<_BomUnitTriggerButton> {
               Icon(
                 _getUnitIcon(widget.selectedUnitName ?? ''),
                 size: 14,
-                color: const Color(0xFF0284C7),
+                color: !isEnabled ? const Color(0xFF94A3B8) : const Color(0xFF0284C7),
               ),
               const SizedBox(width: 6),
               Expanded(
@@ -3323,15 +3492,17 @@ class _BomUnitTriggerButtonState extends State<_BomUnitTriggerButton> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: hasUnit ? FontWeight.w700 : FontWeight.w500,
-                    color: hasUnit ? const Color(0xFF0F172A) : const Color(0xFF94A3B8),
+                    color: !isEnabled
+                        ? const Color(0xFF64748B)
+                        : (hasUnit ? const Color(0xFF0F172A) : const Color(0xFF94A3B8)),
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.keyboard_arrow_down_rounded,
                 size: 16,
-                color: Color(0xFF0284C7),
+                color: !isEnabled ? const Color(0xFF94A3B8) : const Color(0xFF0284C7),
               ),
             ],
           ),
@@ -3473,13 +3644,13 @@ IconData _getUnitIcon(String unitName) {
 }
 
 class _BomLookupEllipsisButton extends StatefulWidget {
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final Color accentColor;
   final Color bgColor;
   final Color borderColor;
 
   const _BomLookupEllipsisButton({
-    required this.onTap,
+    this.onTap,
     required this.accentColor,
     required this.bgColor,
     required this.borderColor,
@@ -3494,10 +3665,11 @@ class _BomLookupEllipsisButtonState extends State<_BomLookupEllipsisButton> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isEnabled = widget.onTap != null;
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
+      cursor: isEnabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       child: InkWell(
         onTap: widget.onTap,
         borderRadius: const BorderRadius.horizontal(right: Radius.circular(7)),
@@ -3506,14 +3678,18 @@ class _BomLookupEllipsisButtonState extends State<_BomLookupEllipsisButton> {
           width: 32,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: _isHovered ? widget.accentColor.withValues(alpha: 0.15) : widget.bgColor,
+            color: !isEnabled
+                ? const Color(0xFFF1F5F9)
+                : (_isHovered ? widget.accentColor.withValues(alpha: 0.15) : widget.bgColor),
             borderRadius: const BorderRadius.horizontal(right: Radius.circular(6)),
-            border: Border(left: BorderSide(color: widget.borderColor)),
+            border: Border(left: BorderSide(color: !isEnabled ? const Color(0xFFCBD5E1) : widget.borderColor)),
           ),
           child: Icon(
             Icons.more_horiz_rounded,
             size: 16,
-            color: _isHovered ? widget.accentColor : widget.accentColor.withValues(alpha: 0.85),
+            color: !isEnabled
+                ? const Color(0xFF94A3B8)
+                : (_isHovered ? widget.accentColor : widget.accentColor.withValues(alpha: 0.85)),
           ),
         ),
       ),
@@ -3526,7 +3702,7 @@ class _BomLookupEllipsisButtonState extends State<_BomLookupEllipsisButton> {
 // ============================================================================
 class _BomAnimatedSuccessButton extends StatefulWidget {
   final ButtonStatus status;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final String idleText;
   final String loadingText;
   final String successText;
@@ -3537,7 +3713,7 @@ class _BomAnimatedSuccessButton extends StatefulWidget {
 
   const _BomAnimatedSuccessButton({
     required this.status,
-    required this.onPressed,
+    this.onPressed,
     required this.idleText,
     required this.loadingText,
     required this.successText,
@@ -3591,14 +3767,17 @@ class _BomAnimatedSuccessButtonState extends State<_BomAnimatedSuccessButton> wi
 
   @override
   Widget build(BuildContext context) {
+    final bool isEnabled = widget.onPressed != null;
     final bool isLoading = widget.status == ButtonStatus.loading;
     final bool isSuccess = widget.status == ButtonStatus.success;
-    final Color bgColor = isSuccess
-        ? widget.successBackgroundColor
-        : (isLoading ? widget.idleBackgroundColor.withValues(alpha: 0.85) : widget.idleBackgroundColor);
+    final Color bgColor = !isEnabled
+        ? const Color(0xFF94A3B8)
+        : (isSuccess
+            ? widget.successBackgroundColor
+            : (isLoading ? widget.idleBackgroundColor.withValues(alpha: 0.85) : widget.idleBackgroundColor));
 
     return InkWell(
-      onTap: isLoading ? null : widget.onPressed,
+      onTap: (!isEnabled || isLoading) ? null : widget.onPressed,
       borderRadius: BorderRadius.circular(9),
       child: AnimatedBuilder(
         animation: _glowAnimation,
@@ -4231,14 +4410,14 @@ class _ActionIconButton extends StatefulWidget {
   final Color color;
   final Color hoverBg;
   final String tooltip;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   const _ActionIconButton({
     required this.icon,
     required this.color,
     required this.hoverBg,
     required this.tooltip,
-    required this.onPressed,
+    this.onPressed,
   });
 
   @override
@@ -4250,6 +4429,7 @@ class _ActionIconButtonState extends State<_ActionIconButton> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isEnabled = widget.onPressed != null;
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -4262,13 +4442,13 @@ class _ActionIconButtonState extends State<_ActionIconButton> {
             duration: const Duration(milliseconds: 150),
             padding: const EdgeInsets.all(5),
             decoration: BoxDecoration(
-              color: _isHovered ? widget.hoverBg : Colors.transparent,
+              color: (_isHovered && isEnabled) ? widget.hoverBg : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               widget.icon,
               size: 16,
-              color: widget.color,
+              color: isEnabled ? widget.color : const Color(0xFFCBD5E1),
             ),
           ),
         ),

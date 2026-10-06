@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using MMSERP.Api.Models;
 using MMSERP.Api.Services;
 
@@ -10,14 +11,22 @@ namespace MMSERP.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [AllowAnonymous] // Seamless enterprise integration with development bypass
     public class BomController : ControllerBase
     {
         private readonly IBomService _service;
+        private readonly ILogger<BomController> _logger;
 
-        public BomController(IBomService service)
+        public BomController(IBomService service, ILogger<BomController> logger)
         {
             _service = service;
+            _logger = logger;
+        }
+
+        private string GetCurrentUserName()
+        {
+            return User.FindFirst(ClaimTypes.Name)?.Value 
+                ?? User.Identity?.Name 
+                ?? "SYSTEM";
         }
 
         /// <summary>
@@ -137,17 +146,26 @@ namespace MMSERP.Api.Controllers
 
             try
             {
-                var success = await _service.SaveBomAsync(payload);
-                if (!success)
-                {
-                    return StatusCode(500, ApiResponse<string>.Fail("Database transaction failed to save BOM."));
-                }
+                var userName = GetCurrentUserName();
+                var finalBomId = await _service.SaveBomAsync(payload, userName);
+                payload.Header.BomId = finalBomId;
 
                 return Ok(ApiResponse<BomCompleteRecordDto>.Ok(payload, "BOM saved successfully."));
             }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Business rule violation when saving BOM: {Message}", ex.Message);
+                return BadRequest(ApiResponse<string>.Fail(ex.Message));
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation error when saving BOM: {Message}", ex.Message);
+                return BadRequest(ApiResponse<string>.Fail(ex.Message));
+            }
             catch (Exception ex)
             {
-                return StatusCode(500, ApiResponse<string>.Fail($"Failed to save BOM: {ex.Message}"));
+                _logger.LogError(ex, "Unhandled server error while saving BOM {BomId}", payload?.Header?.BomId);
+                return StatusCode(500, ApiResponse<string>.Fail("Failed to save BOM. Please try again or contact support if the issue persists."));
             }
         }
 
@@ -165,14 +183,28 @@ namespace MMSERP.Api.Controllers
                 return BadRequest(ApiResponse<string>.Fail("BOM ID is required for deletion."));
             }
 
-            key = Uri.UnescapeDataString(key).Trim();
-            var deleted = await _service.DeleteBomAsync(key, User.Identity?.Name ?? "ADMIN");
-            if (!deleted)
+            try
             {
-                return NotFound(ApiResponse<string>.Fail($"BOM record '{key}' not found or already deleted."));
-            }
+                key = Uri.UnescapeDataString(key).Trim();
+                var userName = GetCurrentUserName();
+                var deleted = await _service.DeleteBomAsync(key, userName);
+                if (!deleted)
+                {
+                    return NotFound(ApiResponse<string>.Fail($"BOM record '{key}' not found or already deleted."));
+                }
 
-            return Ok(ApiResponse<string>.Ok(key, $"BOM '{key}' deleted successfully."));
+                return Ok(ApiResponse<string>.Ok(key, $"BOM '{key}' deleted successfully."));
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Business rule violation when deleting BOM: {Message}", ex.Message);
+                return BadRequest(ApiResponse<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unhandled server error while deleting BOM {Key}", key);
+                return StatusCode(500, ApiResponse<string>.Fail("Failed to delete BOM. Please try again or contact support if the issue persists."));
+            }
         }
 
         /// <summary>
@@ -188,13 +220,27 @@ namespace MMSERP.Api.Controllers
             }
 
             var key = Uri.UnescapeDataString(bomId).Trim();
-            var deleted = await _service.DeleteBomAsync(key, User.Identity?.Name ?? "ADMIN");
-            if (!deleted)
+            try
             {
-                return NotFound(ApiResponse<string>.Fail($"BOM record '{key}' not found or already deleted."));
-            }
+                var userName = GetCurrentUserName();
+                var deleted = await _service.DeleteBomAsync(key, userName);
+                if (!deleted)
+                {
+                    return NotFound(ApiResponse<string>.Fail($"BOM record '{key}' not found or already deleted."));
+                }
 
-            return Ok(ApiResponse<string>.Ok(key, $"BOM '{key}' deleted successfully."));
+                return Ok(ApiResponse<string>.Ok(key, $"BOM '{key}' deleted successfully."));
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Business rule violation when deleting BOM: {Message}", ex.Message);
+                return BadRequest(ApiResponse<string>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unhandled server error while deleting BOM {Key}", key);
+                return StatusCode(500, ApiResponse<string>.Fail("Failed to delete BOM. Please try again or contact support if the issue persists."));
+            }
         }
     }
 }

@@ -214,6 +214,21 @@ class _BomShowRecordModalState extends State<BomShowRecordModal> {
   }
 
   Future<void> _handleDelete(String bomId) async {
+    final targetRecord = _records.cast<BomRecordSummary?>().firstWhere(
+      (r) => r?.bomId.trim().toUpperCase() == bomId.trim().toUpperCase(),
+      orElse: () => null,
+    );
+    if (targetRecord != null && targetRecord.status.trim().toUpperCase() == 'APPROVED') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cannot delete an approved BOM record.'),
+          backgroundColor: Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.4),
@@ -1087,19 +1102,27 @@ class _BomRecordLookupRowState extends State<_BomRecordLookupRow> {
                             height: 14,
                             child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFEF4444)),
                           )
-                        : IconButton(
-                            onPressed: widget.onDelete,
-                            icon: const Icon(Icons.delete_outline_rounded, size: 15, color: Color(0xFFEF4444)),
-                            splashRadius: 13,
-                            padding: EdgeInsets.zero,
-                            style: IconButton.styleFrom(
-                              minimumSize: const Size(24, 24),
-                              padding: EdgeInsets.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-                            tooltip: 'Delete BOM',
-                          ),
+                        : (widget.item.status.trim().toUpperCase() == 'APPROVED'
+                            ? const Tooltip(
+                                message: 'Locked (Approved) — Cannot delete',
+                                child: Padding(
+                                  padding: EdgeInsets.all(4.0),
+                                  child: Icon(Icons.lock_outline_rounded, size: 15, color: Color(0xFF94A3B8)),
+                                ),
+                              )
+                            : IconButton(
+                                onPressed: widget.onDelete,
+                                icon: const Icon(Icons.delete_outline_rounded, size: 15, color: Color(0xFFEF4444)),
+                                splashRadius: 13,
+                                padding: EdgeInsets.zero,
+                                style: IconButton.styleFrom(
+                                  minimumSize: const Size(24, 24),
+                                  padding: EdgeInsets.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                                tooltip: 'Delete BOM',
+                              )),
                   ],
                 ),
               ),

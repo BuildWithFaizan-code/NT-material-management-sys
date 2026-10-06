@@ -9,50 +9,50 @@ namespace MMSERP.Api.Models
 
     public record BomHeaderDto
     {
-        public string BomId { get; init; } = string.Empty;
-        public string BomCode { get; init; } = string.Empty;
-        public int DepCode { get; init; }
-        public string DepName { get; init; } = string.Empty;
-        public int StrCode { get; init; }
-        public string StrName { get; init; } = string.Empty;
-        public string ICode { get; init; } = string.Empty;
-        public string Description { get; init; } = string.Empty;
-        public double Qty { get; init; } = 1.0;
-        public int UnitCode { get; init; }
-        public string UnitName { get; init; } = string.Empty;
-        public string Purpose { get; init; } = "Costing";
-        public string Status { get; init; } = "OPEN";
-        public string BomType { get; init; } = "JOB"; // 'JOB' or 'REGULAR'
-        public DateTime BomDate { get; init; } = DateTime.UtcNow;
-        public string BomPo { get; init; } = string.Empty;
-        public string BomLoc { get; init; } = "LWHL26_SQL";
-        public string BomUsrName { get; init; } = "ADMIN";
-        public string BomEMode { get; init; } = "New";
-        public DateTime BomEDate { get; init; } = DateTime.UtcNow;
+        public string BomId { get; set; } = string.Empty;
+        public string BomCode { get; set; } = string.Empty;
+        public int DepCode { get; set; }
+        public string DepName { get; set; } = string.Empty;
+        public int StrCode { get; set; }
+        public string StrName { get; set; } = string.Empty;
+        public string ICode { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public double Qty { get; set; } = 1.0;
+        public int UnitCode { get; set; }
+        public string UnitName { get; set; } = string.Empty;
+        public string Purpose { get; set; } = "Costing";
+        public string Status { get; set; } = "OPEN";
+        public string BomType { get; set; } = "JOB"; // 'JOB' or 'REGULAR'
+        public DateTime BomDate { get; set; } = DateTime.UtcNow;
+        public string BomPo { get; set; } = string.Empty;
+        public string BomLoc { get; set; } = "LWHL26_SQL";
+        public string BomUsrName { get; set; } = "SYSTEM";
+        public string BomEMode { get; set; } = "New";
+        public DateTime BomEDate { get; set; } = DateTime.UtcNow;
     }
 
     public record BomSubItemDto
     {
-        public string BomsId { get; init; } = string.Empty;
-        public string BomsCode { get; init; } = string.Empty;
-        public string BomCode { get; init; } = string.Empty;
-        public int ItGroupCd { get; init; } = 0;
-        public string ICode { get; init; } = string.Empty;
-        public string Description { get; init; } = string.Empty;
-        public string MaterialType { get; init; } = "RAW MATERIAL";
-        public double Qty { get; init; } = 1.0;
-        public int UnitCode { get; init; } = 0;
-        public string UnitName { get; init; } = string.Empty;
-        public double Sqm { get; init; } = 0.0;
-        public double BomCons { get; init; } = 1.0;
-        public double BomExtra { get; init; } = 0.0;
-        public double BomTolQty { get; init; } = 0.0;
-        public double BomTotQty { get; init; } = 1.0;
-        public double ConvQty { get; init; } = 1.0;
-        public double BomRate { get; init; } = 0.0;
-        public string BomRateUnit { get; init; } = string.Empty;
-        public double BomAmount { get; init; } = 0.0;
-        public string BomRemarks { get; init; } = string.Empty;
+        public string BomsId { get; set; } = string.Empty;
+        public string BomsCode { get; set; } = string.Empty;
+        public string BomCode { get; set; } = string.Empty;
+        public int ItGroupCd { get; set; } = 0;
+        public string ICode { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string MaterialType { get; set; } = "RAW MATERIAL";
+        public double Qty { get; set; } = 1.0;
+        public int UnitCode { get; set; } = 0;
+        public string UnitName { get; set; } = string.Empty;
+        public double Sqm { get; set; } = 0.0;
+        public double BomCons { get; set; } = 1.0;
+        public double BomExtra { get; set; } = 0.0;
+        public double BomTolQty { get; set; } = 0.0;
+        public double BomTotQty { get; set; } = 1.0;
+        public double ConvQty { get; set; } = 1.0;
+        public double BomRate { get; set; } = 0.0;
+        public string BomRateUnit { get; set; } = string.Empty;
+        public double BomAmount { get; set; } = 0.0;
+        public string BomRemarks { get; set; } = string.Empty;
     }
 
     public record BomCompleteRecordDto

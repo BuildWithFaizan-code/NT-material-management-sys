@@ -748,9 +748,6 @@ class BomService {
   /// Deletes a BOM record by ID
   Future<bool> deleteBom(String bomId) async {
     final cleanId = bomId.trim();
-    clearRecordsCache();
-    _fallbackCompleteRecords.removeWhere((r) => r.header.bomId.trim().toUpperCase() == cleanId.toUpperCase());
-    _cachedRecords.clear();
 
     try {
       final encodedQuery = Uri.encodeQueryComponent(cleanId);
@@ -766,28 +763,21 @@ class BomService {
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         clearRecordsCache();
+        _fallbackCompleteRecords.removeWhere((r) => r.header.bomId.trim().toUpperCase() == cleanId.toUpperCase());
         return true;
       }
+      return false;
     } catch (e) {
       debugPrint('BomService: deleteBom error: $e');
+      return false;
     }
-
-    clearRecordsCache();
-    return true;
   }
 
   /// Saves a complete BOM Header and Sub-Items
-  Future<bool> saveBom({
+  Future<BomSaveResult> saveBom({
     required BomHeaderData header,
     required List<BomSubItemData> items,
   }) async {
-    clearRecordsCache();
-
-    // Store in local fallback memory cache
-    final complete = BomCompleteRecord(header: header, items: items);
-    _fallbackCompleteRecords.removeWhere((r) => r.header.bomId.trim().toUpperCase() == header.bomId.trim().toUpperCase());
-    _fallbackCompleteRecords.insert(0, complete);
-
     try {
       final payload = jsonEncode({
         'header': header.toJson(),
@@ -807,19 +797,44 @@ class BomService {
       }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        String authoritativeBomId = header.bomId;
+        try {
+          final body = jsonDecode(response.body);
+          final data = body['data'];
+          if (data is Map<String, dynamic>) {
+            if (data['header'] != null && data['header']['bomId'] != null) {
+              authoritativeBomId = data['header']['bomId'].toString();
+            } else if (data['bomId'] != null) {
+              authoritativeBomId = data['bomId'].toString();
+            }
+          }
+        } catch (_) {}
+
         _incrementSequence(header.bomType);
         clearRecordsCache();
-        return true;
+
+        final updatedHeader = header.copyWith(bomId: authoritativeBomId);
+        final complete = BomCompleteRecord(header: updatedHeader, items: items);
+        _fallbackCompleteRecords.removeWhere((r) =>
+            r.header.bomId.trim().toUpperCase() == header.bomId.trim().toUpperCase() ||
+            r.header.bomId.trim().toUpperCase() == authoritativeBomId.toUpperCase());
+        _fallbackCompleteRecords.insert(0, complete);
+
+        return BomSaveResult(success: true, bomId: authoritativeBomId);
+      } else {
+        String errorMsg = 'Failed to save BOM.';
+        try {
+          final body = jsonDecode(response.body);
+          if (body['message'] != null && body['message'].toString().trim().isNotEmpty) {
+            errorMsg = body['message'].toString();
+          }
+        } catch (_) {}
+        return BomSaveResult(success: false, errorMessage: errorMsg);
       }
     } catch (e) {
       debugPrint('BomService: saveBom network error: $e');
+      return BomSaveResult(success: false, errorMessage: 'Network error occurred: ${e.toString()}');
     }
-
-    // Simulated local persistence for seamless UI feedback
-    await Future.delayed(const Duration(milliseconds: 300));
-    _incrementSequence(header.bomType);
-    clearRecordsCache();
-    return true;
   }
 
   static void _incrementSequence(String bomType) {

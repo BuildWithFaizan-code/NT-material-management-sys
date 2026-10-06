@@ -11,6 +11,88 @@ using MMSERP.Api.Models;
 
 namespace MMSERP.Api.Repositories
 {
+    // ============================================================================
+    // REFERENCE SCHEMA FOR LEGACY ENTERPRISE TABLES: BOMMst, BOMSubMst, DAYBOOK
+    // (Do not execute DDL at runtime. These tables are pre-existing and populated.)
+    //
+    // 1. BOMMst:
+    //    BOMID VARCHAR(50) NOT NULL PRIMARY KEY
+    //    BOMCode INT NOT NULL DEFAULT 1
+    //    BOM_PicPath VARCHAR(255) NULL
+    //    BOM_Margin DECIMAL(18,2) NULL DEFAULT 0
+    //    Bom_JobRt DECIMAL(18,2) NULL DEFAULT 0
+    //    BOM_Cost DECIMAL(18,2) NULL DEFAULT 0
+    //    BOM_Rs DECIMAL(18,2) NULL DEFAULT 0
+    //    BOM_US DECIMAL(18,2) NULL DEFAULT 0
+    //    BOM_DEPCODE INT NOT NULL
+    //    BOM_STRCODE INT NOT NULL
+    //    I_Code VARCHAR(100) NOT NULL
+    //    DESCRIPTION VARCHAR(255) NOT NULL
+    //    Qty DECIMAL(18,4) NOT NULL DEFAULT 1
+    //    Unit_Code INT NOT NULL
+    //    Purpose VARCHAR(50) NOT NULL DEFAULT 'Costing'
+    //    Status VARCHAR(20) NOT NULL DEFAULT 'OPEN'
+    //    TypeID INT NULL DEFAULT 0
+    //    Bom_Type VARCHAR(20) NOT NULL DEFAULT 'JOB'
+    //    Bom_Date DATETIME NOT NULL DEFAULT GETDATE()
+    //    Bom_Season VARCHAR(50) NULL
+    //    Bom_FabCont VARCHAR(100) NULL
+    //    Bom_PCode VARCHAR(50) NULL
+    //    Bom_PO VARCHAR(100) NULL
+    //    Bom_SOCode VARCHAR(50) NULL
+    //    Bom_Brand VARCHAR(50) NULL
+    //    Bom_Size VARCHAR(50) NULL
+    //    Bom_Designer VARCHAR(50) NULL
+    //    Bom_Color VARCHAR(50) NULL
+    //    BOM_LOC VARCHAR(50) NULL DEFAULT 'LWHL26_SQL'
+    //    BOM_EDate DATETIME NOT NULL DEFAULT GETDATE()
+    //    BOM_UsrName VARCHAR(50) NOT NULL DEFAULT 'ADMIN'
+    //    BOM_EMode VARCHAR(20) NOT NULL DEFAULT 'New'
+    //    BOM_Freight DECIMAL(18,2) NULL DEFAULT 0
+    //    BOM_OverAll DECIMAL(18,2) NULL DEFAULT 0
+    //    BOM_SecPer DECIMAL(18,2) NULL DEFAULT 0
+    //    BOM_RejPer DECIMAL(18,2) NULL DEFAULT 0
+    //    Bom_MCNo VARCHAR(50) NULL
+    //    BOM_USED BIT NULL DEFAULT 0
+    //
+    // 2. BOMSubMst:
+    //    BOMSID VARCHAR(50) NOT NULL
+    //    BOMSCode VARCHAR(50) NOT NULL
+    //    BOMCode INT NOT NULL DEFAULT 0
+    //    It_GroupCD INT NOT NULL DEFAULT 0
+    //    I_Code VARCHAR(100) NOT NULL
+    //    DESCRIPTION VARCHAR(255) NOT NULL
+    //    BOM_Width DECIMAL(18,2) NULL DEFAULT 0
+    //    BOM_GSM DECIMAL(18,2) NULL DEFAULT 0
+    //    Qty DECIMAL(18,4) NOT NULL DEFAULT 1
+    //    Unit_Code INT NOT NULL DEFAULT 0
+    //    Bom_TotQty DECIMAL(18,4) NOT NULL DEFAULT 1
+    //    Bom_Cons DECIMAL(18,4) NOT NULL DEFAULT 1
+    //    Bom_Extra DECIMAL(18,2) NOT NULL DEFAULT 0
+    //    Bom_TolQty DECIMAL(18,4) NOT NULL DEFAULT 0
+    //    Bom_Rate DECIMAL(18,2) NULL DEFAULT 0
+    //    Bom_RateUnit VARCHAR(20) NULL
+    //    Bom_Amount DECIMAL(18,2) NULL DEFAULT 0
+    //    Bom_Remarks VARCHAR(500) NULL
+    //    Bom_FabPhoto VARCHAR(255) NULL
+    //    bom_shade VARCHAR(50) NULL
+    //    bom_sizedet VARCHAR(50) NULL
+    //    bom_DesNo VARCHAR(50) NULL
+    //    CONSTRAINT PK_BOMSubMst PRIMARY KEY (BOMSID, BOMSCode)
+    //
+    // 3. DAYBOOK:
+    //    DB_ID INT IDENTITY(1,1) PRIMARY KEY
+    //    DB_DATE DATETIME NOT NULL DEFAULT GETDATE()
+    //    DB_TYPE VARCHAR(50) NOT NULL
+    //    DB_PNAME VARCHAR(100) NULL
+    //    DB_AMT DECIMAL(18,2) NULL DEFAULT 0
+    //    DB_REFNO VARCHAR(50) NOT NULL
+    //    DB_ACTION VARCHAR(50) NOT NULL
+    //    DB_TYP VARCHAR(50) NULL
+    //    DB_DR VARCHAR(10) NULL
+    //    DB_COMPNAME VARCHAR(100) NULL
+    // ============================================================================
+
     public class BomRepository : IBomRepository
     {
         private readonly string _connectionString;
@@ -22,110 +104,8 @@ namespace MMSERP.Api.Repositories
 
         private IDbConnection CreateConnection() => new SqlConnection(_connectionString);
 
-        public async Task EnsureTablesCreatedAsync()
+        private static async Task<string> GenerateNextBomIdInternalAsync(IDbConnection connection, IDbTransaction? transaction, string mode)
         {
-            using var connection = CreateConnection();
-            const string sql = @"
-                -- 1. Master Table BOMMst
-                IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'BOMMst')
-                BEGIN
-                    CREATE TABLE BOMMst (
-                        BOMID VARCHAR(50) NOT NULL PRIMARY KEY,
-                        BOMCode INT NOT NULL DEFAULT 1,
-                        BOM_PicPath VARCHAR(255) NULL,
-                        BOM_Margin DECIMAL(18,2) NULL DEFAULT 0,
-                        Bom_JobRt DECIMAL(18,2) NULL DEFAULT 0,
-                        BOM_Cost DECIMAL(18,2) NULL DEFAULT 0,
-                        BOM_Rs DECIMAL(18,2) NULL DEFAULT 0,
-                        BOM_US DECIMAL(18,2) NULL DEFAULT 0,
-                        BOM_DEPCODE INT NOT NULL,
-                        BOM_STRCODE INT NOT NULL,
-                        I_Code VARCHAR(100) NOT NULL,
-                        DESCRIPTION VARCHAR(255) NOT NULL,
-                        Qty DECIMAL(18,4) NOT NULL DEFAULT 1,
-                        Unit_Code INT NOT NULL,
-                        Purpose VARCHAR(50) NOT NULL DEFAULT 'Costing',
-                        Status VARCHAR(20) NOT NULL DEFAULT 'OPEN',
-                        TypeID INT NULL DEFAULT 0,
-                        Bom_Type VARCHAR(20) NOT NULL DEFAULT 'JOB',
-                        Bom_Date DATETIME NOT NULL DEFAULT GETDATE(),
-                        Bom_Season VARCHAR(50) NULL,
-                        Bom_FabCont VARCHAR(100) NULL,
-                        Bom_PCode VARCHAR(50) NULL,
-                        Bom_PO VARCHAR(100) NULL,
-                        Bom_SOCode VARCHAR(50) NULL,
-                        Bom_Brand VARCHAR(50) NULL,
-                        Bom_Size VARCHAR(50) NULL,
-                        Bom_Designer VARCHAR(50) NULL,
-                        Bom_Color VARCHAR(50) NULL,
-                        BOM_LOC VARCHAR(50) NULL DEFAULT 'LWHL26_SQL',
-                        BOM_EDate DATETIME NOT NULL DEFAULT GETDATE(),
-                        BOM_UsrName VARCHAR(50) NOT NULL DEFAULT 'ADMIN',
-                        BOM_EMode VARCHAR(20) NOT NULL DEFAULT 'New',
-                        BOM_Freight DECIMAL(18,2) NULL DEFAULT 0,
-                        BOM_OverAll DECIMAL(18,2) NULL DEFAULT 0,
-                        BOM_SecPer DECIMAL(18,2) NULL DEFAULT 0,
-                        BOM_RejPer DECIMAL(18,2) NULL DEFAULT 0,
-                        Bom_MCNo VARCHAR(50) NULL,
-                        BOM_USED BIT NULL DEFAULT 0
-                    );
-                END
-
-                -- 2. Detail Table BOMSubMst
-                IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'BOMSubMst')
-                BEGIN
-                    CREATE TABLE BOMSubMst (
-                        BOMSID VARCHAR(50) NOT NULL,
-                        BOMSCode VARCHAR(50) NOT NULL,
-                        BOMCode INT NOT NULL DEFAULT 0,
-                        It_GroupCD INT NOT NULL DEFAULT 0,
-                        I_Code VARCHAR(100) NOT NULL,
-                        DESCRIPTION VARCHAR(255) NOT NULL,
-                        BOM_Width DECIMAL(18,2) NULL DEFAULT 0,
-                        BOM_GSM DECIMAL(18,2) NULL DEFAULT 0,
-                        Qty DECIMAL(18,4) NOT NULL DEFAULT 1,
-                        Unit_Code INT NOT NULL DEFAULT 0,
-                        Bom_TotQty DECIMAL(18,4) NOT NULL DEFAULT 1,
-                        Bom_Cons DECIMAL(18,4) NOT NULL DEFAULT 1,
-                        Bom_Extra DECIMAL(18,2) NOT NULL DEFAULT 0,
-                        Bom_TolQty DECIMAL(18,4) NOT NULL DEFAULT 0,
-                        Bom_Rate DECIMAL(18,2) NULL DEFAULT 0,
-                        Bom_RateUnit VARCHAR(20) NULL,
-                        Bom_Amount DECIMAL(18,2) NULL DEFAULT 0,
-                        Bom_Remarks VARCHAR(500) NULL,
-                        Bom_FabPhoto VARCHAR(255) NULL,
-                        bom_shade VARCHAR(50) NULL,
-                        bom_sizedet VARCHAR(50) NULL,
-                        bom_DesNo VARCHAR(50) NULL,
-                        CONSTRAINT PK_BOMSubMst PRIMARY KEY (BOMSID, BOMSCode)
-                    );
-                END
-
-                -- 3. Audit Trail Table DAYBOOK
-                IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'DAYBOOK')
-                BEGIN
-                    CREATE TABLE DAYBOOK (
-                        DB_ID INT IDENTITY(1,1) PRIMARY KEY,
-                        DB_DATE DATETIME NOT NULL DEFAULT GETDATE(),
-                        DB_TYPE VARCHAR(50) NOT NULL,
-                        DB_PNAME VARCHAR(100) NULL,
-                        DB_AMT DECIMAL(18,2) NULL DEFAULT 0,
-                        DB_REFNO VARCHAR(50) NOT NULL,
-                        DB_ACTION VARCHAR(50) NOT NULL,
-                        DB_TYP VARCHAR(50) NULL,
-                        DB_DR VARCHAR(10) NULL,
-                        DB_COMPNAME VARCHAR(100) NULL
-                    );
-                END";
-
-            await connection.ExecuteAsync(sql);
-        }
-
-        public async Task<string> GetNextBomIdAsync(string mode)
-        {
-            await EnsureTablesCreatedAsync();
-            using var connection = CreateConnection();
-
             var isJob = string.Equals(mode, "JOB", StringComparison.OrdinalIgnoreCase);
             var prefix = isJob ? "BMCJ" : "BMCC";
             var now = DateTime.Now;
@@ -136,18 +116,35 @@ namespace MMSERP.Api.Repositories
 
             const string sql = @"
                 SELECT ISNULL(MAX(TRY_CAST(SUBSTRING(BOMID, 6, 6) AS INT)), 0) + 1
-                FROM BOMMst
+                FROM BOMMst WITH (UPDLOCK, HOLDLOCK)
                 WHERE LEFT(BOMID, 4) = @Prefix 
                   AND (Purpose = 'Costing' OR Purpose = 'COSTING')
                   AND Bom_Date >= @FyStart AND Bom_Date <= @FyEnd;";
 
-            var nextSeq = await connection.ExecuteScalarAsync<int>(sql, new { Prefix = prefix, FyStart = fyStart, FyEnd = fyEnd });
+            var nextSeq = await connection.ExecuteScalarAsync<int>(sql, new { Prefix = prefix, FyStart = fyStart, FyEnd = fyEnd }, transaction);
             return $"{prefix}/{nextSeq:D6}/{fySuffix}";
+        }
+
+        public async Task<string> GetNextBomIdAsync(string mode)
+        {
+            using var connection = CreateConnection();
+            if (connection.State != ConnectionState.Open) connection.Open();
+            using var transaction = connection.BeginTransaction();
+            try
+            {
+                var nextId = await GenerateNextBomIdInternalAsync(connection, transaction, mode);
+                transaction.Commit();
+                return nextId;
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
 
         public async Task<IEnumerable<BomRecordSummaryDto>> GetAllSummariesAsync(string? mode = null, string? query = null)
         {
-            await EnsureTablesCreatedAsync();
             using var connection = CreateConnection();
 
             var cleanQ = query?.Trim() ?? string.Empty;
@@ -201,7 +198,6 @@ namespace MMSERP.Api.Repositories
 
         public async Task<BomCompleteRecordDto?> GetByIdAsync(string bomId)
         {
-            await EnsureTablesCreatedAsync();
             using var connection = CreateConnection();
 
             const string sql = @"
@@ -223,7 +219,7 @@ namespace MMSERP.Api.Repositories
                     b.Bom_Date AS BomDate,
                     ISNULL(b.Bom_PO, '') AS BomPo,
                     ISNULL(b.BOM_LOC, 'LWHL26_SQL') AS BomLoc,
-                    ISNULL(b.BOM_UsrName, 'ADMIN') AS BomUsrName,
+                    ISNULL(b.BOM_UsrName, 'SYSTEM') AS BomUsrName,
                     ISNULL(b.BOM_EMode, 'New') AS BomEMode,
                     b.BOM_EDate AS BomEDate
                 FROM BOMMst b
@@ -273,9 +269,8 @@ namespace MMSERP.Api.Repositories
             };
         }
 
-        public async Task<bool> SaveBomAsync(BomCompleteRecordDto record)
+        public async Task<string> SaveBomAsync(BomCompleteRecordDto record, string user = "SYSTEM")
         {
-            await EnsureTablesCreatedAsync();
             using var connection = CreateConnection();
             if (connection.State != ConnectionState.Open) connection.Open();
 
@@ -284,11 +279,23 @@ namespace MMSERP.Api.Repositories
             try
             {
                 var h = record.Header;
-                const string checkExistsSql = "SELECT COUNT(1) FROM BOMMst WHERE BOMID = @BomId;";
-                var exists = (await connection.ExecuteScalarAsync<int>(checkExistsSql, new { h.BomId }, transaction)) > 0;
+                const string checkStatusSql = "SELECT Status FROM BOMMst WITH (UPDLOCK, HOLDLOCK) WHERE RTRIM(LTRIM(BOMID)) = RTRIM(LTRIM(@BomId));";
+                var existingStatus = await connection.ExecuteScalarAsync<string>(checkStatusSql, new { h.BomId }, transaction);
+                var exists = existingStatus != null;
 
+                if (exists && string.Equals(existingStatus?.Trim(), "APPROVED", StringComparison.OrdinalIgnoreCase))
+                {
+                    transaction.Rollback();
+                    throw new InvalidOperationException("This BOM is approved and cannot be modified. Contact an administrator if changes are required.");
+                }
+
+                string finalBomId;
                 if (!exists)
                 {
+                    // Concurrency-safe ID generation within the insert transaction
+                    finalBomId = await GenerateNextBomIdInternalAsync(connection, transaction, h.BomType);
+                    h.BomId = finalBomId;
+
                     // INSERT INTO BOMMst
                     const string insertMasterSql = @"
                         INSERT INTO BOMMst (
@@ -303,7 +310,7 @@ namespace MMSERP.Api.Repositories
 
                     await connection.ExecuteAsync(insertMasterSql, new
                     {
-                        h.BomId,
+                        BomId = finalBomId,
                         h.BomCode,
                         h.DepCode,
                         h.StrCode,
@@ -317,13 +324,15 @@ namespace MMSERP.Api.Repositories
                         h.BomDate,
                         h.BomPo,
                         h.BomLoc,
-                        h.BomUsrName,
-                        h.BomEMode,
-                        h.BomEDate,
+                        BomUsrName = user,
+                        BomEMode = "New",
+                        BomEDate = DateTime.UtcNow,
                     }, transaction);
                 }
                 else
                 {
+                    finalBomId = h.BomId;
+
                     // UPDATE BOMMst
                     const string updateMasterSql = @"
                         UPDATE BOMMst SET
@@ -356,15 +365,15 @@ namespace MMSERP.Api.Repositories
                         h.BomType,
                         h.BomDate,
                         h.BomPo,
-                        h.BomUsrName,
+                        BomUsrName = user,
                         BomEDate = DateTime.UtcNow,
-                        h.BomId,
+                        BomId = finalBomId,
                     }, transaction);
                 }
 
                 // Delete old detail records for this BOMID
-                const string deleteSubSql = "DELETE FROM BOMSubMst WHERE BOMSID = @BomId;";
-                await connection.ExecuteAsync(deleteSubSql, new { h.BomId }, transaction);
+                const string deleteSubSql = "DELETE FROM BOMSubMst WHERE RTRIM(LTRIM(BOMSID)) = RTRIM(LTRIM(@BomId));";
+                await connection.ExecuteAsync(deleteSubSql, new { BomId = finalBomId }, transaction);
 
                 // Re-insert detail records
                 if (record.Items != null && record.Items.Count > 0)
@@ -382,9 +391,10 @@ namespace MMSERP.Api.Repositories
 
                     foreach (var item in record.Items)
                     {
+                        item.BomsId = finalBomId;
                         await connection.ExecuteAsync(insertSubSql, new
                         {
-                            BomsId = h.BomId,
+                            BomsId = finalBomId,
                             item.BomsCode,
                             BomCode = h.BomCode,
                             item.ItGroupCd,
@@ -410,20 +420,21 @@ namespace MMSERP.Api.Repositories
                     INSERT INTO DAYBOOK (
                         DB_DATE, DB_TYPE, DB_PNAME, DB_AMT, DB_REFNO, DB_ACTION, DB_TYP, DB_DR, DB_COMPNAME
                     ) VALUES (
-                        GETDATE(), 'BOM', @Description, @Qty, @BomId, @Action, @BomType, '0', 'NEW TECH INFOSOL'
+                        GETDATE(), 'BOM', @Description, @Qty, @BomId, @Action, @BomType, '0', @User
                     );";
 
                 await connection.ExecuteAsync(daybookSql, new
                 {
                     Description = h.Description,
                     Qty = h.Qty,
-                    BomId = h.BomId,
+                    BomId = finalBomId,
                     Action = exists ? "UPDATE" : "CREATE",
                     BomType = h.BomType,
+                    User = user,
                 }, transaction);
 
                 transaction.Commit();
-                return true;
+                return finalBomId;
             }
             catch (Exception)
             {
@@ -432,15 +443,28 @@ namespace MMSERP.Api.Repositories
             }
         }
 
-        public async Task<bool> DeleteBomAsync(string bomId, string user = "ADMIN")
+        public async Task<bool> DeleteBomAsync(string bomId, string user = "SYSTEM")
         {
-            await EnsureTablesCreatedAsync();
             using var connection = CreateConnection();
             if (connection.State != ConnectionState.Open) connection.Open();
 
             using var transaction = connection.BeginTransaction();
             try
             {
+                const string checkStatusSql = "SELECT Status FROM BOMMst WITH (UPDLOCK, HOLDLOCK) WHERE RTRIM(LTRIM(BOMID)) = RTRIM(LTRIM(@BomId));";
+                var status = await connection.ExecuteScalarAsync<string>(checkStatusSql, new { BomId = bomId }, transaction);
+                if (status == null)
+                {
+                    transaction.Rollback();
+                    return false;
+                }
+
+                if (string.Equals(status.Trim(), "APPROVED", StringComparison.OrdinalIgnoreCase))
+                {
+                    transaction.Rollback();
+                    throw new InvalidOperationException("This BOM is approved and cannot be deleted. Contact an administrator if changes are required.");
+                }
+
                 // Delete detail items
                 const string deleteSubSql = "DELETE FROM BOMSubMst WHERE RTRIM(LTRIM(BOMSID)) = RTRIM(LTRIM(@BomId));";
                 await connection.ExecuteAsync(deleteSubSql, new { BomId = bomId }, transaction);
@@ -454,10 +478,10 @@ namespace MMSERP.Api.Repositories
                     INSERT INTO DAYBOOK (
                         DB_DATE, DB_TYPE, DB_PNAME, DB_AMT, DB_REFNO, DB_ACTION, DB_TYP, DB_DR, DB_COMPNAME
                     ) VALUES (
-                        GETDATE(), 'BOM', @BomId, 0, @BomId, 'DELETE', 'BOM', '0', 'NEW TECH INFOSOL'
+                        GETDATE(), 'BOM', @BomId, 0, @BomId, 'DELETE', 'BOM', '0', @User
                     );";
 
-                await connection.ExecuteAsync(daybookSql, new { BomId = bomId }, transaction);
+                await connection.ExecuteAsync(daybookSql, new { BomId = bomId, User = user }, transaction);
 
                 transaction.Commit();
                 return rows > 0;
@@ -472,81 +496,75 @@ namespace MMSERP.Api.Repositories
         public async Task<IEnumerable<BomStoreLookupDto>> GetStoresAsync()
         {
             using var connection = CreateConnection();
-            const string sql = @"
-                IF EXISTS (SELECT * FROM sys.tables WHERE name = 'STOREMST')
-                    SELECT STR_NAME AS StrName, STR_CODE AS StrCode FROM STOREMST WHERE STR_NAME <> '' ORDER BY STR_NAME;
-                ELSE
-                    SELECT 1 AS StrCode, 'MAIN STORE - LUDHIANA' AS StrName UNION ALL
-                    SELECT 2 AS StrCode, 'FINISH GOODS STORE' AS StrName;";
+            const string checkSql = "SELECT COUNT(1) FROM sys.tables WHERE name = 'STOREMST';";
+            if (await connection.ExecuteScalarAsync<int>(checkSql) == 0)
+            {
+                throw new InvalidOperationException("Required table STOREMST was not found in the connected database.");
+            }
+
+            const string sql = @"SELECT STR_NAME AS StrName, STR_CODE AS StrCode FROM STOREMST WHERE STR_NAME <> '' ORDER BY STR_NAME;";
             return await connection.QueryAsync<BomStoreLookupDto>(sql);
         }
 
         public async Task<IEnumerable<BomDepartmentLookupDto>> GetDepartmentsAsync()
         {
             using var connection = CreateConnection();
-            const string sql = @"
-                IF EXISTS (SELECT * FROM sys.tables WHERE name = 'LABOURMST')
-                    SELECT LAB_NAME AS LabName, LAB_CODE AS LabCode FROM LABOURMST WHERE (LAB_STATUS = '' OR LAB_STATUS IS NULL OR LAB_STATUS = 'YES') ORDER BY LAB_NAME;
-                ELSE
-                    SELECT 1 AS LabCode, 'PRODUCTION & STITCHING' AS LabName UNION ALL
-                    SELECT 2 AS LabCode, 'KNITTING DEPARTMENT' AS LabName;";
+            const string checkSql = "SELECT COUNT(1) FROM sys.tables WHERE name = 'LABOURMST';";
+            if (await connection.ExecuteScalarAsync<int>(checkSql) == 0)
+            {
+                throw new InvalidOperationException("Required table LABOURMST was not found in the connected database.");
+            }
+
+            const string sql = @"SELECT LAB_NAME AS LabName, LAB_CODE AS LabCode FROM LABOURMST WHERE (LAB_STATUS = '' OR LAB_STATUS IS NULL OR LAB_STATUS = 'YES') ORDER BY LAB_NAME;";
             return await connection.QueryAsync<BomDepartmentLookupDto>(sql);
         }
 
         public async Task<IEnumerable<BomUnitLookupDto>> GetUnitsAsync()
         {
             using var connection = CreateConnection();
-            const string sql = @"
-                IF EXISTS (SELECT * FROM sys.tables WHERE name = 'UNITMST')
-                    SELECT Unit_Code AS UnitCode, Unit_Name AS UnitName FROM UNITMST ORDER BY Unit_Name;
-                ELSE
-                    SELECT 22 AS UnitCode, 'PCS' AS UnitName UNION ALL
-                    SELECT 24 AS UnitCode, 'MTR' AS UnitName UNION ALL
-                    SELECT 25 AS UnitCode, 'KGS' AS UnitName UNION ALL
-                    SELECT 26 AS UnitCode, 'NOS' AS UnitName;";
+            const string checkSql = "SELECT COUNT(1) FROM sys.tables WHERE name = 'UNITMST';";
+            if (await connection.ExecuteScalarAsync<int>(checkSql) == 0)
+            {
+                throw new InvalidOperationException("Required table UNITMST was not found in the connected database.");
+            }
+
+            const string sql = @"SELECT Unit_Code AS UnitCode, Unit_Name AS UnitName FROM UNITMST ORDER BY Unit_Name;";
             return await connection.QueryAsync<BomUnitLookupDto>(sql);
         }
 
         public async Task<IEnumerable<FinishedGoodLookupDto>> GetFinishedGoodsAsync(string skuCross = "", string query = "")
         {
             using var connection = CreateConnection();
+            const string checkSql = "SELECT COUNT(1) FROM sys.tables WHERE name = 'ITEMMST';";
+            if (await connection.ExecuteScalarAsync<int>(checkSql) == 0)
+            {
+                throw new InvalidOperationException("Required table ITEMMST was not found in the connected database.");
+            }
+
             var targetCross = (skuCross.Equals("REGULAR", StringComparison.OrdinalIgnoreCase) || skuCross.Equals("R", StringComparison.OrdinalIgnoreCase)) ? "R" : "J";
             var cleanQ = query?.Trim() ?? string.Empty;
 
             const string sql = @"
-                IF EXISTS (SELECT * FROM sys.tables WHERE name = 'ITEMMST')
-                BEGIN
-                    SELECT TOP 150 
-                        IM.I_CODE AS ICode,
-                        ISNULL(IM.I_NAME1, IM.I_CODE) AS ItName,
-                        ISNULL(UM.UNIT_NAME, 'PCS') AS UnitName,
-                        ISNULL(UM.UNIT_CODE, 22) AS UnitCode,
-                        CASE WHEN (IM.I_BLOCK = 0 OR IM.I_BLOCK IS NULL) THEN 'OPEN' ELSE 'BLOCKED' END AS Status,
-                        @TargetCross AS SkuCross,
-                        ISNULL(CT.CAT_CODE, 0) AS CatCode
-                    FROM ITEMMST AS IM 
-                    LEFT OUTER JOIN UNITMST AS UM ON IM.I_UOM = UM.UNIT_CODE 
-                    LEFT JOIN CATEGORYMST AS CT ON IM.I_CID = CT.CAT_CODE 
-                    LEFT JOIN WIPMST AS WM ON IM.I_PREFIX = WM.WIP_CODE 
-                    WHERE IM.I_HSN <> '' 
-                      AND (IM.I_CODE + ' ' + ISNULL(IM.I_NAME1, '') LIKE '%' + @CleanQ + '%') 
-                      AND (WM.WIP_NAME = 'FINISH' OR WM.WIP_NAME IS NULL)
-                      AND (
-                          EXISTS (SELECT 1 FROM SKUMST WHERE SKU_CODE = IM.I_CODE AND SKU_CROSS = @TargetCross)
-                          OR NOT EXISTS (SELECT 1 FROM SKUMST)
-                      )
-                    ORDER BY IM.I_NAME1;
-                END
-                ELSE
-                BEGIN
-                    SELECT 
-                        'FGMYLO00000S84000000J' AS ICode, 'Mylo FG BABY Pants S-84x4' AS ItName, 
-                        'PCS' AS UnitName, 22 AS UnitCode, 'OPEN' AS Status, 'J' AS SkuCross, 4 AS CatCode
-                    UNION ALL
-                    SELECT 
-                        'FG1T1000000L75000000R' AS ICode, '1 To 10 Baby Pants L-75x6 Regular' AS ItName, 
-                        'PCS' AS UnitName, 22 AS UnitCode, 'OPEN' AS Status, 'R' AS SkuCross, 4 AS CatCode;
-                END";
+                SELECT TOP 150 
+                    IM.I_CODE AS ICode,
+                    ISNULL(IM.I_NAME1, IM.I_CODE) AS ItName,
+                    ISNULL(UM.UNIT_NAME, 'PCS') AS UnitName,
+                    ISNULL(UM.UNIT_CODE, 22) AS UnitCode,
+                    CASE WHEN (IM.I_BLOCK = 0 OR IM.I_BLOCK IS NULL) THEN 'OPEN' ELSE 'BLOCKED' END AS Status,
+                    @TargetCross AS SkuCross,
+                    ISNULL(CT.CAT_CODE, 0) AS CatCode
+                FROM ITEMMST AS IM 
+                LEFT OUTER JOIN UNITMST AS UM ON IM.I_UOM = UM.UNIT_CODE 
+                LEFT JOIN CATEGORYMST AS CT ON IM.I_CID = CT.CAT_CODE 
+                LEFT JOIN WIPMST AS WM ON IM.I_PREFIX = WM.WIP_CODE 
+                WHERE IM.I_HSN <> '' 
+                  AND (IM.I_CODE + ' ' + ISNULL(IM.I_NAME1, '') LIKE '%' + @CleanQ + '%') 
+                  AND (WM.WIP_NAME = 'FINISH' OR WM.WIP_NAME IS NULL)
+                  AND (
+                      EXISTS (SELECT 1 FROM SKUMST WHERE SKU_CODE = IM.I_CODE AND SKU_CROSS = @TargetCross)
+                      OR NOT EXISTS (SELECT 1 FROM SKUMST)
+                  )
+                ORDER BY IM.I_NAME1;";
 
             return await connection.QueryAsync<FinishedGoodLookupDto>(sql, new { TargetCross = targetCross, CleanQ = cleanQ });
         }
@@ -554,45 +572,41 @@ namespace MMSERP.Api.Repositories
         public async Task<IEnumerable<ComponentLookupDto>> GetComponentsAsync(string parentCode = "", string query = "")
         {
             using var connection = CreateConnection();
+            const string checkSql = "SELECT COUNT(1) FROM sys.tables WHERE name = 'ITEMMST';";
+            if (await connection.ExecuteScalarAsync<int>(checkSql) == 0)
+            {
+                throw new InvalidOperationException("Required table ITEMMST was not found in the connected database.");
+            }
+
             var pCode = parentCode?.Trim() ?? string.Empty;
             var cleanQ = query?.Trim() ?? string.Empty;
 
             const string sql = @"
-                IF EXISTS (SELECT * FROM sys.tables WHERE name = 'ITEMMST')
-                BEGIN
-                    SELECT TOP 150 
-                        IM.I_CODE AS ICode,
-                        ISNULL(IM.I_NAME1, IM.I_CODE) AS ItName,
-                        ISNULL(UM.UNIT_CODE, 24) AS UnitCode,
-                        ISNULL(UM.UNIT_NAME, 'MTR') AS UnitName,
-                        ISNULL(CM.CAT_CODE, 0) AS CatCode,
-                        ISNULL(CM.CAT_NAME, 'RAW MATERIAL') AS CatName,
-                        ISNULL(WM.WIP_NAME, 'RAW MATERIAL') AS MaterialType,
-                        CASE WHEN J.UNIT_CODE IS NULL OR J.UNIT_CODE = 0 THEN ISNULL(UM.UNIT_CODE, 24) ELSE J.UNIT_CODE END AS SecUcode,
-                        CASE WHEN J.UNIT_CODE IS NULL OR J.UNIT_CODE = 0 THEN ISNULL(UM.UNIT_NAME, 'MTR') ELSE J.UNIT_NAME END AS SecUnit,
-                        ISNULL(IM.I_DISPNM, '') AS PrintCode,
-                        CAST(ISNULL(S1.SIM_CONVQTY, 1.0) AS FLOAT) AS ConvQty
-                    FROM ITEMMST AS IM 
-                    LEFT OUTER JOIN UNITMST AS UM ON UM.UNIT_CODE = IM.I_UOM 
-                    LEFT JOIN CATEGORYMST AS CM ON IM.I_CID = CM.CAT_CODE 
-                    LEFT JOIN WIPMST AS WM ON IM.I_PREFIX = WM.WIP_CODE 
-                    LEFT JOIN SUBITEMMST AS S1 ON IM.I_CODE = S1.SIM_CODE 
-                    LEFT JOIN UNITMST AS J ON S1.SIM_SECUNIT = J.UNIT_CODE 
-                    LEFT JOIN SKUMST AS K ON IM.I_CODE = K.SKU_CODE 
-                    WHERE IM.I_HSN <> '' 
-                      AND (IM.I_BLOCK IS NULL OR IM.I_BLOCK = 0) 
-                      AND (@PCode = '' OR IM.I_CODE <> @PCode)
-                      AND (IM.I_CODE + ' ' + ISNULL(IM.I_NAME1, '') LIKE '%' + @CleanQ + '%') 
-                    ORDER BY IM.I_NAME1;
-                END
-                ELSE
-                BEGIN
-                    SELECT 'RMCOT100SINGLEJERS' AS ICode, '100% Cotton Single Jersey 180 GSM' AS ItName, 25 AS UnitCode, 'KGS' AS UnitName, 1 AS CatCode, 'Fabrics' AS CatName, 'RAW MATERIAL' AS MaterialType, 3.25 AS ConvQty, 24 AS SecUcode, 'MTR' AS SecUnit, 'COT-SJ-180' AS PrintCode
-                    UNION ALL
-                    SELECT 'ACSEWTHRDSPUNPOLY' AS ICode, 'Spun Polyester Sewing Thread 40/2 5000M' AS ItName, 26 AS UnitCode, 'NOS' AS UnitName, 2 AS CatCode, 'Accessories' AS CatName, 'ACCESSORIES' AS MaterialType, 1.0 AS ConvQty, 26 AS SecUcode, 'NOS' AS SecUnit, 'THRD-40/2' AS PrintCode
-                    UNION ALL
-                    SELECT 'PKMCARTON7PLY6040' AS ICode, 'Master Shipper Corrugated Carton 7-Ply' AS ItName, 26 AS UnitCode, 'NOS' AS UnitName, 3 AS CatCode, 'Packaging' AS CatName, 'PACKAGING' AS MaterialType, 1.0 AS ConvQty, 26 AS SecUcode, 'NOS' AS SecUnit, 'CTN-7PLY' AS PrintCode;
-                END";
+                SELECT TOP 150 
+                    IM.I_CODE AS ICode,
+                    ISNULL(IM.I_NAME1, IM.I_CODE) AS ItName,
+                    ISNULL(UM.UNIT_CODE, 24) AS UnitCode,
+                    ISNULL(UM.UNIT_NAME, 'MTR') AS UnitName,
+                    ISNULL(CM.CAT_CODE, 0) AS CatCode,
+                    ISNULL(CM.CAT_NAME, 'RAW MATERIAL') AS CatName,
+                    ISNULL(WM.WIP_NAME, 'RAW MATERIAL') AS MaterialType,
+                    CASE WHEN J.UNIT_CODE IS NULL OR J.UNIT_CODE = 0 THEN ISNULL(UM.UNIT_CODE, 24) ELSE J.UNIT_CODE END AS SecUcode,
+                    CASE WHEN J.UNIT_CODE IS NULL OR J.UNIT_CODE = 0 THEN ISNULL(UM.UNIT_NAME, 'MTR') ELSE J.UNIT_NAME END AS SecUnit,
+                    ISNULL(IM.I_DISPNM, '') AS PrintCode,
+                    CAST(ISNULL(S1.SIM_CONVQTY, 1.0) AS FLOAT) AS ConvQty
+                FROM ITEMMST AS IM 
+                LEFT OUTER JOIN UNITMST AS UM ON UM.UNIT_CODE = IM.I_UOM 
+                LEFT JOIN CATEGORYMST AS CM ON IM.I_CID = CM.CAT_CODE 
+                LEFT JOIN WIPMST AS WM ON IM.I_PREFIX = WM.WIP_CODE 
+                LEFT JOIN SUBITEMMST AS S1 ON IM.I_CODE = S1.SIM_CODE 
+                LEFT JOIN UNITMST AS J ON S1.SIM_SECUNIT = J.UNIT_CODE 
+                LEFT JOIN SKUMST AS K ON IM.I_CODE = K.SKU_CODE 
+                WHERE IM.I_HSN <> '' 
+                  AND (IM.I_BLOCK IS NULL OR IM.I_BLOCK = 0) 
+                  AND (@PCode = '' OR IM.I_CODE <> @PCode)
+                  AND (IM.I_CODE + ' ' + ISNULL(IM.I_NAME1, '') LIKE '%' + @CleanQ + '%') 
+                ORDER BY IM.I_NAME1;
+            ";
 
             return await connection.QueryAsync<ComponentLookupDto>(sql, new { PCode = pCode, CleanQ = cleanQ });
         }

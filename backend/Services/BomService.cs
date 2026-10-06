@@ -31,7 +31,7 @@ namespace MMSERP.Api.Services
             return _repository.GetByIdAsync(bomId.Trim());
         }
 
-        public Task<bool> SaveBomAsync(BomCompleteRecordDto record)
+        public Task<string> SaveBomAsync(BomCompleteRecordDto record, string user = "SYSTEM")
         {
             if (record?.Header == null)
             {
@@ -48,10 +48,10 @@ namespace MMSERP.Api.Services
                 throw new ArgumentException("Finished Good Material Code is required.");
             }
 
-            return _repository.SaveBomAsync(record);
+            return _repository.SaveBomAsync(record, user);
         }
 
-        public Task<bool> DeleteBomAsync(string bomId, string user = "ADMIN")
+        public Task<bool> DeleteBomAsync(string bomId, string user = "SYSTEM")
         {
             if (string.IsNullOrWhiteSpace(bomId)) return Task.FromResult(false);
             return _repository.DeleteBomAsync(bomId.Trim(), user);

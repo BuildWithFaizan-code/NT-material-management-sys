@@ -241,6 +241,65 @@ class BomHeaderData {
         'bomEMode': bomEMode,
         'bomEDate': bomEDate.toIso8601String(),
       };
+
+  BomHeaderData copyWith({
+    String? bomId,
+    String? bomCode,
+    int? depCode,
+    String? depName,
+    int? strCode,
+    String? strName,
+    String? iCode,
+    String? description,
+    double? qty,
+    int? unitCode,
+    String? unitName,
+    String? purpose,
+    String? status,
+    String? bomType,
+    DateTime? bomDate,
+    String? bomPo,
+    String? bomLoc,
+    String? bomUsrName,
+    String? bomEMode,
+    DateTime? bomEDate,
+  }) {
+    return BomHeaderData(
+      bomId: bomId ?? this.bomId,
+      bomCode: bomCode ?? this.bomCode,
+      depCode: depCode ?? this.depCode,
+      depName: depName ?? this.depName,
+      strCode: strCode ?? this.strCode,
+      strName: strName ?? this.strName,
+      iCode: iCode ?? this.iCode,
+      description: description ?? this.description,
+      qty: qty ?? this.qty,
+      unitCode: unitCode ?? this.unitCode,
+      unitName: unitName ?? this.unitName,
+      purpose: purpose ?? this.purpose,
+      status: status ?? this.status,
+      bomType: bomType ?? this.bomType,
+      bomDate: bomDate ?? this.bomDate,
+      bomPo: bomPo ?? this.bomPo,
+      bomLoc: bomLoc ?? this.bomLoc,
+      bomUsrName: bomUsrName ?? this.bomUsrName,
+      bomEMode: bomEMode ?? this.bomEMode,
+      bomEDate: bomEDate ?? this.bomEDate,
+    );
+  }
+}
+
+/// Result returned from saveBom operations
+class BomSaveResult {
+  final bool success;
+  final String? bomId;
+  final String? errorMessage;
+
+  const BomSaveResult({
+    required this.success,
+    this.bomId,
+    this.errorMessage,
+  });
 }
 
 /// Component item entity (from ITEMMST + SUBITEMMST for BOM Sub-Items)

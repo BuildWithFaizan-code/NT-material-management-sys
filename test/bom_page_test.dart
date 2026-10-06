@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:newtechmms/pages/bom/bom_models.dart';
 import 'package:newtechmms/pages/bom/bom_service.dart';
@@ -106,7 +107,7 @@ class FakeBomService extends BomService {
     bool forceRefresh = false,
   }) async {
     final cleanQ = query.trim().toLowerCase();
-    return BomService.fallbackCompleteRecords.where((record) {
+    final list = BomService.fallbackCompleteRecords.where((record) {
       if (mode != null && record.header.bomType.toUpperCase() != mode.label.toUpperCase()) {
         return false;
       }
@@ -136,10 +137,118 @@ class FakeBomService extends BomService {
         subItemCount: record.items.length,
       );
     }).toList();
+
+    if (mode == null || mode == BomMode.job) {
+      list.add(
+        BomRecordSummary(
+          bomId: 'BOM_APPROVED_TEST',
+          bomCode: 'APPR001',
+          depCode: 1,
+          depName: 'PRODUCTION & STITCHING',
+          strCode: 1,
+          strName: 'MAIN STORE - LUDHIANA',
+          iCode: 'FGMYLO00000S84000000J',
+          description: 'Approved Baby Pants Test',
+          qty: 50.0,
+          unitCode: 22,
+          unitName: 'PCS',
+          status: 'APPROVED',
+          bomType: 'JOB',
+          bomDate: DateTime(2026, 9, 15),
+          bomPo: 'PO-APPR-100',
+          subItemCount: 1,
+        ),
+      );
+      list.add(
+        BomRecordSummary(
+          bomId: 'BOM_MISMATCH_TEST',
+          bomCode: 'MISM001',
+          depCode: 999,
+          depName: 'GHOST DEPARTMENT 999',
+          strCode: 888,
+          strName: 'GHOST STORE 888',
+          iCode: 'FGMYLO00000S84000000J',
+          description: 'Mismatch Baby Pants Test',
+          qty: 50.0,
+          unitCode: 22,
+          unitName: 'PCS',
+          status: 'OPEN',
+          bomType: 'JOB',
+          bomDate: DateTime(2026, 9, 15),
+          bomPo: 'PO-MISM-100',
+          subItemCount: 0,
+        ),
+      );
+    }
+    return list;
   }
 
   @override
   Future<BomCompleteRecord?> fetchBomDetails(String bomId) async {
+    if (bomId == 'BOM_APPROVED_TEST') {
+      return BomCompleteRecord(
+        header: BomHeaderData(
+          bomId: 'BOM_APPROVED_TEST',
+          bomCode: 'APPR001',
+          depCode: 1,
+          depName: 'PRODUCTION & STITCHING',
+          strCode: 1,
+          strName: 'MAIN STORE - LUDHIANA',
+          iCode: 'FGMYLO00000S84000000J',
+          description: 'Approved Baby Pants Test',
+          qty: 50.0,
+          unitCode: 22,
+          unitName: 'PCS',
+          status: 'APPROVED',
+          bomType: 'JOB',
+          bomDate: DateTime(2026, 9, 15),
+          bomPo: 'PO-APPR-100',
+          bomEDate: DateTime(2026, 9, 15),
+        ),
+        items: const [
+          BomSubItemData(
+            bomsId: 'BOM_APPROVED_TEST',
+            bomsCode: '1',
+            itGroupCd: 1,
+            iCode: 'RMCOT100SINGLEJERS',
+            description: 'Cotton Fabric',
+            materialType: 'RAW MATERIAL',
+            qty: 1.0,
+            unitCode: 25,
+            unitName: 'KGS',
+            sqm: 1.0,
+            bomCons: 1.0,
+            bomExtra: 0.0,
+            bomTolQty: 0.0,
+            bomTotQty: 1.0,
+            convQty: 1.0,
+          ),
+        ],
+      );
+    }
+    if (bomId == 'BOM_MISMATCH_TEST') {
+      return BomCompleteRecord(
+        header: BomHeaderData(
+          bomId: 'BOM_MISMATCH_TEST',
+          bomCode: 'MISM001',
+          depCode: 999,
+          depName: 'GHOST DEPARTMENT 999',
+          strCode: 888,
+          strName: 'GHOST STORE 888',
+          iCode: 'FGMYLO00000S84000000J',
+          description: 'Mismatch Baby Pants Test',
+          qty: 50.0,
+          unitCode: 22,
+          unitName: 'PCS',
+          status: 'OPEN',
+          bomType: 'JOB',
+          bomDate: DateTime(2026, 9, 15),
+          bomPo: 'PO-MISM-100',
+          bomEDate: DateTime(2026, 9, 15),
+        ),
+        items: const [],
+      );
+    }
     try {
       return BomService.fallbackCompleteRecords.firstWhere(
         (r) => r.header.bomId.toUpperCase() == bomId.toUpperCase(),
@@ -147,6 +256,24 @@ class FakeBomService extends BomService {
     } catch (_) {
       return null;
     }
+  }
+
+  @override
+  Future<BomSaveResult> saveBom({
+    required BomHeaderData header,
+    required List<BomSubItemData> items,
+  }) async {
+    if (header.status.toUpperCase() == 'APPROVED') {
+      return const BomSaveResult(
+        success: false,
+        errorMessage: 'Cannot modify or save an APPROVED BOM record.',
+      );
+    }
+    final authoritativeId = header.bomId.isEmpty ? 'BMCJ/000999/27' : header.bomId;
+    return BomSaveResult(
+      success: true,
+      bomId: authoritativeId,
+    );
   }
 
   @override
@@ -777,6 +904,107 @@ void main() {
       expect(find.text('Are you sure you want to delete this'), findsNothing);
       expect(find.text('2 Components'), findsOneWidget);
       expect(find.text('2 Sub-Item(s)'), findsOneWidget);
+    });
+
+    testWidgets('Loading an APPROVED record freezes the form, disables save/delete, and displays lock banner', (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1920, 1080);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BillOfMaterialPage(
+              bomService: FakeBomService(),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Open Show Record modal
+      await tester.tap(find.text('Show Record'));
+      await tester.pumpAndSettle();
+
+      // Search and select BOM_APPROVED_TEST
+      await tester.enterText(
+        find.descendant(of: find.byType(Dialog), matching: find.byType(TextField)),
+        'BOM_APPROVED_TEST',
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
+
+      final selectBtn = find.widgetWithText(ElevatedButton, 'Select').first;
+      await tester.ensureVisible(selectBtn);
+      await tester.tap(selectBtn);
+      await tester.pumpAndSettle();
+
+      // Ensure modal is dismissed
+      expect(find.text('Select Bill of Materials (BOM) Record'), findsNothing);
+
+      // Verify prominent APPROVED Lock banner is visible
+      expect(find.text('This BOM is APPROVED and locked for editing.'), findsOneWidget);
+
+      // Verify Save button indicates locked state
+      expect(find.text('Locked (Approved)'), findsOneWidget);
+      expect(find.text('Save BOM (F1)'), findsNothing);
+
+      // Verify tapping delete component does not show confirmation dialog
+      await tester.tap(find.byTooltip('Delete Component').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Are you sure you want to delete this'), findsNothing);
+
+      // Verify F1 shortcut does not trigger save
+      await tester.sendKeyEvent(LogicalKeyboardKey.f1);
+      await tester.pumpAndSettle();
+      expect(find.text('Saving BOM...'), findsNothing);
+    });
+
+    testWidgets('Loading record with unknown store/department displays mismatch warning and unmatched code', (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1920, 1080);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BillOfMaterialPage(
+              bomService: FakeBomService(),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Open Show Record modal and search for mismatch record
+      await tester.tap(find.text('Show Record'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.descendant(of: find.byType(Dialog), matching: find.byType(TextField)),
+        'BOM_MISMATCH_TEST',
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
+
+      final selectBtn = find.widgetWithText(ElevatedButton, 'Select').first;
+      await tester.ensureVisible(selectBtn);
+      await tester.tap(selectBtn);
+      await tester.pumpAndSettle();
+
+      // Verify Master Data Mismatch warning banner appears
+      expect(
+        find.text('One or more master data values on this record no longer exist in master data. Review Store / Department / Unit before saving.'),
+        findsOneWidget,
+      );
+
+      // Verify unmatched store/department indicator is displayed
+      expect(find.text('Unmatched (Code: 888)'), findsOneWidget);
+      expect(find.text('Unmatched (Code: 999)'), findsOneWidget);
     });
 
     test('BomService in-memory caching and cache invalidation behavior', () async {
