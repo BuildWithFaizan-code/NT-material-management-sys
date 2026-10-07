@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:excel/excel.dart' as excel_pkg;
@@ -399,7 +400,7 @@ class _BomExportModalDialogState extends State<BomExportModalDialog> {
         child: BackdropFilter(
           filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
           child: Container(
-            width: 920,
+            width: (MediaQuery.of(context).size.width * 0.84).clamp(980.0, 1160.0),
             height: 610,
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.93),
@@ -418,12 +419,12 @@ class _BomExportModalDialogState extends State<BomExportModalDialog> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // LEFT COLUMN: Format Selector & Options (440px)
+                    // LEFT COLUMN: Format Selector & Options (370px)
                     SizedBox(
-                      width: 440,
+                      width: 370,
                       child: Container(
                         color: const Color(0xFFF8FAFC),
-                        padding: const EdgeInsets.all(24),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -506,6 +507,7 @@ class _BomExportModalDialogState extends State<BomExportModalDialog> {
                             Row(
                               children: [
                                 Expanded(
+                                  flex: 4,
                                   child: OutlinedButton(
                                     onPressed: _isExporting ? null : () => Navigator.of(context).pop(),
                                     style: OutlinedButton.styleFrom(
@@ -518,6 +520,7 @@ class _BomExportModalDialogState extends State<BomExportModalDialog> {
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
+                                  flex: 5,
                                   child: AnimatedSuccessButton(
                                     status: _isExporting
                                         ? ButtonStatus.loading
@@ -540,9 +543,8 @@ class _BomExportModalDialogState extends State<BomExportModalDialog> {
                     ),
                     const VerticalDivider(width: 1, thickness: 1, color: AppColors.divider),
                     Expanded(
-                      flex: 7,
                       child: Container(
-                        padding: const EdgeInsets.fromLTRB(22, 26, 26, 26),
+                        padding: const EdgeInsets.fromLTRB(20, 24, 24, 24),
                         color: const Color(0xFFF8FAFC).withValues(alpha: 0.7),
                         child: Column(
                           children: [
@@ -752,10 +754,10 @@ class _BomExportModalDialogState extends State<BomExportModalDialog> {
               child: const Row(
                 children: [
                   SizedBox(width: 36, child: Text('SEL', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11), textAlign: TextAlign.center)),
-                  SizedBox(width: 110, child: Text('BOM ID', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11), textAlign: TextAlign.center)),
-                  SizedBox(width: 70, child: Text('TYPE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11), textAlign: TextAlign.center)),
+                  SizedBox(width: 125, child: Text('BOM ID', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11), textAlign: TextAlign.center)),
+                  SizedBox(width: 95, child: Text('TYPE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11), textAlign: TextAlign.center)),
                   Expanded(child: Text('FG CODE & DESCRIPTION', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11), textAlign: TextAlign.left)),
-                  SizedBox(width: 90, child: Text('STATUS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11), textAlign: TextAlign.center)),
+                  SizedBox(width: 80, child: Text('STATUS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11), textAlign: TextAlign.center)),
                 ],
               ),
             ),
@@ -766,7 +768,6 @@ class _BomExportModalDialogState extends State<BomExportModalDialog> {
                 itemBuilder: (ctx, idx) {
                   final r = previewList[idx];
                   final isSelected = _selectedBomIds.contains(r.bomId);
-                  final isJob = r.bomType.toUpperCase() == 'JOB';
 
                   return InkWell(
                     onTap: () {
@@ -781,7 +782,9 @@ class _BomExportModalDialogState extends State<BomExportModalDialog> {
                     child: Container(
                       height: 44,
                       padding: const EdgeInsets.symmetric(horizontal: 14),
-                      color: isSelected ? AppColors.secondaryColor.withValues(alpha: 0.04) : Colors.white,
+                      color: isSelected
+                          ? AppColors.secondaryColor.withValues(alpha: 0.04)
+                          : (idx.isEven ? Colors.white : const Color(0xFFF8FAFC)),
                       child: Row(
                         children: [
                           SizedBox(
@@ -801,40 +804,36 @@ class _BomExportModalDialogState extends State<BomExportModalDialog> {
                             ),
                           ),
                           SizedBox(
-                            width: 110,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: isJob ? const Color(0xFFEFF6FF) : const Color(0xFFECFDF5),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: isJob ? const Color(0xFFBFDBFE) : const Color(0xFFA7F3D0)),
-                              ),
-                              child: Text(
-                                r.bomId,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 10.5,
-                                  fontFamily: 'monospace',
-                                  color: isJob ? const Color(0xFF2563EB) : const Color(0xFF059669),
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          SizedBox(
-                            width: 64,
+                            width: 125,
                             child: Text(
-                              r.bomType,
-                              style: TextStyle(
-                                fontSize: 10.5,
+                              r.bomId,
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: isJob ? const Color(0xFF2563EB) : const Color(0xFF059669),
+                                fontSize: 11.5,
+                                fontFamily: 'monospace',
+                                color: AppColors.primaryColor,
                               ),
                               textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const SizedBox(width: 8),
+                          SizedBox(
+                            width: 95,
+                            child: Text(
+                              r.bomType,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.neutralDark,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -842,38 +841,43 @@ class _BomExportModalDialogState extends State<BomExportModalDialog> {
                               children: [
                                 Text(
                                   r.description,
-                                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: AppColors.neutralDark),
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.neutralDark,
+                                  ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
+                                const SizedBox(height: 1.5),
                                 Text(
                                   r.iCode,
-                                  style: TextStyle(fontSize: 10, fontFamily: 'monospace', color: AppColors.neutralDark.withValues(alpha: 0.6)),
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontFamily: 'monospace',
+                                    color: AppColors.neutralDark.withValues(alpha: 0.6),
+                                  ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ],
                             ),
                           ),
+                          const SizedBox(width: 8),
                           SizedBox(
-                            width: 90,
-                            child: Center(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: r.status.toUpperCase() == 'OPEN' ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: r.status.toUpperCase() == 'OPEN' ? const Color(0xFFA7F3D0) : const Color(0xFFFECACA)),
-                                ),
-                                child: Text(
-                                  r.status,
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: r.status.toUpperCase() == 'OPEN' ? const Color(0xFF059669) : const Color(0xFFDC2626),
-                                  ),
-                                ),
+                            width: 80,
+                            child: Text(
+                              r.status,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: r.status.toUpperCase() == 'OPEN'
+                                    ? const Color(0xFF0C3B2E)
+                                    : const Color(0xFFDC2626),
                               ),
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -1166,7 +1170,7 @@ class _Pdf3DLogoPainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     )..layout();
 
-    textPainter.paint(canvas, Offset(w * 0.10, h * 0.08));
+    textPainter.paint(canvas, Offset(w * 0.22, h * 0.15));
   }
 
   @override
@@ -1268,8 +1272,12 @@ class _AnimatedSuccessButtonState extends State<AnimatedSuccessButton>
   @override
   void didUpdateWidget(covariant AnimatedSuccessButton oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.status != widget.status && widget.status == ButtonStatus.success) {
+    if (widget.status == ButtonStatus.success && oldWidget.status != ButtonStatus.success) {
       _triggerSuccess();
+    } else if (widget.status == ButtonStatus.idle) {
+      _checkController.reset();
+      _rippleController.reset();
+      _glowController.reset();
     }
   }
 
@@ -1291,86 +1299,354 @@ class _AnimatedSuccessButtonState extends State<AnimatedSuccessButton>
       builder: (context, child) {
         return Transform.scale(
           scale: isSuccess ? _bounceAnimation.value : 1.0,
-          child: Container(
-            height: widget.height,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: isSuccess
-                  ? [
-                      BoxShadow(
-                        color: widget.successBackgroundColor.withValues(alpha: 0.4 * _glowAnimation.value),
-                        blurRadius: 16 * _glowAnimation.value,
-                        spreadRadius: 2 * _glowAnimation.value,
-                      ),
-                    ]
-                  : [],
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                if (isSuccess && _rippleAnimation.value > 0)
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: widget.successBackgroundColor.withValues(alpha: 1.0 - _rippleAnimation.value),
-                          width: 3 * _rippleAnimation.value,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // Ripple burst ring
+              if (isSuccess)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: AnimatedOpacity(
+                      opacity: (1.0 - _rippleAnimation.value).clamp(0.0, 1.0),
+                      duration: const Duration(milliseconds: 100),
+                      child: Transform.scale(
+                        scale: 1.0 + (_rippleAnimation.value * 0.25),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: widget.successBackgroundColor.withValues(alpha: 0.6),
+                              width: 2.5,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ElevatedButton(
-                  onPressed: isLoading ? null : widget.onPressed,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isSuccess ? widget.successBackgroundColor : widget.idleBackgroundColor,
-                    disabledBackgroundColor: widget.idleBackgroundColor.withValues(alpha: 0.7),
-                    foregroundColor: Colors.white,
-                    elevation: isSuccess ? 4 : 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (isLoading) ...[
-                        const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+
+              // Main button body
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                height: widget.height,
+                decoration: BoxDecoration(
+                  gradient: isSuccess
+                      ? LinearGradient(
+                          colors: [
+                            widget.successBackgroundColor,
+                            widget.successBackgroundColor.withValues(alpha: 0.85),
+                            const Color(0xFF059669),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : null,
+                  color: isSuccess
+                      ? null
+                      : (widget.onPressed == null
+                          ? widget.idleBackgroundColor.withValues(alpha: 0.6)
+                          : widget.idleBackgroundColor),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    if (isSuccess)
+                      BoxShadow(
+                        color: widget.successBackgroundColor
+                            .withValues(alpha: 0.3 + (_glowAnimation.value * 0.35)),
+                        blurRadius: 8 + (_glowAnimation.value * 16),
+                        spreadRadius: _glowAnimation.value * 3,
+                        offset: const Offset(0, 2),
+                      )
+                    else
+                      BoxShadow(
+                        color: widget.idleBackgroundColor.withValues(alpha: 0.15),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: (isLoading || isSuccess) ? null : widget.onPressed,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (isLoading)
+                            const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+                            )
+                          else if (isSuccess)
+                            ScaleTransition(
+                              scale: _scaleAnimation,
+                              child: const Icon(Icons.check_circle_rounded, size: 22, color: Colors.white),
+                            )
+                          else
+                            Icon(widget.idleIcon, size: 18, color: Colors.white),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 200),
+                              transitionBuilder: (child, animation) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: SlideTransition(
+                                    position: Tween<Offset>(
+                                      begin: const Offset(0, 0.3),
+                                      end: Offset.zero,
+                                    ).animate(animation),
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                isLoading
+                                    ? widget.loadingText
+                                    : (isSuccess ? widget.successText : widget.idleText),
+                                key: ValueKey<String>(
+                                  isLoading
+                                      ? 'loading'
+                                      : (isSuccess ? 'success' : widget.idleText),
+                                ),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12.0,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(widget.loadingText, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), overflow: TextOverflow.ellipsis),
-                        ),
-                      ] else if (isSuccess) ...[
-                        Transform.scale(
-                          scale: _scaleAnimation.value,
-                          child: const Icon(Icons.check_circle_rounded, size: 18, color: Colors.white),
-                        ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(widget.successText, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), overflow: TextOverflow.ellipsis),
-                        ),
-                      ] else ...[
-                        Icon(widget.idleIcon, size: 16, color: Colors.white),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(widget.idleText, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12), overflow: TextOverflow.ellipsis),
-                        ),
-                      ],
-                    ],
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+
+              // Sparkle particles
+              if (isSuccess) ...List.generate(6, (i) {
+                final angle = (i * 60.0) * (3.14159 / 180.0);
+                final distance = 18.0 + (_rippleAnimation.value * 22.0);
+                return Positioned(
+                  left: (widget.height / 2) - 3 + (distance * math.cos(angle)),
+                  top: (widget.height / 2) - 3 + (distance * math.sin(angle)),
+                  child: AnimatedOpacity(
+                    opacity: (1.0 - _rippleAnimation.value).clamp(0.0, 1.0),
+                    duration: const Duration(milliseconds: 100),
+                    child: Container(
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: i.isEven
+                            ? Colors.white
+                            : widget.successBackgroundColor.withValues(alpha: 0.8),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: widget.successBackgroundColor.withValues(alpha: 0.5),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
           ),
         );
       },
     );
   }
 }
+
+// ============================================================================
+// ANIMATED EXPORT BUTTON & ORBIT BORDER PAINTER (100% PROJECT MASTER PARITY)
+// ============================================================================
+class BomAnimatedExportButton extends StatefulWidget {
+  final VoidCallback onPressed;
+  const BomAnimatedExportButton({super.key, required this.onPressed});
+
+  @override
+  State<BomAnimatedExportButton> createState() => _BomAnimatedExportButtonState();
+}
+
+class _BomAnimatedExportButtonState extends State<BomAnimatedExportButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  bool _isHovered = false;
+  bool _isAnimating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 650),
+    );
+
+    _ctrl.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _ctrl.reset();
+        if (mounted) {
+          setState(() => _isAnimating = false);
+        }
+        widget.onPressed();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _triggerClickOrbit() {
+    if (_isAnimating) return;
+    setState(() => _isAnimating = true);
+    _ctrl.forward(from: 0.0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: _triggerClickOrbit,
+        child: AnimatedBuilder(
+          animation: _ctrl,
+          builder: (context, _) {
+            final progress = _ctrl.value;
+
+            return CustomPaint(
+              painter: _OrbitButtonBorderPainter(
+                progress: progress,
+                isHovered: _isHovered,
+                isAnimating: _isAnimating,
+              ),
+              child: Container(
+                height: 40,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceColor,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: _isAnimating ? AppColors.secondaryColor : AppColors.divider,
+                    width: _isAnimating ? 1.4 : 1.0,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _isAnimating
+                          ? AppColors.secondaryColor.withValues(alpha: 0.3)
+                          : AppColors.secondaryColor.withValues(alpha: _isHovered ? 0.18 : 0.05),
+                      blurRadius: _isAnimating || _isHovered ? 12 : 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.file_download_outlined,
+                      size: 16,
+                      color: _isAnimating || _isHovered ? AppColors.secondaryColor : AppColors.primaryColor,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Export',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: _isAnimating || _isHovered ? AppColors.secondaryColor : AppColors.primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _OrbitButtonBorderPainter extends CustomPainter {
+  final double progress;
+  final bool isHovered;
+  final bool isAnimating;
+
+  _OrbitButtonBorderPainter({
+    required this.progress,
+    required this.isHovered,
+    required this.isAnimating,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (!isAnimating || progress <= 0.0 || progress >= 1.0) return;
+
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    final rrect = RRect.fromRectAndRadius(rect, const Radius.circular(18));
+    final path = Path()..addRRect(rrect);
+
+    final metrics = path.computeMetrics().first;
+    final totalLen = metrics.length;
+    final beamLen = totalLen * 0.35;
+
+    final start = progress * totalLen;
+    final end = (start + beamLen) % totalLen;
+
+    Path extractPath;
+    if (start + beamLen <= totalLen) {
+      extractPath = metrics.extractPath(start, start + beamLen);
+    } else {
+      extractPath = metrics.extractPath(start, totalLen);
+      extractPath.addPath(metrics.extractPath(0, end), Offset.zero);
+    }
+
+    final glowPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.2
+      ..strokeCap = StrokeCap.round
+      ..color = const Color(0xFF25D366).withValues(alpha: 0.85)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.solid, 3.0);
+
+    final beamPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.2
+      ..strokeCap = StrokeCap.round
+      ..shader = SweepGradient(
+        colors: [
+          Colors.transparent,
+          const Color(0xFF0C3B2E).withValues(alpha: 0.2),
+          const Color(0xFF25D366),
+          const Color(0xFF10B981),
+          Colors.white,
+        ],
+        stops: const [0.0, 0.25, 0.6, 0.85, 1.0],
+        transform: GradientRotation(progress * 2 * math.pi),
+      ).createShader(rect);
+
+    canvas.drawPath(extractPath, glowPaint);
+    canvas.drawPath(extractPath, beamPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _OrbitButtonBorderPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.isHovered != isHovered ||
+        oldDelegate.isAnimating != isAnimating;
+  }
+}
+

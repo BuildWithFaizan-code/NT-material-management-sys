@@ -9,6 +9,7 @@ import '../../design/app_colors.dart';
 import '../bom/bom_models.dart';
 import '../bom/bom_service.dart';
 import '../bom/widgets/finished_good_lookup_dialog.dart';
+import '../bom/widgets/sub_material_lookup_dialog.dart';
 import '../bom/widgets/bom_show_record_modal.dart';
 import '../bom/widgets/bom_export_modal_dialog.dart';
 
@@ -190,6 +191,54 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
         _buttonValidationMsg = null;
       });
       _descriptionFocusNode.requestFocus();
+    }
+  }
+
+  Future<void> _openSubMaterialLookup() async {
+    if (_isApproved) return;
+    final parentCode = _materialCodeCtrl.text.trim();
+    if (parentCode.isEmpty) {
+      _showButtonValidation('Please select Finished Good Material Code first!');
+      _materialCodeFocusNode.requestFocus();
+      return;
+    }
+
+    final selected = await showDialog<ComponentLookupItem>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => SubMaterialLookupDialog(
+        parentItemCode: parentCode,
+        bomService: _bomService,
+      ),
+    );
+
+    if (selected != null && mounted) {
+      setState(() {
+        final nextCode = '${_subItems.length + 1}';
+        final newItem = BomSubItemData(
+          bomsId: _bomIdCtrl.text.trim(),
+          bomsCode: nextCode,
+          itGroupCd: selected.catCode,
+          iCode: selected.iCode,
+          description: selected.itName,
+          materialType: selected.materialType,
+          qty: selected.convQty > 0 ? selected.convQty : 1.0,
+          unitCode: selected.unitCode,
+          unitName: selected.unitName,
+          sqm: 0.0,
+          bomCons: 1.0,
+          bomExtra: 0.0,
+          bomTolQty: 0.0,
+          bomTotQty: selected.convQty > 0 ? selected.convQty : 1.0,
+          convQty: selected.convQty > 0 ? selected.convQty : 1.0,
+          bomRate: 0.0,
+          bomAmount: 0.0,
+          bomRemarks: '',
+        );
+        _subItems.add(newItem);
+        _selectedComponentIndex = _subItems.length - 1;
+        _buttonValidationMsg = null;
+      });
     }
   }
 
@@ -501,20 +550,10 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
   }
 
   Color _getMaterialTypeColor(String type) {
-    final t = type.toUpperCase();
-    if (t.contains('RAW')) return const Color(0xFFD97706);
-    if (t.contains('ACCESS')) return const Color(0xFF7C3AED);
-    if (t.contains('PACK')) return const Color(0xFF0D9488);
-    if (t.contains('WIP')) return const Color(0xFF2563EB);
-    return const Color(0xFF475569);
+    return const Color(0xFF334155);
   }
 
   Color _getMaterialTypeBg(String type) {
-    final t = type.toUpperCase();
-    if (t.contains('RAW')) return const Color(0xFFFEF3C7);
-    if (t.contains('ACCESS')) return const Color(0xFFF5F3FF);
-    if (t.contains('PACK')) return const Color(0xFFF0FDFA);
-    if (t.contains('WIP')) return const Color(0xFFEFF6FF);
     return const Color(0xFFF1F5F9);
   }
 
@@ -1677,6 +1716,20 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
 
               const Spacer(),
 
+              // ACTION BUTTON: SELECT SUB-MATERIAL (QUERY 6)
+              OutlinedButton.icon(
+                onPressed: _isApproved ? null : _openSubMaterialLookup,
+                icon: const Icon(Icons.add_rounded, size: 14, color: Color(0xFF0C3B2E)),
+                label: const Text('Add Sub-Material', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0C3B2E))),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  side: const BorderSide(color: Color(0xFFA7F3D0)),
+                  backgroundColor: const Color(0xFFE6F4EA),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+              const SizedBox(width: 8),
+
               // ACTION BUTTON: DUPLICATE ROW (WHEN ROW SELECTED)
               if (_selectedComponentIndex != null && _selectedComponentIndex! < _subItems.length) ...[
                 OutlinedButton.icon(
@@ -1752,8 +1805,21 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Load a BOM record using "Show Record" above to view components',
+            'Load a BOM record using "Show Record" above to view components, or select sub-materials below',
             style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            onPressed: _isApproved ? null : _openSubMaterialLookup,
+            icon: const Icon(Icons.add_rounded, size: 16),
+            label: const Text('Select Sub-Materials', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0C3B2E),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              elevation: 0,
+            ),
           ),
         ],
       ),
@@ -1761,180 +1827,199 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
   }
 
   Widget _buildComponentsDataGrid() {
-    return Column(
-      children: [
-        // TABLE HEADER ROW (FITS 100% WIDTH, ZERO HORIZONTAL SCROLL)
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF1F5F9),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-          ),
-          child: const Row(
-            children: [
-              SizedBox(width: 36, child: Text('SR', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF475569)))),
-              SizedBox(width: 95, child: Text('MATERIAL TYPE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF475569)))),
-              SizedBox(width: 140, child: Text('MATERIAL CODE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF475569)))),
-              Expanded(child: Text('MATERIAL DESCRIPTION', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF475569)))),
-              SizedBox(width: 65, child: Text('CONS.', textAlign: TextAlign.right, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF475569)))),
-              SizedBox(width: 85, child: Text('NET QTY', textAlign: TextAlign.right, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF475569)))),
-              SizedBox(width: 60, child: Text('ACTION', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF475569)))),
-            ],
-          ),
-        ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const double minTableWidth = 640.0;
+        final double tableWidth = math.max(constraints.maxWidth, minTableWidth);
 
-        const SizedBox(height: 6),
-
-        // TABLE BODY (SCROLLABLE ROWS)
-        Expanded(
-          child: ListView.builder(
-            controller: _verticalTableController,
-            itemCount: _subItems.length,
-            itemBuilder: (context, index) {
-              final item = _subItems[index];
-              final isSelected = index == _selectedComponentIndex;
-
-              return Container(
-                margin: const EdgeInsets.only(bottom: 4),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? const Color(0xFFEFF6FF)
-                      : (index.isEven ? Colors.white : const Color(0xFFFAFAFA)),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isSelected ? const Color(0xFF3B82F6) : const Color(0xFFE2E8F0),
-                    width: isSelected ? 1.4 : 1.0,
-                  ),
-                ),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(8),
-                  onTap: () => setState(() => _selectedComponentIndex = index),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    child: Row(
+        return Scrollbar(
+          controller: _horizontalTableController,
+          thumbVisibility: constraints.maxWidth < minTableWidth,
+          child: SingleChildScrollView(
+            controller: _horizontalTableController,
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(
+              width: tableWidth,
+              child: Column(
+                children: [
+                  // TABLE HEADER ROW (FITS 100% WIDTH, RESPONSIVE WITH MIN-WIDTH SAFEGUARD)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: const Row(
                       children: [
-                        // SR NO
-                        SizedBox(
-                          width: 36,
-                          child: Text(
-                            item.bomsCode,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w800,
-                              color: isSelected ? const Color(0xFF1D4ED8) : const Color(0xFF64748B),
-                            ),
-                          ),
-                        ),
-
-                        // MATERIAL TYPE BADGE
-                        SizedBox(
-                          width: 95,
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: _getMaterialTypeBg(item.materialType),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                item.materialType.isNotEmpty ? item.materialType : 'GENERAL',
-                                style: TextStyle(
-                                  fontSize: 8.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: _getMaterialTypeColor(item.materialType),
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        // MATERIAL CODE
-                        SizedBox(
-                          width: 140,
-                          child: Text(
-                            item.iCode,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              color: isSelected ? const Color(0xFF1D4ED8) : const Color(0xFF0F172A),
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-
-                        // DESCRIPTION
-                        Expanded(
-                          child: Tooltip(
-                            message: item.description,
-                            child: Text(
-                              item.description,
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-
-                        // CONSUMPTION
-                        SizedBox(
-                          width: 65,
-                          child: Text(
-                            item.bomCons.toStringAsFixed(2),
-                            textAlign: TextAlign.right,
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
-                          ),
-                        ),
-
-                        // NET QTY
-                        SizedBox(
-                          width: 85,
-                          child: Text(
-                            '${item.qty.toStringAsFixed(2)} ${item.unitName}',
-                            textAlign: TextAlign.right,
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF059669)),
-                          ),
-                        ),
-
-                        // ACTION (DELETE ONLY, MATCHING PROJECT MASTER SCREEN)
-                        SizedBox(
-                          width: 60,
-                          child: Center(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: const Color(0xFFE2E8F0)),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.02),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
-                              ),
-                              child: _ActionIconButton(
-                                icon: Icons.delete_outline_rounded,
-                                color: const Color(0xFFEF4444),
-                                hoverBg: const Color(0xFFFEF2F2),
-                                tooltip: 'Delete Component',
-                                onPressed: _isApproved ? null : () => _confirmDeleteComponent(index),
-                              ),
-                            ),
-                          ),
-                        ),
+                        SizedBox(width: 36, child: Text('SR', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF334155)))),
+                        SizedBox(width: 95, child: Text('MATERIAL TYPE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF334155)))),
+                        SizedBox(width: 140, child: Text('MATERIAL CODE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF334155)))),
+                        Expanded(child: Text('MATERIAL DESCRIPTION', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF334155)))),
+                        SizedBox(width: 65, child: Text('CONS.', textAlign: TextAlign.right, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF334155)))),
+                        SizedBox(width: 85, child: Text('NET QTY', textAlign: TextAlign.right, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF334155)))),
+                        SizedBox(width: 60, child: Text('ACTION', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF334155)))),
                       ],
                     ),
                   ),
-                ),
-              );
-            },
+
+                  const SizedBox(height: 6),
+
+                  // TABLE BODY (SCROLLABLE ROWS)
+                  Expanded(
+                    child: ListView.builder(
+                      controller: _verticalTableController,
+                      itemCount: _subItems.length,
+                      itemBuilder: (context, index) {
+                        final item = _subItems[index];
+                        final isSelected = index == _selectedComponentIndex;
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 4),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? const Color(0xFFE6F4EA)
+                                : (index.isEven ? Colors.white : const Color(0xFFFAFAFA)),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isSelected ? const Color(0xFF0C3B2E) : const Color(0xFFE2E8F0),
+                              width: isSelected ? 1.4 : 1.0,
+                            ),
+                          ),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(8),
+                            onTap: () => setState(() => _selectedComponentIndex = index),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              child: Row(
+                                children: [
+                                  // SR NO
+                                  SizedBox(
+                                    width: 36,
+                                    child: Text(
+                                      item.bomsCode,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: isSelected ? const Color(0xFF0C3B2E) : const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                  ),
+
+                                  // MATERIAL TYPE BADGE
+                                  SizedBox(
+                                    width: 95,
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF1F5F9),
+                                          borderRadius: BorderRadius.circular(4),
+                                          border: Border.all(color: const Color(0xFFCBD5E1)),
+                                        ),
+                                        child: Text(
+                                          item.materialType.isNotEmpty ? item.materialType : 'GENERAL',
+                                          style: const TextStyle(
+                                            fontSize: 8.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF334155),
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                  // MATERIAL CODE
+                                  SizedBox(
+                                    width: 140,
+                                    child: Text(
+                                      item.iCode,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w800,
+                                        color: isSelected ? const Color(0xFF0C3B2E) : const Color(0xFF0F172A),
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+
+                                  // DESCRIPTION
+                                  Expanded(
+                                    child: Tooltip(
+                                      message: item.description,
+                                      child: Text(
+                                        item.description,
+                                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ),
+
+                                  // CONSUMPTION
+                                  SizedBox(
+                                    width: 65,
+                                    child: Text(
+                                      item.bomCons.toStringAsFixed(2),
+                                      textAlign: TextAlign.right,
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                                    ),
+                                  ),
+
+                                  // NET QTY
+                                  SizedBox(
+                                    width: 85,
+                                    child: Text(
+                                      '${item.qty.toStringAsFixed(2)} ${item.unitName}',
+                                      textAlign: TextAlign.right,
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF0C3B2E)),
+                                    ),
+                                  ),
+
+                                  // ACTION (DELETE ONLY, MATCHING PROJECT MASTER SCREEN)
+                                  SizedBox(
+                                    width: 60,
+                                    child: Center(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(10),
+                                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: 0.02),
+                                              blurRadius: 4,
+                                              offset: const Offset(0, 1),
+                                            ),
+                                          ],
+                                        ),
+                                        child: _ActionIconButton(
+                                          icon: Icons.delete_outline_rounded,
+                                          color: const Color(0xFFDC2626),
+                                          hoverBg: const Color(0xFFFEF2F2),
+                                          tooltip: 'Delete Component',
+                                          onPressed: _isApproved ? null : () => _confirmDeleteComponent(index),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -2184,8 +2269,8 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                                               SizedBox(width: 70, child: Text(row.sqm > 0 ? row.sqm.toStringAsFixed(2) : '-', textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)))),
                                               SizedBox(width: 80, child: Text(row.bomCons.toStringAsFixed(2), textAlign: TextAlign.right, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)))),
                                               SizedBox(width: 85, child: Text('${row.bomExtra.toStringAsFixed(1)}%', textAlign: TextAlign.right, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)))),
-                                              SizedBox(width: 85, child: Text(row.bomTolQty.toStringAsFixed(2), textAlign: TextAlign.right, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFD97706)))),
-                                              SizedBox(width: 90, child: Text(row.qty.toStringAsFixed(2), textAlign: TextAlign.right, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF059669)))),
+                                              SizedBox(width: 85, child: Text(row.bomTolQty.toStringAsFixed(2), textAlign: TextAlign.right, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)))),
+                                              SizedBox(width: 90, child: Text(row.qty.toStringAsFixed(2), textAlign: TextAlign.right, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF0C3B2E)))),
                                               SizedBox(
                                                 width: 65,
                                                 child: Center(
@@ -2224,7 +2309,7 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                                                     ),
                                                     child: _ActionIconButton(
                                                       icon: Icons.delete_outline_rounded,
-                                                      color: const Color(0xFFEF4444),
+                                                      color: const Color(0xFFDC2626),
                                                       hoverBg: const Color(0xFFFEF2F2),
                                                       tooltip: 'Delete Component',
                                                       onPressed: _isApproved
@@ -4126,109 +4211,19 @@ class _AnimatedShowRecordButtonState extends State<_AnimatedShowRecordButton> wi
 }
 
 // ============================================================================
-// ANIMATED EXPORT BUTTON
+// ANIMATED EXPORT BUTTON (100% PROJECT MASTER PARITY RE-USE)
 // ============================================================================
-class _AnimatedExportButton extends StatefulWidget {
+class _AnimatedExportButton extends StatelessWidget {
   final VoidCallback onPressed;
   const _AnimatedExportButton({required this.onPressed});
-
-  @override
-  State<_AnimatedExportButton> createState() => _AnimatedExportButtonState();
-}
-
-class _AnimatedExportButtonState extends State<_AnimatedExportButton> with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  bool _isHovered = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 3200),
-    );
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  void _onEnter(_) {
-    setState(() => _isHovered = true);
-    _ctrl.repeat();
-  }
-
-  void _onExit(_) {
-    setState(() => _isHovered = false);
-    _ctrl.stop();
-    _ctrl.animateTo(0.0, duration: const Duration(milliseconds: 250));
-  }
 
   @override
   Widget build(BuildContext context) {
     return Tooltip(
       message: 'Export BOM Records',
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-      onEnter: _onEnter,
-      onExit: _onExit,
-      child: GestureDetector(
-        onTap: widget.onPressed,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
-          decoration: BoxDecoration(
-            color: _isHovered ? const Color(0xFFECFDF5) : const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: _isHovered ? const Color(0xFF10B981) : const Color(0xFFCBD5E1),
-              width: 1.2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: _isHovered ? const Color(0xFF10B981).withValues(alpha: 0.18) : Colors.black.withValues(alpha: 0.03),
-                blurRadius: _isHovered ? 8 : 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedBuilder(
-                animation: _ctrl,
-                builder: (context, child) {
-                  return Transform.rotate(
-                    angle: _ctrl.value * 2 * math.pi,
-                    child: child,
-                  );
-                },
-                child: const Icon(
-                  Icons.file_download_outlined,
-                  size: 15,
-                  color: Color(0xFF059669),
-                ),
-              ),
-              const SizedBox(width: 7),
-              const Text(
-                'Export',
-                style: TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF065F46),
-                  letterSpacing: -0.1,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
-}
+      child: BomAnimatedExportButton(onPressed: onPressed),
+    );
+  }
 }
 
 // ----------------------------------------------------------------------------

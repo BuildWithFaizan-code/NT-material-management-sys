@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../bom_models.dart';
 import '../bom_service.dart';
+import 'bom_export_modal_dialog.dart';
 
 /// "SHOW RECORD" LOOKUP MODAL FOR BILL OF MATERIALS
 /// Cloned directly from Group Master's _GroupMasterRecordLookupModal architecture
@@ -274,6 +275,10 @@ class _BomShowRecordModalState extends State<BomShowRecordModal> {
   @override
   Widget build(BuildContext context) {
     final filtered = _filteredRecords;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final dialogWidth = math.min(screenWidth * 0.96, 1720.0);
+    final dialogHeight = math.min(screenHeight * 0.92, 820.0);
 
     return Focus(
       focusNode: _keyboardFocusNode,
@@ -284,11 +289,11 @@ class _BomShowRecordModalState extends State<BomShowRecordModal> {
       },
       child: Dialog(
         backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         child: Container(
-          width: 1420,
-          height: 720,
-          constraints: const BoxConstraints(maxWidth: 1480),
+          width: dialogWidth,
+          height: dialogHeight,
+          constraints: const BoxConstraints(minWidth: 800, minHeight: 480),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),
@@ -317,10 +322,10 @@ class _BomShowRecordModalState extends State<BomShowRecordModal> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEEF2FF),
+                          color: const Color(0xFFE6F4EA),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(Icons.manage_search_rounded, color: Color(0xFF6366F1), size: 20),
+                        child: const Icon(Icons.manage_search_rounded, color: Color(0xFF0C3B2E), size: 20),
                       ),
                       const SizedBox(width: 12),
                       const Text(
@@ -333,13 +338,13 @@ class _BomShowRecordModalState extends State<BomShowRecordModal> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFDCFCE7),
+                          color: const Color(0xFFE6F4EA),
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFF86EFAC)),
+                          border: Border.all(color: const Color(0xFFA7D7B5)),
                         ),
                         child: Text(
                           '${filtered.length} / ${_records.length} Records',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0C3B2E)),
                         ),
                       ),
 
@@ -392,7 +397,7 @@ class _BomShowRecordModalState extends State<BomShowRecordModal> {
                             decoration: InputDecoration(
                               hintText: 'Type to live filter by BOM ID, FG Code, Description, Plant, Dept, PO #...',
                               hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
-                              prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF10B981)),
+                              prefixIcon: const Icon(Icons.search_rounded, size: 18, color: Color(0xFF0C3B2E)),
                               suffixIcon: _searchCtrl.text.isNotEmpty
                                   ? IconButton(
                                       icon: const Icon(Icons.clear_rounded, size: 16, color: Color(0xFF94A3B8)),
@@ -405,9 +410,9 @@ class _BomShowRecordModalState extends State<BomShowRecordModal> {
                               filled: true,
                               fillColor: Colors.white,
                               contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: const BorderSide(color: Color(0xFF10B981))),
-                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: const BorderSide(color: Color(0xFF10B981))),
-                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: const BorderSide(color: Color(0xFF059669), width: 2.0)),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: const BorderSide(color: Color(0xFF0C3B2E), width: 1.8)),
                             ),
                           ),
                         ),
@@ -428,8 +433,8 @@ class _BomShowRecordModalState extends State<BomShowRecordModal> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             _buildModeFilterTab('ALL', 'All Modes'),
-                            _buildModeFilterTab('JOB', 'JOB (BMCJ)', color: const Color(0xFF2563EB)),
-                            _buildModeFilterTab('REGULAR', 'REGULAR (BMCC)', color: const Color(0xFF059669)),
+                            _buildModeFilterTab('JOB', 'JOB (BMCJ)', color: const Color(0xFF0C3B2E)),
+                            _buildModeFilterTab('REGULAR', 'REGULAR (BMCC)', color: const Color(0xFF0C3B2E)),
                           ],
                         ),
                       ),
@@ -448,8 +453,8 @@ class _BomShowRecordModalState extends State<BomShowRecordModal> {
                         child: Row(
                           children: [
                             _buildStatusFilterTab('ALL', 'All Status'),
-                            _buildStatusFilterTab('OPEN', 'OPEN', color: const Color(0xFF10B981)),
-                            _buildStatusFilterTab('BLOCKED', 'BLOCKED', color: const Color(0xFFEF4444)),
+                            _buildStatusFilterTab('OPEN', 'OPEN', color: const Color(0xFF0C3B2E)),
+                            _buildStatusFilterTab('BLOCKED', 'BLOCKED', color: const Color(0xFFDC2626)),
                           ],
                         ),
                       ),
@@ -458,33 +463,8 @@ class _BomShowRecordModalState extends State<BomShowRecordModal> {
                         const SizedBox(width: 10),
                         Tooltip(
                           message: 'Export BOM Records',
-                          child: InkWell(
-                            onTap: widget.onExport,
-                            borderRadius: BorderRadius.circular(10),
-                            child: Container(
-                              height: 38,
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFEAF5EE),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: const Color(0xFFA7F3D0)),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.file_download_outlined, size: 16, color: Color(0xFF0C3B2E)),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    'Export',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF0C3B2E),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                          child: BomAnimatedExportButton(
+                            onPressed: widget.onExport!,
                           ),
                         ),
                       ],
@@ -518,16 +498,16 @@ class _BomShowRecordModalState extends State<BomShowRecordModal> {
                             ),
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: isSelected ? const Color(0xFF10B981) : Colors.white,
+                              color: isSelected ? const Color(0xFF0C3B2E) : Colors.white,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: isSelected ? const Color(0xFF059669) : const Color(0xFFE2E8F0),
+                                color: isSelected ? const Color(0xFF0C3B2E) : const Color(0xFFE2E8F0),
                               ),
                               boxShadow: isSelected
                                   ? [
                                       BoxShadow(
-                                        color: const Color(0xFF10B981).withValues(alpha: 0.3),
-                                        blurRadius: 6,
+                                        color: const Color(0xFF0C3B2E).withValues(alpha: 0.25),
+                                        blurRadius: 4,
                                         offset: const Offset(0, 2),
                                       ),
                                     ]
@@ -557,7 +537,7 @@ class _BomShowRecordModalState extends State<BomShowRecordModal> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              CircularProgressIndicator(color: Color(0xFF10B981)),
+                              CircularProgressIndicator(color: Color(0xFF0C3B2E)),
                               SizedBox(height: 12),
                               Text('Loading registered BOM records...', style: TextStyle(fontSize: 12.5, color: Color(0xFF64748B))),
                             ],
@@ -584,7 +564,7 @@ class _BomShowRecordModalState extends State<BomShowRecordModal> {
                             )
                           : LayoutBuilder(
                               builder: (context, constraints) {
-                                const double minTableWidth = 1380.0;
+                                const double minTableWidth = 1680.0;
                                 final double tableWidth = math.max(constraints.maxWidth, minTableWidth);
 
                                 return Scrollbar(
@@ -599,124 +579,132 @@ class _BomShowRecordModalState extends State<BomShowRecordModal> {
                                         children: [
                                           // Table Header Row
                                           Container(
-                                            height: 38,
+                                            height: 42,
                                             color: const Color(0xFFF8FAFC),
-                                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                                            padding: const EdgeInsets.symmetric(horizontal: 16),
                                             child: const Row(
                                               children: [
                                                 // BOM ID
                                                 SizedBox(
-                                                  width: 140,
+                                                  width: 155,
                                                   child: Row(
                                                     children: [
-                                                      Icon(Icons.fingerprint_rounded, size: 13, color: Color(0xFF2563EB)),
-                                                      SizedBox(width: 4),
-                                                      Text('BOM ID', style: TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold, fontSize: 10.5)),
+                                                      Icon(Icons.fingerprint_rounded, size: 13, color: Color(0xFF64748B)),
+                                                      SizedBox(width: 5),
+                                                      Text('BOM ID', style: TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.w700, fontSize: 10.5, letterSpacing: 0.3)),
                                                     ],
                                                   ),
                                                 ),
 
                                                 // DATE
                                                 SizedBox(
-                                                  width: 95,
+                                                  width: 105,
                                                   child: Row(
                                                     children: [
-                                                      Icon(Icons.calendar_today_rounded, size: 12, color: Color(0xFF475569)),
-                                                      SizedBox(width: 4),
-                                                      Text('DATE', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.bold, fontSize: 10.5)),
+                                                      Icon(Icons.calendar_today_rounded, size: 12, color: Color(0xFF64748B)),
+                                                      SizedBox(width: 5),
+                                                      Text('DATE', style: TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.w700, fontSize: 10.5, letterSpacing: 0.3)),
                                                     ],
                                                   ),
                                                 ),
 
                                                 // TYPE
                                                 SizedBox(
-                                                  width: 85,
+                                                  width: 120,
                                                   child: Center(
-                                                    child: Text('TYPE', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.bold, fontSize: 10.5)),
+                                                    child: Text('TYPE', style: TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.w700, fontSize: 10.5, letterSpacing: 0.3)),
                                                   ),
                                                 ),
 
                                                 // FINISHED GOOD CODE
                                                 SizedBox(
-                                                  width: 180,
+                                                  width: 190,
                                                   child: Row(
                                                     children: [
-                                                      Icon(Icons.qr_code_2_rounded, size: 13, color: Color(0xFF0D9488)),
-                                                      SizedBox(width: 4),
-                                                      Text('FG CODE', style: TextStyle(color: Color(0xFF0D9488), fontWeight: FontWeight.bold, fontSize: 10.5)),
+                                                      Icon(Icons.qr_code_2_rounded, size: 13, color: Color(0xFF64748B)),
+                                                      SizedBox(width: 5),
+                                                      Text('FG CODE', style: TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.w700, fontSize: 10.5, letterSpacing: 0.3)),
                                                     ],
                                                   ),
                                                 ),
 
                                                 // DESCRIPTION
                                                 Expanded(
-                                                  child: Row(
-                                                    children: [
-                                                      Icon(Icons.inventory_2_outlined, size: 13, color: Color(0xFF059669)),
-                                                      SizedBox(width: 4),
-                                                      Flexible(
-                                                        child: Text(
-                                                          'FG DESCRIPTION',
-                                                          style: TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.bold, fontSize: 10.5),
-                                                          overflow: TextOverflow.ellipsis,
+                                                  child: Padding(
+                                                    padding: EdgeInsets.only(right: 12),
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(Icons.inventory_2_outlined, size: 13, color: Color(0xFF64748B)),
+                                                        SizedBox(width: 5),
+                                                        Flexible(
+                                                          child: Text(
+                                                            'FG DESCRIPTION',
+                                                            style: TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.w700, fontSize: 10.5, letterSpacing: 0.3),
+                                                            overflow: TextOverflow.ellipsis,
+                                                          ),
                                                         ),
-                                                      ),
-                                                    ],
+                                                      ],
+                                                    ),
                                                   ),
                                                 ),
 
                                                 // PLANT / STORE
                                                 SizedBox(
-                                                  width: 150,
+                                                  width: 160,
                                                   child: Row(
                                                     children: [
-                                                      Icon(Icons.storefront_rounded, size: 13, color: Color(0xFFD97706)),
-                                                      SizedBox(width: 4),
-                                                      Text('PLANT', style: TextStyle(color: Color(0xFFD97706), fontWeight: FontWeight.bold, fontSize: 10.5)),
+                                                      Icon(Icons.storefront_rounded, size: 13, color: Color(0xFF64748B)),
+                                                      SizedBox(width: 5),
+                                                      Text('PLANT', style: TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.w700, fontSize: 10.5, letterSpacing: 0.3)),
                                                     ],
                                                   ),
                                                 ),
 
                                                 // DEPARTMENT
                                                 SizedBox(
-                                                  width: 145,
+                                                  width: 155,
                                                   child: Row(
                                                     children: [
-                                                      Icon(Icons.business_rounded, size: 13, color: Color(0xFF7C3AED)),
-                                                      SizedBox(width: 4),
-                                                      Text('DEPARTMENT', style: TextStyle(color: Color(0xFF7C3AED), fontWeight: FontWeight.bold, fontSize: 10.5)),
+                                                      Icon(Icons.business_rounded, size: 13, color: Color(0xFF64748B)),
+                                                      SizedBox(width: 5),
+                                                      Text('DEPARTMENT', style: TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.w700, fontSize: 10.5, letterSpacing: 0.3)),
                                                     ],
                                                   ),
                                                 ),
 
                                                 // QTY
                                                 SizedBox(
-                                                  width: 80,
-                                                  child: Text('BASE QTY', style: TextStyle(color: Color(0xFF0891B2), fontWeight: FontWeight.bold, fontSize: 10.5), textAlign: TextAlign.right),
+                                                  width: 95,
+                                                  child: Padding(
+                                                    padding: EdgeInsets.only(right: 8),
+                                                    child: Text('BASE QTY', style: TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.w700, fontSize: 10.5, letterSpacing: 0.3), textAlign: TextAlign.right),
+                                                  ),
                                                 ),
 
                                                 // PO #
                                                 SizedBox(
                                                   width: 95,
-                                                  child: Text('PO #', style: TextStyle(color: Color(0xFFEA580C), fontWeight: FontWeight.bold, fontSize: 10.5), textAlign: TextAlign.center),
+                                                  child: Center(
+                                                    child: Text('PO #', style: TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.w700, fontSize: 10.5, letterSpacing: 0.3)),
+                                                  ),
                                                 ),
 
                                                 // STATUS
                                                 SizedBox(
-                                                  width: 75,
-                                                  child: Center(child: Text('STATUS', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.bold, fontSize: 10.5))),
+                                                  width: 85,
+                                                  child: Center(child: Text('STATUS', style: TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.w700, fontSize: 10.5, letterSpacing: 0.3))),
                                                 ),
 
                                                 // COMPONENTS COUNT
                                                 SizedBox(
-                                                  width: 100,
-                                                  child: Center(child: Text('COMPONENTS', style: TextStyle(color: Color(0xFF16A34A), fontWeight: FontWeight.bold, fontSize: 10.5))),
+                                                  width: 105,
+                                                  child: Center(child: Text('COMPONENTS', style: TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.w700, fontSize: 10.5, letterSpacing: 0.3))),
                                                 ),
 
                                                 // ACTIONS
                                                 SizedBox(
-                                                  width: 110,
-                                                  child: Center(child: Text('ACTION', style: TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.bold, fontSize: 10.5))),
+                                                  width: 120,
+                                                  child: Center(child: Text('ACTION', style: TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.w700, fontSize: 10.5, letterSpacing: 0.3))),
                                                 ),
                                               ],
                                             ),
@@ -871,9 +859,9 @@ class _BomRecordLookupRowState extends State<_BomRecordLookupRow> {
 
     Color rowBg = widget.idx.isEven ? Colors.white : const Color(0xFFFAFAFA);
     if (widget.isHighlighted || _isHovered) {
-      rowBg = const Color(0xFFEFF6FF);
+      rowBg = const Color(0xFFF1F5F9);
     } else if (widget.isGlow) {
-      rowBg = const Color(0xFFECFDF5);
+      rowBg = const Color(0xFFE6F4EA);
     }
 
     return MouseRegion(
@@ -881,14 +869,14 @@ class _BomRecordLookupRowState extends State<_BomRecordLookupRow> {
       onExit: (_) => setState(() => _isHovered = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
-        height: 46,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        height: 48,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           color: rowBg,
           border: widget.isGlow
-              ? Border.all(color: const Color(0xFF10B981), width: 1.5)
+              ? Border.all(color: const Color(0xFF0C3B2E), width: 1.5)
               : (widget.isHighlighted
-                  ? Border.all(color: const Color(0xFF3B82F6), width: 1.2)
+                  ? Border.all(color: const Color(0xFF0C3B2E), width: 1.2)
                   : null),
         ),
         child: InkWell(
@@ -897,66 +885,81 @@ class _BomRecordLookupRowState extends State<_BomRecordLookupRow> {
             children: [
               // BOM ID
               SizedBox(
-                width: 140,
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: isJob ? const Color(0xFFEFF6FF) : const Color(0xFFECFDF5),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: isJob ? const Color(0xFFBFDBFE) : const Color(0xFFA7F3D0)),
-                      ),
-                      child: Text(
-                        isJob ? 'BMCJ' : 'BMCC',
-                        style: TextStyle(
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.w900,
-                          color: isJob ? const Color(0xFF2563EB) : const Color(0xFF059669),
+                width: 155,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: const Color(0xFFCBD5E1)),
+                        ),
+                        child: Text(
+                          isJob ? 'BMCJ' : 'BMCC',
+                          style: const TextStyle(
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF334155),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        item.bomId,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF0F172A),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          item.bomId,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0C3B2E),
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
 
               // DATE
               SizedBox(
-                width: 95,
-                child: Text(
-                  widget.formattedDate,
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                width: 105,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Text(
+                    widget.formattedDate,
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF475569)),
+                  ),
                 ),
               ),
 
               // TYPE BADGE
               SizedBox(
-                width: 85,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: isJob ? const Color(0xFFDBEAFE) : const Color(0xFFD1FAE5),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      item.bomType,
-                      style: TextStyle(
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w800,
-                        color: isJob ? const Color(0xFF1D4ED8) : const Color(0xFF047857),
+                width: 120,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Center(
+                    child: Tooltip(
+                      message: item.bomType,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Text(
+                          item.bomType,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF334155),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -965,54 +968,78 @@ class _BomRecordLookupRowState extends State<_BomRecordLookupRow> {
 
               // FG CODE
               SizedBox(
-                width: 180,
-                child: Text(
-                  item.iCode,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1E293B),
+                width: 190,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Text(
+                    item.iCode,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1E293B),
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
 
               // DESCRIPTION
               Expanded(
-                child: Text(
-                  item.description,
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
-                  overflow: TextOverflow.ellipsis,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Tooltip(
+                    message: item.description,
+                    child: Text(
+                      item.description,
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ),
               ),
 
               // PLANT
               SizedBox(
-                width: 150,
-                child: Text(
-                  item.strName.isNotEmpty ? item.strName : 'Plant #${item.strCode}',
-                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF475569)),
-                  overflow: TextOverflow.ellipsis,
+                width: 160,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Tooltip(
+                    message: item.strName.isNotEmpty ? item.strName : 'Plant #${item.strCode}',
+                    child: Text(
+                      item.strName.isNotEmpty ? item.strName : 'Plant #${item.strCode}',
+                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF475569)),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ),
               ),
 
               // DEPARTMENT
               SizedBox(
-                width: 145,
-                child: Text(
-                  item.depName.isNotEmpty ? item.depName : 'Dept #${item.depCode}',
-                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF475569)),
-                  overflow: TextOverflow.ellipsis,
+                width: 155,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Tooltip(
+                    message: item.depName.isNotEmpty ? item.depName : 'Dept #${item.depCode}',
+                    child: Text(
+                      item.depName.isNotEmpty ? item.depName : 'Dept #${item.depCode}',
+                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF475569)),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ),
               ),
 
               // QTY & UQC
               SizedBox(
-                width: 80,
-                child: Text(
-                  '${item.qty.toStringAsFixed(0)} ${item.unitName}',
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                width: 95,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Text(
+                    '${item.qty.toStringAsFixed(0)} ${item.unitName}',
+                    textAlign: TextAlign.right,
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                  ),
                 ),
               ),
 
@@ -1030,20 +1057,21 @@ class _BomRecordLookupRowState extends State<_BomRecordLookupRow> {
 
               // STATUS BADGE
               SizedBox(
-                width: 75,
+                width: 85,
                 child: Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                     decoration: BoxDecoration(
-                      color: isOpen ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2),
+                      color: isOpen ? const Color(0xFFE6F4EA) : const Color(0xFFFEF2F2),
                       borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: isOpen ? const Color(0xFFA7D7B5) : const Color(0xFFFECACA)),
                     ),
                     child: Text(
                       item.status,
                       style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w800,
-                        color: isOpen ? const Color(0xFF15803D) : const Color(0xFFB91C1C),
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w700,
+                        color: isOpen ? const Color(0xFF0C3B2E) : const Color(0xFF991B1B),
                       ),
                     ),
                   ),
@@ -1052,23 +1080,23 @@ class _BomRecordLookupRowState extends State<_BomRecordLookupRow> {
 
               // COMPONENTS COUNT PILL
               SizedBox(
-                width: 100,
+                width: 105,
                 child: Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF0FDF4),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: const Color(0xFFBBF7D0)),
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(5),
+                      border: Border.all(color: const Color(0xFFCBD5E1)),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.layers_rounded, size: 11, color: Color(0xFF16A34A)),
-                        const SizedBox(width: 3),
+                        const Icon(Icons.layers_outlined, size: 12, color: Color(0xFF475569)),
+                        const SizedBox(width: 4),
                         Text(
                           '${item.subItemCount} Items',
-                          style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: Color(0xFF16A34A)),
+                          style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
                         ),
                       ],
                     ),
@@ -1078,16 +1106,16 @@ class _BomRecordLookupRowState extends State<_BomRecordLookupRow> {
 
               // ACTIONS (SELECT & DELETE)
               SizedBox(
-                width: 110,
+                width: 120,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton(
                       onPressed: widget.onSelect,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF10B981),
+                        backgroundColor: const Color(0xFF0C3B2E),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         minimumSize: Size.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
@@ -1100,7 +1128,7 @@ class _BomRecordLookupRowState extends State<_BomRecordLookupRow> {
                         ? const SizedBox(
                             width: 14,
                             height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFEF4444)),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFDC2626)),
                           )
                         : (widget.item.status.trim().toUpperCase() == 'APPROVED'
                             ? const Tooltip(
@@ -1112,7 +1140,7 @@ class _BomRecordLookupRowState extends State<_BomRecordLookupRow> {
                               )
                             : IconButton(
                                 onPressed: widget.onDelete,
-                                icon: const Icon(Icons.delete_outline_rounded, size: 15, color: Color(0xFFEF4444)),
+                                icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFDC2626)),
                                 splashRadius: 13,
                                 padding: EdgeInsets.zero,
                                 style: IconButton.styleFrom(

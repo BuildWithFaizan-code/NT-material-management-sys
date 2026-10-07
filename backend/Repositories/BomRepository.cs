@@ -290,6 +290,7 @@ namespace MMSERP.Api.Repositories
                 }
 
                 string finalBomId;
+                int bomCodeInt = int.TryParse(h.BomCode, out var parsedBc) && parsedBc > 0 ? parsedBc : 1;
                 if (!exists)
                 {
                     // Concurrency-safe ID generation within the insert transaction
@@ -311,7 +312,7 @@ namespace MMSERP.Api.Repositories
                     await connection.ExecuteAsync(insertMasterSql, new
                     {
                         BomId = finalBomId,
-                        h.BomCode,
+                        BomCode = bomCodeInt,
                         h.DepCode,
                         h.StrCode,
                         h.ICode,
@@ -396,7 +397,7 @@ namespace MMSERP.Api.Repositories
                         {
                             BomsId = finalBomId,
                             item.BomsCode,
-                            BomCode = h.BomCode,
+                            BomCode = bomCodeInt,
                             item.ItGroupCd,
                             item.ICode,
                             item.Description,
@@ -415,22 +416,20 @@ namespace MMSERP.Api.Repositories
                     }
                 }
 
-                // Insert into DAYBOOK audit trail
+                // Insert into DAYBOOK audit trail (matches enterprise trace schema)
                 const string daybookSql = @"
                     INSERT INTO DAYBOOK (
                         DB_DATE, DB_TYPE, DB_PNAME, DB_AMT, DB_REFNO, DB_ACTION, DB_TYP, DB_DR, DB_COMPNAME
                     ) VALUES (
-                        GETDATE(), 'BOM', @Description, @Qty, @BomId, @Action, @BomType, '0', @User
+                        GETDATE(), @User, '', @Qty, @BomId, @Action, 'BOM', '1', 'NEWTECHINFOSOL'
                     );";
 
                 await connection.ExecuteAsync(daybookSql, new
                 {
-                    Description = h.Description,
+                    User = !string.IsNullOrWhiteSpace(user) ? user : "ADMIN",
                     Qty = h.Qty,
                     BomId = finalBomId,
-                    Action = exists ? "UPDATE" : "CREATE",
-                    BomType = h.BomType,
-                    User = user,
+                    Action = exists ? "UPDATE" : "NEW",
                 }, transaction);
 
                 transaction.Commit();
@@ -473,15 +472,19 @@ namespace MMSERP.Api.Repositories
                 const string deleteMasterSql = "DELETE FROM BOMMst WHERE RTRIM(LTRIM(BOMID)) = RTRIM(LTRIM(@BomId));";
                 var rows = await connection.ExecuteAsync(deleteMasterSql, new { BomId = bomId }, transaction);
 
-                // Audit log
+                // Audit log (matches enterprise trace schema)
                 const string daybookSql = @"
                     INSERT INTO DAYBOOK (
                         DB_DATE, DB_TYPE, DB_PNAME, DB_AMT, DB_REFNO, DB_ACTION, DB_TYP, DB_DR, DB_COMPNAME
                     ) VALUES (
-                        GETDATE(), 'BOM', @BomId, 0, @BomId, 'DELETE', 'BOM', '0', @User
+                        GETDATE(), @User, '', 0, @BomId, 'DELETE', 'BOM', '1', 'NEWTECHINFOSOL'
                     );";
 
-                await connection.ExecuteAsync(daybookSql, new { BomId = bomId, User = user }, transaction);
+                await connection.ExecuteAsync(daybookSql, new
+                {
+                    User = !string.IsNullOrWhiteSpace(user) ? user : "ADMIN",
+                    BomId = bomId,
+                }, transaction);
 
                 transaction.Commit();
                 return rows > 0;

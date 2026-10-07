@@ -508,6 +508,57 @@ void main() {
       expect(find.text('FGMYLO00000S84000000J'), findsOneWidget);
     });
 
+    testWidgets('Sub-Material selection workflow (Query 6) opens lookup and populates grid row', (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1920, 1080);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: BillOfMaterialPage(
+              bomService: FakeBomService(),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Attempting to select sub-material without Finished Good prompts validation
+      await tester.tap(find.text('Select Sub-Materials'));
+      await tester.pumpAndSettle();
+      expect(find.text('Please select Finished Good Material Code first!'), findsOneWidget);
+
+      // Select Finished Good
+      await tester.tap(find.byIcon(Icons.more_horiz_rounded));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Select').first);
+      await tester.pumpAndSettle();
+
+      // Click Select Sub-Materials to open Query 6 picker modal
+      await tester.tap(find.text('Select Sub-Materials'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Select Sub-Material / Component'), findsOneWidget);
+      expect(find.text('Parent: FGMYLO00000S84000000J'), findsOneWidget);
+
+      // Select the first sub-material
+      final selectSubBtn = find.descendant(
+        of: find.byType(Dialog),
+        matching: find.widgetWithText(ElevatedButton, 'Select'),
+      ).first;
+      await tester.tap(selectSubBtn);
+      await tester.pumpAndSettle();
+
+      // Modal closed, row added to table
+      expect(find.text('Select Sub-Material / Component'), findsNothing);
+      expect(find.text('1 Components'), findsOneWidget);
+      expect(find.text('RMCOT100SINGLEJERS'), findsOneWidget);
+      expect(find.text('100% Cotton Single Jersey 180 GSM'), findsOneWidget);
+    });
+
     test('BomService fetchBomRecords and fetchBomDetails return structured data', () async {
       final service = BomService();
       final records = await service.fetchBomRecords();
