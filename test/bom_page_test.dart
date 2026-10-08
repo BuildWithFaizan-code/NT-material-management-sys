@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:newtechmms/pages/bom/bom_models.dart';
 import 'package:newtechmms/pages/bom/bom_service.dart';
+import 'package:newtechmms/pages/bom/widgets/add_bom_row_dialog.dart';
 import 'package:newtechmms/pages/bom/widgets/bom_export_modal_dialog.dart';
 import 'package:newtechmms/pages/transactions/bill_of_material_page.dart';
 
@@ -487,7 +488,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
 
       // Verify empty components state
-      expect(find.text('No Sub-Items or Components Loaded'), findsOneWidget);
+      expect(find.text('No Components Added'), findsOneWidget);
 
       // Trigger Finished Good Lookup
       await tester.tap(find.byIcon(Icons.more_horiz_rounded));
@@ -508,7 +509,7 @@ void main() {
       expect(find.text('FGMYLO00000S84000000J'), findsOneWidget);
     });
 
-    testWidgets('Sub-Material selection workflow (Query 6) opens lookup and populates grid row', (WidgetTester tester) async {
+    testWidgets('Add Row medium modal box workflow opens dialog, picks item via Query 6, and adds complete row', (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1920, 1080);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -526,8 +527,8 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      // Attempting to select sub-material without Finished Good prompts validation
-      await tester.tap(find.text('Select Sub-Materials'));
+      // Attempting to click Add Row without Finished Good prompts validation
+      await tester.tap(find.text('Add Row').first);
       await tester.pumpAndSettle();
       expect(find.text('Please select Finished Good Material Code first!'), findsOneWidget);
 
@@ -537,26 +538,50 @@ void main() {
       await tester.tap(find.text('Select').first);
       await tester.pumpAndSettle();
 
-      // Click Select Sub-Materials to open Query 6 picker modal
-      await tester.tap(find.text('Select Sub-Materials'));
+      // Click Add Row to open the medium modal box
+      await tester.tap(find.text('Add Row').first);
       await tester.pumpAndSettle();
 
-      expect(find.text('Select Sub-Material / Component'), findsOneWidget);
-      expect(find.text('Parent: FGMYLO00000S84000000J'), findsOneWidget);
+      // Verify Add Row medium modal box is open with compulsory fields
+      expect(find.text('Add Recipe Row / Sub-Component'), findsOneWidget);
+      expect(find.text('FG: FGMYLO00000S84000000J'), findsOneWidget);
+      expect(find.text('1. MATERIAL & COMPONENT IDENTIFICATION'), findsOneWidget);
+      expect(find.text('2. RECIPE QUANTITIES & SPECIFICATIONS'), findsOneWidget);
+      expect(find.text('3. COSTING & REMARKS'), findsOneWidget);
 
-      // Select the first sub-material
+      // Click [...] item lookup inside the medium modal box to query ITEMMST (Query 6)
+      final lookupTrigger = find.byTooltip('Lookup from ITEMMST (Query 6)');
+      expect(lookupTrigger, findsOneWidget);
+      await tester.tap(lookupTrigger);
+      await tester.pumpAndSettle();
+
+      // Pick component from lookup
+      expect(find.text('Select Sub-Material / Component'), findsOneWidget);
       final selectSubBtn = find.descendant(
-        of: find.byType(Dialog),
+        of: find.byType(Dialog).last,
         matching: find.widgetWithText(ElevatedButton, 'Select'),
       ).first;
       await tester.tap(selectSubBtn);
       await tester.pumpAndSettle();
 
-      // Modal closed, row added to table
-      expect(find.text('Select Sub-Material / Component'), findsNothing);
+      // Lookup closed, component details populated into Add Row form
+      expect(find.text('Add Recipe Row / Sub-Component'), findsOneWidget);
+      expect(find.text('RMCOT100SINGLEJERS'), findsOneWidget);
+      expect(find.text('100% Cotton Single Jersey 180 GSM'), findsOneWidget);
+
+      // Click Add Row to Recipe button in footer
+      final addRowToRecipeBtn = find.text('Add Row to Recipe');
+      expect(addRowToRecipeBtn, findsOneWidget);
+      await tester.tap(addRowToRecipeBtn);
+      await tester.pumpAndSettle();
+
+      // Modal closed, row added to sub-items table with all columns filled
+      expect(find.text('Add Recipe Row / Sub-Component'), findsNothing);
       expect(find.text('1 Components'), findsOneWidget);
       expect(find.text('RMCOT100SINGLEJERS'), findsOneWidget);
       expect(find.text('100% Cotton Single Jersey 180 GSM'), findsOneWidget);
+      expect(find.text('1 Sub-Item(s)'), findsOneWidget);
+      expect(find.text('1.00'), findsWidgets);
     });
 
     test('BomService fetchBomRecords and fetchBomDetails return structured data', () async {
@@ -612,8 +637,8 @@ void main() {
       expect(find.descendant(of: find.byType(Dialog), matching: find.text('BMCC/000001/27')), findsOneWidget);
       expect(find.descendant(of: find.byType(Dialog), matching: find.text('BMCJ/000001/27')), findsNothing);
 
-      // Ensure Select button is visible and tap 'Select' on BMCC/000001/27
-      final selectBtn = find.widgetWithText(ElevatedButton, 'Select').first;
+      // Ensure Edit button is visible and tap 'Edit' on BMCC/000001/27
+      final selectBtn = find.byTooltip('Edit BOM').first;
       await tester.ensureVisible(selectBtn);
       await tester.tap(selectBtn);
       await tester.pumpAndSettle();
@@ -836,7 +861,7 @@ void main() {
       await tester.tap(find.text('Show Record'));
       await tester.pumpAndSettle();
 
-      final selectBtn = find.widgetWithText(ElevatedButton, 'Select').first;
+      final selectBtn = find.byTooltip('Edit BOM').first;
       await tester.ensureVisible(selectBtn);
       await tester.tap(selectBtn);
       await tester.pumpAndSettle();
@@ -850,8 +875,8 @@ void main() {
       expect(find.text('NET QTY'), findsWidgets);
       expect(find.text('ACTION'), findsOneWidget);
 
-      // Verify Edit button is removed completely and Delete button exists in row
-      expect(find.byTooltip('Edit Component'), findsNothing);
+      // Verify Edit and Delete buttons exist in row
+      expect(find.byTooltip('Edit Component'), findsWidgets);
       expect(find.byTooltip('Delete Component'), findsWidgets);
 
       // Verify Zoom In button is present in footer
@@ -862,10 +887,10 @@ void main() {
       await tester.tap(zoomInBtn);
       await tester.pumpAndSettle();
 
-      // Verify Full Detail modal is shown with all detailed columns and Delete only
+      // Verify Full Detail modal is shown with all detailed columns and Edit & Delete actions
       expect(find.text('BOM SUB-ITEMS & COMPONENTS — FULL DETAIL VIEW'), findsOneWidget);
       expect(find.text('Close View'), findsOneWidget);
-      expect(find.byTooltip('Edit Component'), findsNothing);
+      expect(find.byTooltip('Edit Component'), findsWidgets);
       expect(find.byTooltip('Delete Component'), findsWidgets);
 
       // Close Zoom In modal
@@ -874,7 +899,7 @@ void main() {
       expect(find.text('BOM SUB-ITEMS & COMPONENTS — FULL DETAIL VIEW'), findsNothing);
     });
 
-    testWidgets('Edit feature is completely removed from BOM sub-items and table', (WidgetTester tester) async {
+    testWidgets('Tapping Edit Component opens edit row dialog and allows updating sub-item component', (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1920, 1080);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -895,14 +920,21 @@ void main() {
       // Load record
       await tester.tap(find.text('Show Record'));
       await tester.pumpAndSettle();
-      final selectBtn = find.widgetWithText(ElevatedButton, 'Select').first;
+      final selectBtn = find.byTooltip('Edit BOM').first;
       await tester.ensureVisible(selectBtn);
       await tester.tap(selectBtn);
       await tester.pumpAndSettle();
 
-      // Edit component tooltip and dialog must not exist anywhere
-      expect(find.byTooltip('Edit Component'), findsNothing);
-      expect(find.text('Edit Sub-Item Component'), findsNothing);
+      // Edit component tooltip and dialog exists
+      expect(find.byTooltip('Edit Component'), findsWidgets);
+
+      // Tap Edit Component on first row
+      await tester.tap(find.byTooltip('Edit Component').first);
+      await tester.pumpAndSettle();
+
+      // Dialog is displayed with edit header
+      expect(find.byType(AddBomRowDialog), findsOneWidget);
+      expect(find.textContaining('Edit Recipe Row'), findsOneWidget);
     });
 
     testWidgets('Deleting a component prompts project master delete UI pane and deletes row in real time', (WidgetTester tester) async {
@@ -928,7 +960,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.descendant(of: find.byType(Dialog), matching: find.text('REGULAR (BMCC)')));
       await tester.pumpAndSettle();
-      final selectBtn = find.widgetWithText(ElevatedButton, 'Select').first;
+      final selectBtn = find.byTooltip('Edit BOM').first;
       await tester.ensureVisible(selectBtn);
       await tester.tap(selectBtn);
       await tester.pumpAndSettle();
@@ -987,7 +1019,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pumpAndSettle();
 
-      final selectBtn = find.widgetWithText(ElevatedButton, 'Select').first;
+      final selectBtn = find.byTooltip('Edit BOM').first;
       await tester.ensureVisible(selectBtn);
       await tester.tap(selectBtn);
       await tester.pumpAndSettle();
@@ -1042,7 +1074,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pumpAndSettle();
 
-      final selectBtn = find.widgetWithText(ElevatedButton, 'Select').first;
+      final selectBtn = find.byTooltip('Edit BOM').first;
       await tester.ensureVisible(selectBtn);
       await tester.tap(selectBtn);
       await tester.pumpAndSettle();

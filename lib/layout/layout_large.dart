@@ -28,6 +28,7 @@ import '../pages/charges_master_page.dart';
 import '../pages/placeholder_module_pages.dart';
 import '../pages/transactions/bill_of_material_page.dart';
 import '../pages/transactions/transaction_placeholder_page.dart';
+import '../pages/bom/bom_followup_page.dart';
 import '../pages/user_management_page.dart';
 import '../services/auth_service.dart';
 import 'widgets/master_nav_item.dart';
@@ -223,10 +224,7 @@ class LargeScreenLayout extends StatelessWidget {
           icon: Icons.precision_manufacturing_outlined,
         );
       case 'BOM Followup':
-        return const TransactionPlaceholderPage(
-          title: 'BOM Followup',
-          icon: Icons.timeline_outlined,
-        );
+        return const BomFollowupPage();
       case 'Production Order Close':
         return const TransactionPlaceholderPage(
           title: 'Production Order Close',

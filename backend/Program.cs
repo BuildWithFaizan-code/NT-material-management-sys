@@ -220,6 +220,8 @@ builder.Services.AddScoped<IGroupMasterDefinitionRepository, GroupMasterDefiniti
 builder.Services.AddScoped<IGroupMasterDefinitionService, GroupMasterDefinitionService>();
 builder.Services.AddScoped<IBomRepository, BomRepository>();
 builder.Services.AddScoped<IBomService, BomService>();
+builder.Services.AddScoped<IBomFollowupRepository, BomFollowupRepository>();
+builder.Services.AddScoped<IBomFollowupService, BomFollowupService>();
 
 var app = builder.Build();
 

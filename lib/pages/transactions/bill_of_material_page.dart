@@ -8,12 +8,13 @@ import 'package:flutter/services.dart';
 import '../../design/app_colors.dart';
 import '../bom/bom_models.dart';
 import '../bom/bom_service.dart';
+import '../bom/widgets/bom_animated_success_button.dart';
 import '../bom/widgets/finished_good_lookup_dialog.dart';
-import '../bom/widgets/sub_material_lookup_dialog.dart';
+import '../bom/widgets/add_bom_row_dialog.dart';
 import '../bom/widgets/bom_show_record_modal.dart';
 import '../bom/widgets/bom_export_modal_dialog.dart';
-
-enum ButtonStatus { idle, loading, success, error }
+import '../bom/widgets/bom_modern_date_picker_dialog.dart';
+import '../bom/widgets/bom_full_detail_modal.dart';
 
 // ============================================================================
 // MAIN PAGE: BillOfMaterialPage (Master Screen UI Architecture)
@@ -65,10 +66,17 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
   bool _isSaveSuccess = false;
   bool _isResetting = false;
   bool _isApproved = false;
+  bool _isExistingRecordLoaded = false;
   String? _buttonValidationMsg;
   String? _glowingBomId;
+  bool _glowingBomIsEdit = false;
   Timer? _glowTimer;
   Timer? _validationTimer;
+
+  // Sub-component row glowing highlight state
+  String? _highlightedSubComponentCode;
+  bool _isHighlightedSubComponentEdit = false;
+  Timer? _subComponentHighlightTimer;
 
   bool get _hasLookupMismatch {
     final strUnmatched = _selectedStrCode != null && !_stores.any((s) => s.strCode == _selectedStrCode);
@@ -113,6 +121,7 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
     _verticalTableController.dispose();
     _formScrollController.dispose();
     _glowTimer?.cancel();
+    _subComponentHighlightTimer?.cancel();
     _validationTimer?.cancel();
     super.dispose();
   }
@@ -151,6 +160,7 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
       _materialCodeCtrl.clear();
       _descriptionCtrl.clear();
       _buttonValidationMsg = null;
+      _isExistingRecordLoaded = false;
     });
 
     final nextId = await _bomService.fetchNextBomId(mode);
@@ -194,7 +204,7 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
     }
   }
 
-  Future<void> _openSubMaterialLookup() async {
+  Future<void> _openAddRowDialog({BomSubItemData? existingItem, int? editIndex}) async {
     if (_isApproved) return;
     final parentCode = _materialCodeCtrl.text.trim();
     if (parentCode.isEmpty) {
@@ -203,63 +213,41 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
       return;
     }
 
-    final selected = await showDialog<ComponentLookupItem>(
+    final newRow = await showDialog<BomSubItemData>(
       context: context,
       barrierDismissible: true,
-      builder: (context) => SubMaterialLookupDialog(
+      builder: (ctx) => AddBomRowDialog(
         parentItemCode: parentCode,
+        bomId: _bomIdCtrl.text.trim(),
+        nextRowIndex: editIndex != null ? (editIndex + 1) : (_subItems.length + 1),
+        units: _units,
         bomService: _bomService,
+        existingItem: existingItem,
       ),
     );
 
-    if (selected != null && mounted) {
+    if (newRow != null && mounted) {
+      final isEdit = editIndex != null && editIndex >= 0 && editIndex < _subItems.length;
       setState(() {
-        final nextCode = '${_subItems.length + 1}';
-        final newItem = BomSubItemData(
-          bomsId: _bomIdCtrl.text.trim(),
-          bomsCode: nextCode,
-          itGroupCd: selected.catCode,
-          iCode: selected.iCode,
-          description: selected.itName,
-          materialType: selected.materialType,
-          qty: selected.convQty > 0 ? selected.convQty : 1.0,
-          unitCode: selected.unitCode,
-          unitName: selected.unitName,
-          sqm: 0.0,
-          bomCons: 1.0,
-          bomExtra: 0.0,
-          bomTolQty: 0.0,
-          bomTotQty: selected.convQty > 0 ? selected.convQty : 1.0,
-          convQty: selected.convQty > 0 ? selected.convQty : 1.0,
-          bomRate: 0.0,
-          bomAmount: 0.0,
-          bomRemarks: '',
-        );
-        _subItems.add(newItem);
-        _selectedComponentIndex = _subItems.length - 1;
+        if (isEdit) {
+          _subItems[editIndex] = newRow;
+          _selectedComponentIndex = editIndex;
+        } else {
+          _subItems.add(newRow);
+          _selectedComponentIndex = _subItems.length - 1;
+        }
         _buttonValidationMsg = null;
       });
+      _triggerSubComponentGlow(newRow.bomsCode, isEdit);
     }
   }
 
   Future<void> _pickDate() async {
-    final picked = await showDatePicker(
+    final picked = await showModernDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2035),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF059669),
-              onPrimary: Colors.white,
-              onSurface: Color(0xFF0F172A),
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
 
     if (picked != null && mounted) {
@@ -282,13 +270,49 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
     });
   }
 
-  void _triggerEntryGlow(String bomId) {
+  void _triggerSubComponentGlow(String bomsCode, bool isEdit) {
+    _subComponentHighlightTimer?.cancel();
+    setState(() {
+      _highlightedSubComponentCode = bomsCode;
+      _isHighlightedSubComponentEdit = isEdit;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_verticalTableController.hasClients) {
+        final idx = _subItems.indexWhere((item) => item.bomsCode == bomsCode);
+        if (idx != -1) {
+          final targetOffset = (idx * 40.0) - 80.0;
+          _verticalTableController.animateTo(
+            targetOffset.clamp(0.0, _verticalTableController.position.maxScrollExtent),
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeOutCubic,
+          );
+        }
+      }
+    });
+
+    _subComponentHighlightTimer = Timer(const Duration(seconds: 4), () {
+      if (mounted) {
+        setState(() {
+          _highlightedSubComponentCode = null;
+        });
+      }
+    });
+  }
+
+  void _triggerEntryGlow(String bomId, {bool isEdit = false}) {
     _glowTimer?.cancel();
-    setState(() => _glowingBomId = bomId);
+    setState(() {
+      _glowingBomId = bomId;
+      _glowingBomIsEdit = isEdit;
+    });
 
     _glowTimer = Timer(const Duration(seconds: 4), () {
       if (mounted) {
-        setState(() => _glowingBomId = null);
+        setState(() {
+          _glowingBomId = null;
+          _glowingBomIsEdit = false;
+        });
       }
     });
   }
@@ -297,7 +321,12 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
     setState(() {
       _isResetting = true;
       _isApproved = false;
+      _isExistingRecordLoaded = false;
     });
+
+    _subComponentHighlightTimer?.cancel();
+    _highlightedSubComponentCode = null;
+    _isHighlightedSubComponentEdit = false;
 
     _selectedStrCode = null;
     _selectedDepCode = null;
@@ -460,20 +489,6 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
       },
     );
   }
-
-  void _duplicateComponent(int index) {
-    if (index < 0 || index >= _subItems.length) return;
-    final current = _subItems[index];
-    setState(() {
-      _subItems.add(
-        current.copyWith(
-          bomsCode: '${_subItems.length + 1}',
-        ),
-      );
-      _selectedComponentIndex = _subItems.length - 1;
-    });
-  }
-
   void _deleteComponent(int index) {
     if (index < 0 || index >= _subItems.length) return;
     setState(() {
@@ -493,7 +508,6 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
 
   Future<bool> _confirmDeleteComponent(int index) async {
     if (index < 0 || index >= _subItems.length) return false;
-    final item = _subItems[index];
 
     final deleted = await showDialog<bool>(
       context: context,
@@ -507,14 +521,6 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
     );
 
     if (deleted == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Component "${item.iCode}" deleted in real time.'),
-          backgroundColor: const Color(0xFF0F172A),
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 2),
-        ),
-      );
       return true;
     }
     return false;
@@ -549,13 +555,6 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
     );
   }
 
-  Color _getMaterialTypeColor(String type) {
-    return const Color(0xFF334155);
-  }
-
-  Color _getMaterialTypeBg(String type) {
-    return const Color(0xFFF1F5F9);
-  }
 
   Future<void> _submitBomHeader() async {
     if (_isSubmitting) return;
@@ -665,6 +664,7 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
 
     if (mounted) {
       if (result.success) {
+        final wasEdit = _isExistingRecordLoaded;
         final finalBomId = result.bomId ?? currentBomId;
         setState(() {
           _isSubmitting = false;
@@ -672,23 +672,7 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
           _bomIdCtrl.text = finalBomId;
         });
 
-        _triggerEntryGlow(finalBomId);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle_rounded, color: Color(0xFF34D399), size: 18),
-                const SizedBox(width: 8),
-                Text('BOM $finalBomId successfully registered!'),
-              ],
-            ),
-            backgroundColor: const Color(0xFF0F172A),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        _triggerEntryGlow(finalBomId, isEdit: wasEdit);
 
         // Fetch fresh sequence for next entry
         final nextId = await _bomService.fetchNextBomId(_activeMode);
@@ -697,6 +681,7 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
             if (mounted) {
               setState(() {
                 _isSaveSuccess = false;
+                _isExistingRecordLoaded = false;
                 _bomIdCtrl.text = nextId;
               });
             }
@@ -718,6 +703,7 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
         initialMode: _activeMode,
         recentlySavedId: _glowingBomId,
         glowingBomId: _glowingBomId,
+        isGlowingEdit: _glowingBomIsEdit,
         onSelect: (summary) => _loadRecordDetails(summary.bomId),
         onExport: _openExportModal,
       ),
@@ -761,25 +747,10 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
           _subItems.addAll(record.items);
           _selectedComponentIndex = _subItems.isNotEmpty ? 0 : null;
           _buttonValidationMsg = null;
+          _isExistingRecordLoaded = true;
         });
 
-        _triggerEntryGlow(h.bomId);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle_rounded, color: Color(0xFF34D399), size: 18),
-                const SizedBox(width: 8),
-                Text('Loaded BOM ${h.bomId} with ${_subItems.length} components.'),
-              ],
-            ),
-            backgroundColor: const Color(0xFF0F172A),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        _triggerEntryGlow(h.bomId, isEdit: true);
       }
     } catch (e) {
       debugPrint('Error loading BOM details: $e');
@@ -994,9 +965,6 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
   // LEFT PANE: BOM HEADER FORM CARD (COMPACT, DISTINCT COLORS & SLEEK SCROLL)
   // --------------------------------------------------------------------------
   Widget _buildHeaderFormCard() {
-    const headerIconColor = Color(0xFF059669);
-    const headerIconBg = Color(0xFFECFDF5);
-    const headerIconBorder = Color(0xFFA7F3D0);
     final isGlowing = _glowingBomId == _bomIdCtrl.text;
 
     return AnimatedContainer(
@@ -1023,17 +991,8 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
           // CARD HEADER
           Row(
             children: [
-              Container(
-                width: 26,
-                height: 26,
-                decoration: BoxDecoration(
-                  color: headerIconBg,
-                  borderRadius: BorderRadius.circular(7),
-                  border: Border.all(color: headerIconBorder),
-                ),
-                child: const Icon(Icons.description_rounded, size: 14, color: headerIconColor),
-              ),
-              const SizedBox(width: 7),
+              const _BomHeaderDetailsLogoWidget(size: 28),
+              const SizedBox(width: 8),
               const Expanded(
                 child: Text(
                   'BOM HEADER DETAILS',
@@ -1047,17 +1006,23 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                 ),
               ),
               const SizedBox(width: 6),
-              // ID BADGE
+              // MODE BADGE (JOB / REGULAR)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
+                  color: _activeMode == BomMode.job ? const Color(0xFFEFF6FF) : const Color(0xFFF5F3FF),
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                  border: Border.all(
+                    color: _activeMode == BomMode.job ? const Color(0xFFBFDBFE) : const Color(0xFFDDD6FE),
+                  ),
                 ),
                 child: Text(
-                  _bomIdCtrl.text.isNotEmpty ? _bomIdCtrl.text : '${_activeMode.prefix}/000001/27',
-                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF334155)),
+                  _activeMode.label,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: _activeMode == BomMode.job ? const Color(0xFF1D4ED8) : const Color(0xFF6D28D9),
+                  ),
                 ),
               ),
             ],
@@ -1639,15 +1604,19 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
             ),
           ),
         ],
-        _BomAnimatedSuccessButton(
+        BomAnimatedSuccessButton(
           status: _isSubmitting
               ? ButtonStatus.loading
               : (_isSaveSuccess ? ButtonStatus.success : ButtonStatus.idle),
           onPressed: (_isApproved || _isSubmitting) ? null : _submitBomHeader,
-          idleText: _isApproved ? 'Locked (Approved)' : 'Save BOM (F1)',
-          loadingText: 'Saving BOM...',
-          successText: 'BOM Saved!',
-          idleIcon: _isApproved ? Icons.lock_rounded : Icons.save_rounded,
+          idleText: _isApproved
+              ? 'Locked (Approved)'
+              : (_isExistingRecordLoaded ? 'Update BOM' : 'Save BOM (F1)'),
+          loadingText: _isExistingRecordLoaded ? 'Updating BOM...' : 'Saving BOM...',
+          successText: _isExistingRecordLoaded ? 'BOM Updated!' : 'BOM Saved!',
+          idleIcon: _isApproved
+              ? Icons.lock_rounded
+              : (_isExistingRecordLoaded ? Icons.check_circle_outline_rounded : Icons.save_rounded),
           idleBackgroundColor: _isApproved ? const Color(0xFF94A3B8) : AppColors.secondaryColor,
           successBackgroundColor: const Color(0xFF10B981),
           height: 30,
@@ -1680,17 +1649,8 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
           // 1. TOOLBAR HEADER
           Row(
             children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF0FDF4),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFBBF7D0)),
-                ),
-                child: const Icon(Icons.table_chart_rounded, size: 15, color: Color(0xFF16A34A)),
-              ),
-              const SizedBox(width: 8),
+              const _BomSubItemsChecklistLogoWidget(size: 28),
+              const SizedBox(width: 9),
               const Text(
                 'BOM SUB-ITEMS & COMPONENTS',
                 style: TextStyle(
@@ -1700,52 +1660,24 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                   letterSpacing: 0.3,
                 ),
               ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: const Color(0xFFCBD5E1)),
-                ),
-                child: Text(
-                  '${_subItems.length} Components',
-                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
-                ),
-              ),
 
               const Spacer(),
 
-              // ACTION BUTTON: SELECT SUB-MATERIAL (QUERY 6)
-              OutlinedButton.icon(
-                onPressed: _isApproved ? null : _openSubMaterialLookup,
-                icon: const Icon(Icons.add_rounded, size: 14, color: Color(0xFF0C3B2E)),
-                label: const Text('Add Sub-Material', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0C3B2E))),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  side: const BorderSide(color: Color(0xFFA7F3D0)),
-                  backgroundColor: const Color(0xFFE6F4EA),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
-              const SizedBox(width: 8),
-
-              // ACTION BUTTON: DUPLICATE ROW (WHEN ROW SELECTED)
-              if (_selectedComponentIndex != null && _selectedComponentIndex! < _subItems.length) ...[
+              // ACTION BUTTON: ADD ROW (ONLY SHOWN AT TOP WHEN TABLE HAS DATA)
+              if (_subItems.isNotEmpty) ...[
                 OutlinedButton.icon(
-                  onPressed: () => _duplicateComponent(_selectedComponentIndex!),
-                  icon: const Icon(Icons.copy_rounded, size: 13, color: Color(0xFF2563EB)),
-                  label: const Text('Duplicate', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF2563EB))),
+                  onPressed: _isApproved ? null : _openAddRowDialog,
+                  icon: const Icon(Icons.add_rounded, size: 14, color: Color(0xFF0C3B2E)),
+                  label: const Text('Add Row', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0C3B2E))),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    side: const BorderSide(color: Color(0xFFBFDBFE)),
-                    backgroundColor: const Color(0xFFEFF6FF),
+                    side: const BorderSide(color: Color(0xFFA7F3D0)),
+                    backgroundColor: const Color(0xFFE6F4EA),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
                 const SizedBox(width: 8),
               ],
-
               // ACTION BUTTON: CLEAR ALL
               if (_subItems.isNotEmpty)
                 OutlinedButton.icon(
@@ -1789,34 +1721,34 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 54,
-            height: 54,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
+              color: const Color(0xFFF8FAFC),
               shape: BoxShape.circle,
               border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
-            child: const Icon(Icons.table_chart_outlined, size: 28, color: Color(0xFF64748B)),
+            child: const Icon(Icons.playlist_add_rounded, size: 24, color: Color(0xFF94A3B8)),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           const Text(
-            'No Sub-Items or Components Loaded',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Load a BOM record using "Show Record" above to view components, or select sub-materials below',
-            style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+            'No Components Added',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF475569),
+              letterSpacing: -0.1,
+            ),
           ),
           const SizedBox(height: 12),
           ElevatedButton.icon(
-            onPressed: _isApproved ? null : _openSubMaterialLookup,
+            onPressed: _isApproved ? null : _openAddRowDialog,
             icon: const Icon(Icons.add_rounded, size: 16),
-            label: const Text('Select Sub-Materials', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+            label: const Text('Add Row', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF0C3B2E),
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               elevation: 0,
             ),
@@ -1852,13 +1784,13 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                     ),
                     child: const Row(
                       children: [
-                        SizedBox(width: 36, child: Text('SR', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF334155)))),
+                        SizedBox(width: 42, child: Text('SR', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF334155)))),
                         SizedBox(width: 95, child: Text('MATERIAL TYPE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF334155)))),
-                        SizedBox(width: 140, child: Text('MATERIAL CODE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF334155)))),
+                        SizedBox(width: 134, child: Text('MATERIAL CODE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF334155)))),
                         Expanded(child: Text('MATERIAL DESCRIPTION', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF334155)))),
                         SizedBox(width: 65, child: Text('CONS.', textAlign: TextAlign.right, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF334155)))),
                         SizedBox(width: 85, child: Text('NET QTY', textAlign: TextAlign.right, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF334155)))),
-                        SizedBox(width: 60, child: Text('ACTION', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF334155)))),
+                        SizedBox(width: 85, child: Text('ACTION', textAlign: TextAlign.center, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF334155)))),
                       ],
                     ),
                   ),
@@ -1873,18 +1805,37 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                       itemBuilder: (context, index) {
                         final item = _subItems[index];
                         final isSelected = index == _selectedComponentIndex;
+                        final isGlowing = _highlightedSubComponentCode == item.bomsCode;
+                        final isGlowingEdit = _isHighlightedSubComponentEdit;
+                        final glowColor = isGlowingEdit ? const Color(0xFFF59E0B) : const Color(0xFF10B981);
 
-                        return Container(
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          curve: Curves.easeOutCubic,
                           margin: const EdgeInsets.only(bottom: 4),
                           decoration: BoxDecoration(
-                            color: isSelected
-                                ? const Color(0xFFE6F4EA)
-                                : (index.isEven ? Colors.white : const Color(0xFFFAFAFA)),
+                            color: isGlowing
+                                ? glowColor.withValues(alpha: 0.12)
+                                : (isSelected
+                                    ? const Color(0xFFE6F4EA)
+                                    : (index.isEven ? Colors.white : const Color(0xFFFAFAFA))),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: isSelected ? const Color(0xFF0C3B2E) : const Color(0xFFE2E8F0),
-                              width: isSelected ? 1.4 : 1.0,
+                              color: isGlowing
+                                  ? glowColor
+                                  : (isSelected ? const Color(0xFF0C3B2E) : const Color(0xFFE2E8F0)),
+                              width: isGlowing ? 2.0 : (isSelected ? 1.4 : 1.0),
                             ),
+                            boxShadow: isGlowing
+                                ? [
+                                    BoxShadow(
+                                      color: glowColor.withValues(alpha: 0.40),
+                                      blurRadius: 10,
+                                      spreadRadius: 1.5,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ]
+                                : null,
                           ),
                           child: InkWell(
                             borderRadius: BorderRadius.circular(8),
@@ -1893,16 +1844,49 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                               child: Row(
                                 children: [
-                                  // SR NO
+                                  // SR NO + STAR/EDIT BADGE
                                   SizedBox(
-                                    width: 36,
-                                    child: Text(
-                                      item.bomsCode,
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: 10.5,
-                                        fontWeight: FontWeight.w800,
-                                        color: isSelected ? const Color(0xFF0C3B2E) : const Color(0xFF64748B),
+                                    width: 42,
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.center,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            item.bomsCode,
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              fontSize: 10.5,
+                                              fontWeight: FontWeight.w800,
+                                              color: isGlowing
+                                                  ? glowColor
+                                                  : (isSelected ? const Color(0xFF0C3B2E) : const Color(0xFF64748B)),
+                                            ),
+                                          ),
+                                          if (isGlowing) ...[
+                                            const SizedBox(width: 3),
+                                            Container(
+                                              padding: const EdgeInsets.all(2.5),
+                                              decoration: BoxDecoration(
+                                                color: glowColor,
+                                                shape: BoxShape.circle,
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: glowColor.withValues(alpha: 0.4),
+                                                    blurRadius: 4,
+                                                    offset: const Offset(0, 1),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: const Icon(
+                                                Icons.star_rounded,
+                                                color: Colors.white,
+                                                size: 9,
+                                              ),
+                                            ),
+                                          ],
+                                        ],
                                       ),
                                     ),
                                   ),
@@ -1934,7 +1918,7 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
 
                                   // MATERIAL CODE
                                   SizedBox(
-                                    width: 140,
+                                    width: 134,
                                     child: Text(
                                       item.iCode,
                                       style: TextStyle(
@@ -1978,31 +1962,29 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
                                     ),
                                   ),
 
-                                  // ACTION (DELETE ONLY, MATCHING PROJECT MASTER SCREEN)
+                                  // ACTION (CLEAN BUTTONS, NO BOX)
                                   SizedBox(
-                                    width: 60,
+                                    width: 85,
                                     child: Center(
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(10),
-                                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withValues(alpha: 0.02),
-                                              blurRadius: 4,
-                                              offset: const Offset(0, 1),
-                                            ),
-                                          ],
-                                        ),
-                                        child: _ActionIconButton(
-                                          icon: Icons.delete_outline_rounded,
-                                          color: const Color(0xFFDC2626),
-                                          hoverBg: const Color(0xFFFEF2F2),
-                                          tooltip: 'Delete Component',
-                                          onPressed: _isApproved ? null : () => _confirmDeleteComponent(index),
-                                        ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          _ActionIconButton(
+                                            icon: Icons.edit_outlined,
+                                            color: const Color(0xFF059669),
+                                            hoverBg: const Color(0xFFECFDF5),
+                                            tooltip: 'Edit Component',
+                                            onPressed: _isApproved ? null : () => _openAddRowDialog(existingItem: item, editIndex: index),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          _ActionIconButton(
+                                            icon: Icons.delete_outline_rounded,
+                                            color: const Color(0xFFEF4444),
+                                            hoverBg: const Color(0xFFFEF2F2),
+                                            tooltip: 'Delete Component',
+                                            onPressed: _isApproved ? null : () => _confirmDeleteComponent(index),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),
@@ -2059,30 +2041,18 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
 
           const Spacer(),
 
-          // TOTAL CONSUMPTION
-          _buildSummaryPill(
-            label: 'TOTAL CONS',
-            value: _totalConsumption.toStringAsFixed(2),
-            color: const Color(0xFF2563EB),
-            bgColor: const Color(0xFFEFF6FF),
-          ),
-          const SizedBox(width: 8),
-
-          // TOTAL TOLERANCE QTY
-          _buildSummaryPill(
-            label: 'TOTAL TOL',
-            value: _totalToleranceQty.toStringAsFixed(2),
-            color: const Color(0xFFD97706),
-            bgColor: const Color(0xFFFEF3C7),
-          ),
-          const SizedBox(width: 8),
-
-          // TOTAL NET QTY
-          _buildSummaryPill(
-            label: 'NET QTY',
-            value: _totalNetQty.toStringAsFixed(2),
-            color: const Color(0xFF059669),
-            bgColor: const Color(0xFFECFDF5),
+          // COMPONENT COUNT BADGE (MOVED TO BOTTOM RIGHT)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: const Color(0xFFCBD5E1)),
+            ),
+            child: Text(
+              '${_subItems.length} Components',
+              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+            ),
           ),
         ],
       ),
@@ -2093,334 +2063,17 @@ class _BillOfMaterialPageState extends State<BillOfMaterialPage> {
     showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (dialogCtx) {
-        final ScrollController modalHorizCtrl = ScrollController();
-        final ScrollController modalVertCtrl = ScrollController();
-
-        return StatefulBuilder(
-          builder: (modalContext, setModalState) {
-            return Dialog(
-              backgroundColor: Colors.transparent,
-              insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              child: Container(
-                width: math.min(1540.0, MediaQuery.of(modalContext).size.width * 0.96),
-                height: math.min(820.0, MediaQuery.of(modalContext).size.height * 0.90),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.18),
-                      blurRadius: 28,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    // MODAL HEADER
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-                        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFECFDF5),
-                              borderRadius: BorderRadius.circular(9),
-                              border: Border.all(color: const Color(0xFFA7F3D0)),
-                            ),
-                            child: const Icon(Icons.fullscreen_rounded, size: 18, color: Color(0xFF059669)),
-                          ),
-                          const SizedBox(width: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'BOM SUB-ITEMS & COMPONENTS — FULL DETAIL VIEW',
-                                style: TextStyle(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xFF0F172A),
-                                  letterSpacing: 0.3,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'BOM ID: ${_bomIdCtrl.text.isNotEmpty ? _bomIdCtrl.text : "N/A"}  •  FG: ${_materialCodeCtrl.text.isNotEmpty ? _materialCodeCtrl.text : "N/A"} (${_descriptionCtrl.text.isNotEmpty ? _descriptionCtrl.text : ""})',
-                                style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
-                              ),
-                            ],
-                          ),
-                          const Spacer(),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEFF6FF),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: const Color(0xFFBFDBFE)),
-                            ),
-                            child: Text(
-                              '${_subItems.length} Sub-Items Loaded',
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF1D4ED8)),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          IconButton(
-                            onPressed: () => Navigator.of(modalContext).pop(),
-                            icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF64748B)),
-                            style: IconButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: const BorderSide(color: Color(0xFFE2E8F0))),
-                            ),
-                            tooltip: 'Close (Esc)',
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // MODAL TABLE (SPACIOUS 15 COLUMNS WITH ZERO COLLISIONS)
-                    Expanded(
-                      child: Scrollbar(
-                        controller: modalHorizCtrl,
-                        thumbVisibility: true,
-                        child: SingleChildScrollView(
-                          controller: modalHorizCtrl,
-                          scrollDirection: Axis.horizontal,
-                          child: SizedBox(
-                            width: 1600,
-                            child: Column(
-                              children: [
-                                // TABLE HEADER
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-                                  margin: const EdgeInsets.fromLTRB(12, 12, 12, 6),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF1F5F9),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: const Color(0xFFCBD5E1)),
-                                  ),
-                                  child: const Row(
-                                    children: [
-                                      SizedBox(width: 40, child: Text('SR', textAlign: TextAlign.center, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF334155)))),
-                                      SizedBox(width: 115, child: Text('MATERIAL TYPE', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF334155)))),
-                                      SizedBox(width: 165, child: Text('MATERIAL CODE', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF334155)))),
-                                      SizedBox(width: 250, child: Text('MATERIAL DESCRIPTION', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF334155)))),
-                                      SizedBox(width: 70, child: Text('SQM', textAlign: TextAlign.center, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF334155)))),
-                                      SizedBox(width: 80, child: Text('CONS.', textAlign: TextAlign.right, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF334155)))),
-                                      SizedBox(width: 85, child: Text('TOL (+/- %)', textAlign: TextAlign.right, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF334155)))),
-                                      SizedBox(width: 85, child: Text('TOL QTY', textAlign: TextAlign.right, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF334155)))),
-                                      SizedBox(width: 90, child: Text('TOTAL QTY', textAlign: TextAlign.right, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF334155)))),
-                                      SizedBox(width: 65, child: Text('UOM', textAlign: TextAlign.center, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF334155)))),
-                                      SizedBox(width: 70, child: Text('CONV', textAlign: TextAlign.right, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF334155)))),
-                                      SizedBox(width: 75, child: Text('RATE', textAlign: TextAlign.right, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF334155)))),
-                                      SizedBox(width: 85, child: Text('AMOUNT', textAlign: TextAlign.right, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF334155)))),
-                                      SizedBox(width: 155, child: Text('REMARKS', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF334155)))),
-                                      SizedBox(width: 65, child: Text('ACTION', textAlign: TextAlign.center, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: Color(0xFF334155)))),
-                                    ],
-                                  ),
-                                ),
-
-                                // TABLE ROWS
-                                Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                                    child: ListView.builder(
-                                      controller: modalVertCtrl,
-                                      itemCount: _subItems.length,
-                                      itemBuilder: (ctx, idx) {
-                                        final row = _subItems[idx];
-                                        return Container(
-                                          margin: const EdgeInsets.only(bottom: 4),
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                                          decoration: BoxDecoration(
-                                            color: idx.isEven ? Colors.white : const Color(0xFFF8FAFC),
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(color: const Color(0xFFE2E8F0)),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              SizedBox(width: 40, child: Text(row.bomsCode, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF475569)))),
-                                              SizedBox(
-                                                width: 115,
-                                                child: Align(
-                                                  alignment: Alignment.centerLeft,
-                                                  child: Container(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                                                    decoration: BoxDecoration(
-                                                      color: _getMaterialTypeBg(row.materialType),
-                                                      borderRadius: BorderRadius.circular(5),
-                                                    ),
-                                                    child: Text(
-                                                      row.materialType.isNotEmpty ? row.materialType : 'GENERAL',
-                                                      style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: _getMaterialTypeColor(row.materialType)),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                              SizedBox(width: 165, child: Text(row.iCode, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)))),
-                                              SizedBox(width: 250, child: Text(row.description, style: const TextStyle(fontSize: 11, color: Color(0xFF334155)), overflow: TextOverflow.ellipsis)),
-                                              SizedBox(width: 70, child: Text(row.sqm > 0 ? row.sqm.toStringAsFixed(2) : '-', textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)))),
-                                              SizedBox(width: 80, child: Text(row.bomCons.toStringAsFixed(2), textAlign: TextAlign.right, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)))),
-                                              SizedBox(width: 85, child: Text('${row.bomExtra.toStringAsFixed(1)}%', textAlign: TextAlign.right, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)))),
-                                              SizedBox(width: 85, child: Text(row.bomTolQty.toStringAsFixed(2), textAlign: TextAlign.right, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)))),
-                                              SizedBox(width: 90, child: Text(row.qty.toStringAsFixed(2), textAlign: TextAlign.right, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF0C3B2E)))),
-                                              SizedBox(
-                                                width: 65,
-                                                child: Center(
-                                                  child: Container(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                                    decoration: BoxDecoration(
-                                                      color: const Color(0xFFF1F5F9),
-                                                      borderRadius: BorderRadius.circular(4),
-                                                      border: Border.all(color: const Color(0xFFCBD5E1)),
-                                                    ),
-                                                    child: Text(row.unitName, style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: Color(0xFF475569))),
-                                                  ),
-                                                ),
-                                              ),
-                                              SizedBox(width: 70, child: Text(row.convQty.toStringAsFixed(2), textAlign: TextAlign.right, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)))),
-                                              SizedBox(width: 75, child: Text(row.bomRate.toStringAsFixed(2), textAlign: TextAlign.right, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)))),
-                                              SizedBox(width: 85, child: Text(row.bomAmount.toStringAsFixed(2), textAlign: TextAlign.right, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)))),
-                                              SizedBox(width: 155, child: Text(row.bomRemarks.isNotEmpty ? row.bomRemarks : '-', style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)), overflow: TextOverflow.ellipsis)),
-                                              // ACTION (DELETE ONLY, MATCHING PROJECT MASTER SCREEN)
-                                              SizedBox(
-                                                width: 65,
-                                                child: Center(
-                                                  child: Container(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.white,
-                                                      borderRadius: BorderRadius.circular(10),
-                                                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                                                      boxShadow: [
-                                                        BoxShadow(
-                                                          color: Colors.black.withValues(alpha: 0.02),
-                                                          blurRadius: 4,
-                                                          offset: const Offset(0, 1),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    child: _ActionIconButton(
-                                                      icon: Icons.delete_outline_rounded,
-                                                      color: const Color(0xFFDC2626),
-                                                      hoverBg: const Color(0xFFFEF2F2),
-                                                      tooltip: 'Delete Component',
-                                                      onPressed: _isApproved
-                                                          ? null
-                                                          : () async {
-                                                              final deleted = await _confirmDeleteComponent(idx);
-                                                              if (deleted == true) {
-                                                                setModalState(() {});
-                                                              }
-                                                            },
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // MODAL FOOTER
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.vertical(bottom: Radius.circular(18)),
-                        border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.insights_rounded, size: 15, color: Color(0xFF64748B)),
-                          const SizedBox(width: 6),
-                          Text('${_subItems.length} Total Sub-Items', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF334155))),
-                          const Spacer(),
-                          _buildSummaryPill(
-                            label: 'TOTAL CONS',
-                            value: _totalConsumption.toStringAsFixed(2),
-                            color: const Color(0xFF2563EB),
-                            bgColor: const Color(0xFFEFF6FF),
-                          ),
-                          const SizedBox(width: 8),
-                          _buildSummaryPill(
-                            label: 'TOTAL TOL',
-                            value: _totalToleranceQty.toStringAsFixed(2),
-                            color: const Color(0xFFD97706),
-                            bgColor: const Color(0xFFFEF3C7),
-                          ),
-                          const SizedBox(width: 8),
-                          _buildSummaryPill(
-                            label: 'NET QTY',
-                            value: _totalNetQty.toStringAsFixed(2),
-                            color: const Color(0xFF059669),
-                            bgColor: const Color(0xFFECFDF5),
-                          ),
-                          const SizedBox(width: 14),
-                          ElevatedButton(
-                            onPressed: () => Navigator.of(modalContext).pop(),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0F172A),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                            child: const Text('Close View', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildSummaryPill({
-    required String label,
-    required String value,
-    required Color color,
-    required Color bgColor,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '$label: ',
-            style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700, color: color),
-          ),
-          Text(
-            value,
-            style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900, color: color),
-          ),
-        ],
+      builder: (dialogCtx) => BomFullDetailModal(
+        subItems: _subItems,
+        bomId: _bomIdCtrl.text.trim(),
+        parentItemCode: _materialCodeCtrl.text.trim(),
+        parentItemDescription: _descriptionCtrl.text.trim(),
+        isApproved: _isApproved,
+        totalConsumption: _totalConsumption,
+        totalToleranceQty: _totalToleranceQty,
+        totalNetQty: _totalNetQty,
+        onEditRow: ({existingItem, editIndex}) => _openAddRowDialog(existingItem: existingItem, editIndex: editIndex),
+        onDeleteRow: (index) => _confirmDeleteComponent(index),
       ),
     );
   }
@@ -3783,143 +3436,6 @@ class _BomLookupEllipsisButtonState extends State<_BomLookupEllipsisButton> {
 }
 
 // ============================================================================
-// ANIMATED SUCCESS BUTTON WITH PULSING GLOW EFFECT
-// ============================================================================
-class _BomAnimatedSuccessButton extends StatefulWidget {
-  final ButtonStatus status;
-  final VoidCallback? onPressed;
-  final String idleText;
-  final String loadingText;
-  final String successText;
-  final IconData idleIcon;
-  final Color idleBackgroundColor;
-  final Color successBackgroundColor;
-  final double height;
-
-  const _BomAnimatedSuccessButton({
-    required this.status,
-    this.onPressed,
-    required this.idleText,
-    required this.loadingText,
-    required this.successText,
-    required this.idleIcon,
-    required this.idleBackgroundColor,
-    required this.successBackgroundColor,
-    this.height = 36,
-  });
-
-  @override
-  State<_BomAnimatedSuccessButton> createState() => _BomAnimatedSuccessButtonState();
-}
-
-class _BomAnimatedSuccessButtonState extends State<_BomAnimatedSuccessButton> with SingleTickerProviderStateMixin {
-  late AnimationController _glowController;
-  late Animation<double> _glowAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _glowController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 650),
-    );
-
-    _glowAnimation = Tween<double>(begin: 4.0, end: 18.0).animate(
-      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
-    );
-
-    if (widget.status == ButtonStatus.success) {
-      _glowController.repeat(reverse: true);
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant _BomAnimatedSuccessButton oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.status == ButtonStatus.success && oldWidget.status != ButtonStatus.success) {
-      _glowController.repeat(reverse: true);
-    } else if (widget.status != ButtonStatus.success && oldWidget.status == ButtonStatus.success) {
-      _glowController.stop();
-      _glowController.reset();
-    }
-  }
-
-  @override
-  void dispose() {
-    _glowController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final bool isEnabled = widget.onPressed != null;
-    final bool isLoading = widget.status == ButtonStatus.loading;
-    final bool isSuccess = widget.status == ButtonStatus.success;
-    final Color bgColor = !isEnabled
-        ? const Color(0xFF94A3B8)
-        : (isSuccess
-            ? widget.successBackgroundColor
-            : (isLoading ? widget.idleBackgroundColor.withValues(alpha: 0.85) : widget.idleBackgroundColor));
-
-    return InkWell(
-      onTap: (!isEnabled || isLoading) ? null : widget.onPressed,
-      borderRadius: BorderRadius.circular(9),
-      child: AnimatedBuilder(
-        animation: _glowAnimation,
-        builder: (context, child) {
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
-            height: widget.height,
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(9),
-              border: isSuccess ? Border.all(color: const Color(0xFF34D399), width: 1.5) : null,
-              boxShadow: [
-                BoxShadow(
-                  color: isSuccess
-                      ? widget.successBackgroundColor.withValues(alpha: 0.75)
-                      : bgColor.withValues(alpha: 0.3),
-                  blurRadius: isSuccess ? _glowAnimation.value : 6,
-                  spreadRadius: isSuccess ? 2.5 : 0,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (isLoading)
-                    const SizedBox(
-                      width: 13,
-                      height: 13,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  else if (isSuccess)
-                    const Icon(Icons.check_circle_rounded, size: 15, color: Colors.white)
-                  else
-                    Icon(widget.idleIcon, size: 14, color: Colors.white),
-                  const SizedBox(width: 5),
-                  Flexible(
-                    child: Text(
-                      isLoading ? widget.loadingText : (isSuccess ? widget.successText : widget.idleText),
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-// ============================================================================
 // 100% IDENTICAL BILL OF MATERIAL (BOM) RECEIPT LOGO WIDGET
 // (DIRECT ON PLAIN WHITE SCREEN, NO BACKGROUND BOX/BORDERS)
 // ============================================================================
@@ -4064,6 +3580,237 @@ class _BomReceiptLogoFallbackPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
     canvas.drawPath(checkPath, checkPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ============================================================================
+// BOM HEADER DETAILS DOCUMENT UPLOAD LOGO WIDGET
+// (DIRECT ON PLAIN WHITE SCREEN, NO BACKGROUND BOX/BORDERS, ENHANCED CLARITY)
+// ============================================================================
+class _BomHeaderDetailsLogoWidget extends StatelessWidget {
+  final double size;
+  const _BomHeaderDetailsLogoWidget({this.size = 28});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Image.asset(
+        'assets/images/bom_header_details_logo.png',
+        width: size,
+        height: size,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
+        isAntiAlias: true,
+        errorBuilder: (context, error, stackTrace) {
+          return CustomPaint(
+            size: Size(size, size),
+            painter: _BomHeaderDetailsLogoFallbackPainter(),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _BomHeaderDetailsLogoFallbackPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    // 1. Document Body (Light grey with top-right fold)
+    final docPath = Path();
+    final r = w * 0.08;
+    // Top-left rounded corner
+    docPath.moveTo(w * 0.08 + r, h * 0.06);
+    // Across to fold start
+    docPath.lineTo(w * 0.52, h * 0.06);
+    // Down to fold right
+    docPath.lineTo(w * 0.70, h * 0.23);
+    // Down right side to bottom-right corner
+    docPath.lineTo(w * 0.70, h * 0.82 - r);
+    docPath.arcToPoint(Offset(w * 0.70 - r, h * 0.82), radius: Radius.circular(r));
+    // Across bottom to bottom-left corner
+    docPath.lineTo(w * 0.08 + r, h * 0.82);
+    docPath.arcToPoint(Offset(w * 0.08, h * 0.82 - r), radius: Radius.circular(r));
+    // Up left side to top-left corner
+    docPath.lineTo(w * 0.08, h * 0.06 + r);
+    docPath.arcToPoint(Offset(w * 0.08 + r, h * 0.06), radius: Radius.circular(r));
+    docPath.close();
+
+    final docFill = Paint()
+      ..color = const Color(0xFFEAEEF2)
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(docPath, docFill);
+
+    // Folded ear flap (darker grey)
+    final foldPath = Path();
+    foldPath.moveTo(w * 0.52, h * 0.06);
+    foldPath.lineTo(w * 0.52, h * 0.23);
+    foldPath.lineTo(w * 0.70, h * 0.23);
+    foldPath.close();
+    final foldFill = Paint()
+      ..color = const Color(0xFFB0BEC5)
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(foldPath, foldFill);
+
+    // Text Lines on Document
+    final linePaint = Paint()
+      ..color = const Color(0xFFB0BEC5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w * 0.05
+      ..strokeCap = StrokeCap.round;
+
+    // Line 1
+    canvas.drawLine(Offset(w * 0.16, h * 0.20), Offset(w * 0.36, h * 0.20), linePaint);
+    // Line 2
+    canvas.drawLine(Offset(w * 0.16, h * 0.29), Offset(w * 0.26, h * 0.29), linePaint);
+    canvas.drawLine(Offset(w * 0.32, h * 0.29), Offset(w * 0.60, h * 0.29), linePaint);
+    // Line 3
+    canvas.drawLine(Offset(w * 0.16, h * 0.38), Offset(w * 0.42, h * 0.38), linePaint);
+    canvas.drawLine(Offset(w * 0.48, h * 0.38), Offset(w * 0.60, h * 0.38), linePaint);
+    // Line 4
+    canvas.drawLine(Offset(w * 0.16, h * 0.47), Offset(w * 0.36, h * 0.47), linePaint);
+    canvas.drawLine(Offset(w * 0.42, h * 0.47), Offset(w * 0.60, h * 0.47), linePaint);
+    // Line 5
+    canvas.drawLine(Offset(w * 0.16, h * 0.56), Offset(w * 0.48, h * 0.56), linePaint);
+    // Line 6
+    canvas.drawLine(Offset(w * 0.16, h * 0.65), Offset(w * 0.26, h * 0.65), linePaint);
+    canvas.drawLine(Offset(w * 0.32, h * 0.65), Offset(w * 0.40, h * 0.65), linePaint);
+
+    // 2. Bright Orange Upload Arrow (Bottom-Right)
+    final arrowPath = Path();
+    // Tip
+    arrowPath.moveTo(w * 0.70, h * 0.52);
+    // Left wing
+    arrowPath.lineTo(w * 0.45, h * 0.74);
+    // Inner left corner
+    arrowPath.lineTo(w * 0.57, h * 0.74);
+    // Stem down left
+    arrowPath.lineTo(w * 0.57, h * 0.95);
+    // Stem across bottom
+    arrowPath.lineTo(w * 0.83, h * 0.95);
+    // Stem up right
+    arrowPath.lineTo(w * 0.83, h * 0.74);
+    // Inner right corner
+    arrowPath.lineTo(w * 0.95, h * 0.74);
+    arrowPath.close();
+
+    final arrowPaint = Paint()
+      ..color = const Color(0xFFFA8C16)
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(arrowPath, arrowPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ============================================================================
+// BOM SUB-ITEMS & COMPONENTS CHECKLIST LOGO WIDGET
+// (DIRECT ON PLAIN WHITE SCREEN, NO BACKGROUND BOX/BORDERS, ENHANCED CLARITY)
+// ============================================================================
+class _BomSubItemsChecklistLogoWidget extends StatelessWidget {
+  final double size;
+  const _BomSubItemsChecklistLogoWidget({this.size = 28});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Image.asset(
+        'assets/images/bom_sub_items_logo.png',
+        width: size,
+        height: size,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
+        isAntiAlias: true,
+        errorBuilder: (context, error, stackTrace) {
+          return CustomPaint(
+            size: Size(size, size),
+            painter: _BomSubItemsChecklistLogoPainter(),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _BomSubItemsChecklistLogoPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    final borderPaint = Paint()
+      ..color = const Color(0xFF0F172A)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w * 0.08
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final rowColors = [
+      const Color(0xFFFF5D68), // Red / Coral top bar
+      const Color(0xFFFEDB6A), // Yellow middle bar
+      const Color(0xFF54EAB2), // Emerald / Mint bottom bar
+    ];
+
+    final rowYs = [
+      h * 0.07,
+      h * 0.38,
+      h * 0.69,
+    ];
+    final rowH = h * 0.23;
+
+    for (int i = 0; i < 3; i++) {
+      final y = rowYs[i];
+
+      // 1. Checkbox Box (Left)
+      final boxRect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(w * 0.05, y, w * 0.23, rowH),
+        Radius.circular(w * 0.06),
+      );
+      final boxFill = Paint()
+        ..color = const Color(0xFFEFF1F5)
+        ..style = PaintingStyle.fill;
+      canvas.drawRRect(boxRect, boxFill);
+      canvas.drawRRect(boxRect, borderPaint);
+
+      // 2. Checkmark inside checkbox
+      final checkPath = Path()
+        ..moveTo(w * 0.10, y + rowH * 0.45)
+        ..lineTo(w * 0.16, y + rowH * 0.72)
+        ..lineTo(w * 0.30, y - rowH * 0.05);
+      canvas.drawPath(checkPath, borderPaint);
+
+      // 3. Colored Bar (Right)
+      final barRect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(w * 0.37, y, w * 0.58, rowH),
+        Radius.circular(w * 0.06),
+      );
+      final barFill = Paint()
+        ..color = rowColors[i]
+        ..style = PaintingStyle.fill;
+      canvas.drawRRect(barRect, barFill);
+      canvas.drawRRect(barRect, borderPaint);
+
+      // 4. Horizontal slit inside bar
+      final linePaint = Paint()
+        ..color = const Color(0xFF0F172A)
+        ..strokeWidth = w * 0.06
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(
+        Offset(w * 0.47, y + rowH * 0.5),
+        Offset(w * 0.86, y + rowH * 0.5),
+        linePaint,
+      );
+    }
   }
 
   @override
@@ -4557,7 +4304,7 @@ class _ConfirmDeleteDialogState extends State<_ConfirmDeleteDialog> {
                 Expanded(
                   child: SizedBox(
                     height: 40,
-                    child: _BomAnimatedSuccessButton(
+                    child: BomAnimatedSuccessButton(
                       status: _status,
                       onPressed: _handleDelete,
                       idleText: 'Delete',

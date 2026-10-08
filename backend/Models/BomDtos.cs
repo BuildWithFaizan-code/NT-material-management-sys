@@ -53,6 +53,11 @@ namespace MMSERP.Api.Models
         public string BomRateUnit { get; set; } = string.Empty;
         public double BomAmount { get; set; } = 0.0;
         public string BomRemarks { get; set; } = string.Empty;
+        public double BomGsm { get; set; } = 0.0;
+        public string BomFabPhoto { get; set; } = string.Empty;
+        public string BomShade { get; set; } = string.Empty;
+        public string BomSizeDet { get; set; } = string.Empty;
+        public string BomDesNo { get; set; } = string.Empty;
     }
 
     public record BomCompleteRecordDto

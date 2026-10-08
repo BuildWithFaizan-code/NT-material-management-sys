@@ -248,7 +248,12 @@ namespace MMSERP.Api.Repositories
                     ISNULL(TRY_CAST(sub.Bom_Rate AS FLOAT), 0.0) AS BomRate,
                     ISNULL(CAST(sub.Bom_RateUnit AS VARCHAR(50)), '') AS BomRateUnit,
                     ISNULL(TRY_CAST(sub.Bom_Amount AS FLOAT), 0.0) AS BomAmount,
-                    ISNULL(sub.Bom_Remarks, '') AS BomRemarks
+                    ISNULL(sub.Bom_Remarks, '') AS BomRemarks,
+                    ISNULL(TRY_CAST(sub.BOM_GSM AS FLOAT), 0.0) AS BomGsm,
+                    ISNULL(sub.Bom_FabPhoto, '') AS BomFabPhoto,
+                    ISNULL(sub.bom_shade, '') AS BomShade,
+                    ISNULL(sub.bom_sizedet, '') AS BomSizeDet,
+                    ISNULL(sub.bom_DesNo, '') AS BomDesNo
                 FROM BOMSubMst sub
                 LEFT JOIN UNITMST u ON sub.Unit_Code = u.Unit_Code
                 LEFT JOIN ITEMMST im ON sub.I_Code = im.I_Code
@@ -382,12 +387,14 @@ namespace MMSERP.Api.Repositories
                     const string insertSubSql = @"
                         INSERT INTO BOMSubMst (
                             BOMSID, BOMSCode, BOMCode, It_GroupCD, I_Code, DESCRIPTION, 
-                            BOM_Width, Qty, Unit_Code, Bom_TotQty, Bom_Cons, Bom_Extra, 
-                            Bom_TolQty, Bom_Rate, Bom_RateUnit, Bom_Amount, Bom_Remarks
+                            BOM_Width, BOM_GSM, Qty, Unit_Code, Bom_TotQty, Bom_Cons, Bom_Extra, 
+                            Bom_TolQty, Bom_Rate, Bom_RateUnit, Bom_Amount, Bom_Remarks,
+                            Bom_FabPhoto, bom_shade, bom_sizedet, bom_DesNo
                         ) VALUES (
                             @BomsId, @BomsCode, @BomCode, @ItGroupCd, @ICode, @Description, 
-                            @Sqm, @Qty, @UnitCode, @BomTotQty, @BomCons, @BomExtra, 
-                            @BomTolQty, @BomRate, @BomRateUnit, @BomAmount, @BomRemarks
+                            @Sqm, @BomGsm, @Qty, @UnitCode, @BomTotQty, @BomCons, @BomExtra, 
+                            @BomTolQty, @BomRate, @BomRateUnit, @BomAmount, @BomRemarks,
+                            @BomFabPhoto, @BomShade, @BomSizeDet, @BomDesNo
                         );";
 
                     foreach (var item in record.Items)
@@ -396,12 +403,13 @@ namespace MMSERP.Api.Repositories
                         await connection.ExecuteAsync(insertSubSql, new
                         {
                             BomsId = finalBomId,
-                            item.BomsCode,
+                            BomsCode = !string.IsNullOrWhiteSpace(item.BomsCode) ? item.BomsCode : "1",
                             BomCode = bomCodeInt,
                             item.ItGroupCd,
-                            item.ICode,
-                            item.Description,
+                            ICode = item.ICode ?? "",
+                            Description = item.Description ?? "",
                             item.Sqm,
+                            item.BomGsm,
                             item.Qty,
                             item.UnitCode,
                             item.BomTotQty,
@@ -409,9 +417,15 @@ namespace MMSERP.Api.Repositories
                             item.BomExtra,
                             item.BomTolQty,
                             item.BomRate,
-                            item.BomRateUnit,
+                            BomRateUnit = item.BomRateUnit ?? "",
                             item.BomAmount,
-                            item.BomRemarks,
+                            BomRemarks = item.BomRemarks ?? "",
+                            BomFabPhoto = item.BomFabPhoto ?? "",
+                            BomShade = item.BomShade ?? "",
+                            BomSizeDet = item.BomSizeDet ?? "",
+                            BomDesNo = !string.IsNullOrWhiteSpace(item.BomDesNo)
+                                ? item.BomDesNo
+                                : (!string.IsNullOrWhiteSpace(h.ICode) ? h.ICode : ""),
                         }, transaction);
                     }
                 }

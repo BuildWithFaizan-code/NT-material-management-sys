@@ -12,6 +12,9 @@ enum BomMode {
   const BomMode(this.label, this.prefix, this.skuCross);
 }
 
+/// Interactive button status enum for animated glow and submission transitions.
+enum ButtonStatus { idle, loading, success, error }
+
 /// Store/Plant lookup entity (from STOREMST)
 class BomStoreLookup {
   final int strCode;
@@ -391,6 +394,11 @@ class BomSubItemData {
   final double bomRate;
   final double bomAmount;
   final String bomRemarks;
+  final double bomGsm;
+  final String bomFabPhoto;
+  final String bomShade;
+  final String bomSizeDet;
+  final String bomDesNo;
 
   const BomSubItemData({
     required this.bomsId,
@@ -411,6 +419,11 @@ class BomSubItemData {
     this.bomRate = 0.0,
     this.bomAmount = 0.0,
     this.bomRemarks = '',
+    this.bomGsm = 0.0,
+    this.bomFabPhoto = '',
+    this.bomShade = '',
+    this.bomSizeDet = '',
+    this.bomDesNo = '',
   });
 
   BomSubItemData copyWith({
@@ -432,6 +445,11 @@ class BomSubItemData {
     double? bomRate,
     double? bomAmount,
     String? bomRemarks,
+    double? bomGsm,
+    String? bomFabPhoto,
+    String? bomShade,
+    String? bomSizeDet,
+    String? bomDesNo,
   }) {
     return BomSubItemData(
       bomsId: bomsId ?? this.bomsId,
@@ -452,6 +470,11 @@ class BomSubItemData {
       bomRate: bomRate ?? this.bomRate,
       bomAmount: bomAmount ?? this.bomAmount,
       bomRemarks: bomRemarks ?? this.bomRemarks,
+      bomGsm: bomGsm ?? this.bomGsm,
+      bomFabPhoto: bomFabPhoto ?? this.bomFabPhoto,
+      bomShade: bomShade ?? this.bomShade,
+      bomSizeDet: bomSizeDet ?? this.bomSizeDet,
+      bomDesNo: bomDesNo ?? this.bomDesNo,
     );
   }
 
@@ -497,6 +520,13 @@ class BomSubItemData {
           ? (json['Bom_Amount'] ?? json['bomAmount'] ?? 0.0).toDouble()
           : (double.tryParse((json['Bom_Amount'] ?? json['bomAmount'] ?? '0').toString()) ?? 0.0),
       bomRemarks: (json['Bom_Remarks'] ?? json['bomRemarks'] ?? '').toString(),
+      bomGsm: (json['BOM_GSM'] ?? json['bomGsm'] ?? 0.0) is num
+          ? (json['BOM_GSM'] ?? json['bomGsm'] ?? 0.0).toDouble()
+          : (double.tryParse((json['BOM_GSM'] ?? json['bomGsm'] ?? '0').toString()) ?? 0.0),
+      bomFabPhoto: (json['Bom_FabPhoto'] ?? json['bomFabPhoto'] ?? '').toString(),
+      bomShade: (json['bom_shade'] ?? json['bomShade'] ?? '').toString(),
+      bomSizeDet: (json['bom_sizedet'] ?? json['bomSizeDet'] ?? '').toString(),
+      bomDesNo: (json['bom_DesNo'] ?? json['BOM_DesNo'] ?? json['bomDesNo'] ?? '').toString(),
     );
   }
 
@@ -519,6 +549,11 @@ class BomSubItemData {
         'bomRate': bomRate,
         'bomAmount': bomAmount,
         'bomRemarks': bomRemarks,
+        'bomGsm': bomGsm,
+        'bomFabPhoto': bomFabPhoto,
+        'bomShade': bomShade,
+        'bomSizeDet': bomSizeDet,
+        'bomDesNo': bomDesNo,
       };
 }
 

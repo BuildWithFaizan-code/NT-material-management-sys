@@ -1180,8 +1180,6 @@ class _Pdf3DLogoPainter extends CustomPainter {
 // ============================================================================
 // ANIMATED SUCCESS BUTTON WIDGET (PROJECT MASTER PARITY)
 // ============================================================================
-enum ButtonStatus { idle, loading, success }
-
 class AnimatedSuccessButton extends StatefulWidget {
   final ButtonStatus status;
   final VoidCallback? onPressed;
