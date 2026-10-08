@@ -258,6 +258,14 @@ app.MapGet("/api/health", async (IConfiguration config) =>
 {
     var connStr = DbConnectionHelper.ResolveConnectionString(config);
     var sanitized = Regex.Replace(connStr, @"(?i)Password=[^;]+", "Password=******");
+    
+    // Safe diagnostics to identify if password was truncated or typo'd
+    var match = Regex.Match(connStr, @"(?i)Password=([^;]+)");
+    var pass = match.Success ? match.Groups[1].Value : "";
+    var passDebug = pass.Length > 0
+        ? $"Length: {pass.Length}, StartsWith: '{pass[0]}', EndsWith: '{pass[^1]}', Contains$: {pass.Contains('$')}"
+        : "Missing";
+
     try
     {
         using var conn = new SqlConnection(connStr);
@@ -281,6 +289,7 @@ app.MapGet("/api/health", async (IConfiguration config) =>
             status = "Unhealthy",
             errorType = ex.GetType().Name,
             errorMessage = ex.Message,
+            passwordDiagnostics = passDebug,
             connectionString = sanitized
         }, statusCode: 500);
     }
