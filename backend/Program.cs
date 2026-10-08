@@ -57,67 +57,20 @@ builder.Services.AddControllers(options =>
 });
 
 // ============================================================================
-// 3. CORS Configuration (Explicit Allowlist + Dynamic Vercel / Localhost + AllowCredentials)
+// 3. CORS Configuration (Dynamic CORS_ALLOWED_ORIGINS + AllowCredentials)
 // ============================================================================
-var configuredOrigins = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS")
-    ?? builder.Configuration["CORS_ALLOWED_ORIGINS"];
-var allowedOriginsList = new List<string>
-{
-    "https://nt-material-management-sys.netlify.app",
-    "http://localhost:3000",
-    "http://localhost:5000",
-    "http://localhost:8080",
-    "http://localhost:5173",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:5000",
-    "http://127.0.0.1:8080"
-};
-
-if (!string.IsNullOrWhiteSpace(configuredOrigins))
-{
-    foreach (var origin in configuredOrigins.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-    {
-        if (!allowedOriginsList.Contains(origin, StringComparer.OrdinalIgnoreCase))
-        {
-            allowedOriginsList.Add(origin);
-        }
-    }
-}
+var allowedOrigins = builder.Configuration["CORS_ALLOWED_ORIGINS"]?
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    ?? new[] { "https://newtech-mms.netlify.app" };
 
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.SetIsOriginAllowed(origin =>
-        {
-            if (string.IsNullOrWhiteSpace(origin)) return false;
-
-            // 1. Direct match against static or environment-configured allowlist
-            if (allowedOriginsList.Contains(origin, StringComparer.OrdinalIgnoreCase))
-                return true;
-
-            // 2. Allow any Vercel deployment (preview URLs and production *.vercel.app)
-            if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
-            {
-                if (uri.Host.Equals("vercel.app", StringComparison.OrdinalIgnoreCase) ||
-                    uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-
-                // 3. Fallback for localhost with any development port
-                if (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
-                    uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        })
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials();
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
@@ -285,10 +238,7 @@ else if (app.Environment.IsDevelopment())
 // ============================================================================
 // 9. HTTP Request Pipeline
 // ============================================================================
-// UseCors must precede ExceptionMiddleware and all other middleware so that
-// CORS headers (Access-Control-Allow-Origin) are attached to all responses,
-// including errors (400, 401, 403, 500), preventing browser "Failed to fetch" errors.
-app.UseCors();
+app.UseMiddleware<ExceptionMiddleware>();
 
 if (!app.Environment.IsDevelopment())
 {
@@ -296,7 +246,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseMiddleware<ExceptionMiddleware>();
+app.UseRouting();
+app.UseCors("AllowFrontend"); // MUST be right after UseRouting and before UseAuthorization
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
