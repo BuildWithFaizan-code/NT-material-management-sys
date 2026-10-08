@@ -57,9 +57,10 @@ builder.Services.AddControllers(options =>
 });
 
 // ============================================================================
-// 3. CORS Configuration (Explicit Allowlist + AllowCredentials)
+// 3. CORS Configuration (Explicit Allowlist + Dynamic Vercel / Localhost + AllowCredentials)
 // ============================================================================
-var configuredOrigins = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS");
+var configuredOrigins = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS")
+    ?? builder.Configuration["CORS_ALLOWED_ORIGINS"];
 var allowedOriginsList = new List<string>
 {
     "https://nt-material-management-sys.netlify.app",
@@ -74,9 +75,9 @@ var allowedOriginsList = new List<string>
 
 if (!string.IsNullOrWhiteSpace(configuredOrigins))
 {
-    foreach (var origin in configuredOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+    foreach (var origin in configuredOrigins.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
     {
-        if (!allowedOriginsList.Contains(origin))
+        if (!allowedOriginsList.Contains(origin, StringComparer.OrdinalIgnoreCase))
         {
             allowedOriginsList.Add(origin);
         }
@@ -87,10 +88,36 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins(allowedOriginsList.ToArray())
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+        policy.SetIsOriginAllowed(origin =>
+        {
+            if (string.IsNullOrWhiteSpace(origin)) return false;
+
+            // 1. Direct match against static or environment-configured allowlist
+            if (allowedOriginsList.Contains(origin, StringComparer.OrdinalIgnoreCase))
+                return true;
+
+            // 2. Allow any Vercel deployment (preview URLs and production *.vercel.app)
+            if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+            {
+                if (uri.Host.Equals("vercel.app", StringComparison.OrdinalIgnoreCase) ||
+                    uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                // 3. Fallback for localhost with any development port
+                if (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                    uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        })
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
     });
 });
 
