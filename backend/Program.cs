@@ -254,6 +254,38 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+app.MapGet("/api/health", async (IConfiguration config) =>
+{
+    var connStr = DbConnectionHelper.ResolveConnectionString(config);
+    var sanitized = Regex.Replace(connStr, @"(?i)Password=[^;]+", "Password=******");
+    try
+    {
+        using var conn = new SqlConnection(connStr);
+        await conn.OpenAsync();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT COUNT(*) FROM Users";
+        var count = await cmd.ExecuteScalarAsync();
+        return Results.Ok(new
+        {
+            status = "Healthy",
+            database = "Connected",
+            usersCount = count,
+            server = conn.DataSource,
+            databaseName = conn.Database
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new
+        {
+            status = "Unhealthy",
+            errorType = ex.GetType().Name,
+            errorMessage = ex.Message,
+            connectionString = sanitized
+        }, statusCode: 500);
+    }
+}).AllowAnonymous();
+
 app.Run();
 
 static async Task<bool> HandleAdminProvisioningAsync(string[] args, IServiceProvider services, IConfiguration configuration, ILogger logger)
