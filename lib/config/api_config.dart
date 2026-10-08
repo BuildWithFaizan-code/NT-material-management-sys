@@ -13,7 +13,7 @@ class ApiConfig {
     if (_envUrl.isNotEmpty) {
       return _envUrl;
     }
-    return kReleaseMode ? _prodUrl : (kDebugMode ? _localUrl : _prodUrl);
+    return kDebugMode ? _localUrl : _prodUrl;
   }
 
   /// Resilient network timeout for web clients & Render cold-start latency
