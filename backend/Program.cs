@@ -57,20 +57,68 @@ builder.Services.AddControllers(options =>
 });
 
 // ============================================================================
-// 3. CORS Configuration (Dynamic CORS_ALLOWED_ORIGINS + AllowCredentials)
+// 3. CORS Configuration (Local Development + Dynamic Origins + AllowCredentials)
 // ============================================================================
-var allowedOrigins = builder.Configuration["CORS_ALLOWED_ORIGINS"]?
-    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-    ?? new[] { "https://newtech-mms.netlify.app" };
+var configuredOrigins = builder.Configuration["CORS_ALLOWED_ORIGINS"]?
+    .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+var allowedOriginsList = new List<string>
+{
+    "http://localhost:3000",
+    "http://localhost:5000",
+    "http://localhost:8080",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5000",
+    "http://127.0.0.1:8080",
+    "https://newtech-mms.netlify.app",
+    "https://nt-material-management-sys.netlify.app"
+};
+
+if (configuredOrigins != null)
+{
+    foreach (var origin in configuredOrigins)
+    {
+        if (!allowedOriginsList.Contains(origin, StringComparer.OrdinalIgnoreCase))
+        {
+            allowedOriginsList.Add(origin);
+        }
+    }
+}
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins(allowedOrigins)
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+        policy.SetIsOriginAllowed(origin =>
+        {
+            if (string.IsNullOrWhiteSpace(origin)) return false;
+
+            // Direct match against known origins
+            if (allowedOriginsList.Contains(origin, StringComparer.OrdinalIgnoreCase))
+                return true;
+
+            // Dynamically permit any local development port (e.g. Flutter Web debug servers)
+            if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+            {
+                if (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                    uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                if (uri.Host.EndsWith(".netlify.app", StringComparison.OrdinalIgnoreCase) ||
+                    uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        })
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
     });
 });
 
