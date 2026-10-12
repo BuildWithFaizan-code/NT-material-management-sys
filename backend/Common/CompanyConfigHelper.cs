@@ -5,21 +5,22 @@ namespace MMSERP.Api.Common
 {
     public static class CompanyConfigHelper
     {
+        private const string DefaultCompanyName = "NEWTECHINFOSOL";
+
         /// <summary>
         /// Reads COMPANY_NAME from environment variable or configuration.
-        /// Fails loudly with InvalidOperationException if not configured.
+        /// Falls back to default 'NEWTECHINFOSOL' if not explicitly configured
+        /// to ensure transactions and DAYBOOK audit logging never crash.
         /// </summary>
         public static string ResolveCompanyName(IConfiguration configuration)
         {
             var companyName = Environment.GetEnvironmentVariable("COMPANY_NAME")
-                ?? configuration["COMPANY_NAME"];
+                ?? configuration["COMPANY_NAME"]
+                ?? configuration["CompanyName"];
 
             if (string.IsNullOrWhiteSpace(companyName))
             {
-                throw new InvalidOperationException(
-                    "Configuration error: 'COMPANY_NAME' is not configured. " +
-                    "DAYBOOK audit logging requires a valid company name. " +
-                    "Please set the 'COMPANY_NAME' environment variable or configuration setting.");
+                return DefaultCompanyName;
             }
 
             return companyName.Trim();
