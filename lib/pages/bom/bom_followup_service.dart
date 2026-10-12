@@ -121,8 +121,6 @@ class BomFollowupService {
   Future<BomFollowupCloseResult> closeBomRecords({
     required List<String> bomIds,
     required DateTime asOnDate,
-    String username = 'ADMIN',
-    String companyName = 'NEW TECH INFOSOL',
   }) async {
     if (bomIds.isEmpty) {
       return const BomFollowupCloseResult(
@@ -146,10 +144,10 @@ class BomFollowupService {
       if (data is Map<String, dynamic>) {
         return BomFollowupCloseResult.fromJson(data);
       }
-      return BomFollowupCloseResult(
-        success: true,
-        closedCount: bomIds.length,
-        message: 'Successfully closed ${bomIds.length} BOM record(s).',
+      return const BomFollowupCloseResult(
+        success: false,
+        closedCount: 0,
+        message: 'Unexpected server response format. Please refresh and verify records.',
       );
     }
 

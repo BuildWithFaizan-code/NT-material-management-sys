@@ -110,7 +110,7 @@ const List<TransactionSubSection> transactionSubSections = [
     ],
   ),
 
-  // Purchase Order
+  // Purchase Order (3 Screens)
   TransactionSubSection(
     sectionTitle: 'Purchase Order',
     sectionIcon: Icons.shopping_basket_outlined,
@@ -127,6 +127,13 @@ const List<TransactionSubSection> transactionSubSections = [
         title: 'PO Advance Entry',
         icon: Icons.payments_outlined,
       ),
+    ],
+  ),
+
+  // Freight Memo (Individual Screen)
+  TransactionSubSection(
+    sectionTitle: null,
+    items: [
       TransactionMenuEntry(
         title: 'Freight Memo',
         icon: Icons.local_shipping_outlined,

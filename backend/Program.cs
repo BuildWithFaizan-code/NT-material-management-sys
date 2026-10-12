@@ -57,31 +57,52 @@ builder.Services.AddControllers(options =>
 });
 
 // ============================================================================
-// 3. CORS Configuration (Local Development + Dynamic Origins + AllowCredentials)
+// 3. CORS Configuration (Strict Allowlist + AllowCredentials)
 // ============================================================================
-var configuredOrigins = builder.Configuration["CORS_ALLOWED_ORIGINS"]?
-    .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+var rawCorsOrigins = builder.Configuration["CORS_ALLOWED_ORIGINS"];
+var allowedOriginsList = new List<string>();
 
-var allowedOriginsList = new List<string>
+if (!string.IsNullOrWhiteSpace(rawCorsOrigins))
 {
-    "http://localhost:3000",
-    "http://localhost:5000",
-    "http://localhost:8080",
-    "http://localhost:5173",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:5000",
-    "http://127.0.0.1:8080",
-    "https://newtech-mms.netlify.app",
-    "https://nt-material-management-sys.netlify.app"
-};
-
-if (configuredOrigins != null)
-{
-    foreach (var origin in configuredOrigins)
+    var entries = rawCorsOrigins.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    foreach (var entry in entries)
     {
-        if (!allowedOriginsList.Contains(origin, StringComparer.OrdinalIgnoreCase))
+        var normalized = entry.Trim().TrimEnd('/');
+        if (!string.IsNullOrEmpty(normalized) && !allowedOriginsList.Contains(normalized, StringComparer.OrdinalIgnoreCase))
         {
-            allowedOriginsList.Add(origin);
+            allowedOriginsList.Add(normalized);
+        }
+    }
+}
+else
+{
+    if (builder.Environment.IsProduction())
+    {
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("⚠️ WARNING: 'CORS_ALLOWED_ORIGINS' environment variable is NOT set in Production! Cross-origin requests may be blocked.");
+        Console.ResetColor();
+    }
+    // Hardcoded fallback origin if unset
+    allowedOriginsList.Add("https://newtech-mms.netlify.app");
+}
+
+if (builder.Environment.IsDevelopment())
+{
+    var devLocalOrigins = new[]
+    {
+        "http://localhost:3000",
+        "http://localhost:5000",
+        "http://localhost:8080",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5000",
+        "http://127.0.0.1:8080"
+    };
+    foreach (var devOrigin in devLocalOrigins)
+    {
+        if (!allowedOriginsList.Contains(devOrigin, StringComparer.OrdinalIgnoreCase))
+        {
+            allowedOriginsList.Add(devOrigin);
         }
     }
 }
@@ -90,35 +111,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.SetIsOriginAllowed(origin =>
-        {
-            if (string.IsNullOrWhiteSpace(origin)) return false;
-
-            // Direct match against known origins
-            if (allowedOriginsList.Contains(origin, StringComparer.OrdinalIgnoreCase))
-                return true;
-
-            // Dynamically permit any local development port (e.g. Flutter Web debug servers)
-            if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
-            {
-                if (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
-                    uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-
-                if (uri.Host.EndsWith(".netlify.app", StringComparison.OrdinalIgnoreCase) ||
-                    uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        })
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials();
+        policy.WithOrigins(allowedOriginsList.ToArray())
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
@@ -250,6 +246,12 @@ builder.Services.AddScoped<IBomRepository, BomRepository>();
 builder.Services.AddScoped<IBomService, BomService>();
 builder.Services.AddScoped<IBomFollowupRepository, BomFollowupRepository>();
 builder.Services.AddScoped<IBomFollowupService, BomFollowupService>();
+builder.Services.AddScoped<IPurchaseOrderRepository, PurchaseOrderRepository>();
+builder.Services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
+builder.Services.AddScoped<IPurchaseOrderApprovalRepository, PurchaseOrderApprovalRepository>();
+builder.Services.AddScoped<IPurchaseOrderApprovalService, PurchaseOrderApprovalService>();
+builder.Services.AddScoped<IPurchaseOrderAdvanceRepository, PurchaseOrderAdvanceRepository>();
+builder.Services.AddScoped<IPurchaseOrderAdvanceService, PurchaseOrderAdvanceService>();
 
 var app = builder.Build();
 
@@ -284,6 +286,11 @@ else if (app.Environment.IsDevelopment())
 }
 
 // ============================================================================
+// 8.5 Automated Security Guard: Reject Unauthorized [AllowAnonymous] Controllers
+// ============================================================================
+ValidateNoUnauthorizedAnonymousEndpoints();
+
+// ============================================================================
 // 9. HTTP Request Pipeline
 // ============================================================================
 app.UseMiddleware<ExceptionMiddleware>();
@@ -295,51 +302,29 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseRouting();
-app.UseCors("AllowFrontend"); // MUST be right after UseRouting and before UseAuthorization
+app.UseCors("AllowFrontend"); // Placed after UseRouting so named policy applies to routed endpoints
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 
-app.MapGet("/api/health", async (IConfiguration config) =>
+app.MapGet("/api/health", async (IConfiguration config, ILogger<Program> logger) =>
 {
     var connStr = DbConnectionHelper.ResolveConnectionString(config);
-    var sanitized = Regex.Replace(connStr, @"(?i)Password=[^;]+", "Password=******");
-    
-    // Safe diagnostics to identify if password was truncated or typo'd
-    var match = Regex.Match(connStr, @"(?i)Password=([^;]+)");
-    var pass = match.Success ? match.Groups[1].Value : "";
-    var passDebug = pass.Length > 0
-        ? $"Length: {pass.Length}, StartsWith: '{pass[0]}', EndsWith: '{pass[^1]}', Contains$: {pass.Contains('$')}"
-        : "Missing";
-
     try
     {
         using var conn = new SqlConnection(connStr);
         await conn.OpenAsync();
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT COUNT(*) FROM Users";
-        var count = await cmd.ExecuteScalarAsync();
-        return Results.Ok(new
-        {
-            status = "Healthy",
-            database = "Connected",
-            usersCount = count,
-            server = conn.DataSource,
-            databaseName = conn.Database
-        });
+        cmd.CommandText = "SELECT 1";
+        await cmd.ExecuteScalarAsync();
+        return Results.Ok(new { status = "Healthy" });
     }
     catch (Exception ex)
     {
-        return Results.Json(new
-        {
-            status = "Unhealthy",
-            errorType = ex.GetType().Name,
-            errorMessage = ex.Message,
-            passwordDiagnostics = passDebug,
-            connectionString = sanitized
-        }, statusCode: 500);
+        logger.LogError(ex, "Health check failed: database reachability check failed.");
+        return Results.Json(new { status = "Unhealthy" }, statusCode: StatusCodes.Status503ServiceUnavailable);
     }
 }).AllowAnonymous();
 
@@ -589,3 +574,38 @@ static async Task RunDatabaseMigrationsAsync(string connectionString, bool isCli
         }
     }
 }
+
+static void ValidateNoUnauthorizedAnonymousEndpoints()
+{
+    var controllerTypes = typeof(Program).Assembly.GetTypes()
+        .Where(t => typeof(Microsoft.AspNetCore.Mvc.ControllerBase).IsAssignableFrom(t) && !t.IsAbstract);
+
+    foreach (var controller in controllerTypes)
+    {
+        if (controller.Name == "AuthController")
+        {
+            continue;
+        }
+
+        // Check if controller class has [AllowAnonymous]
+        if (controller.GetCustomAttributes(typeof(AllowAnonymousAttribute), inherit: true).Any())
+        {
+            throw new InvalidOperationException(
+                $"FATAL SECURITY FAILURE: Controller '{controller.FullName}' is marked with [AllowAnonymous]. " +
+                "Only AuthController is permitted to contain anonymous endpoints.");
+        }
+
+        // Check if any action on the controller has [AllowAnonymous]
+        var actions = controller.GetMethods(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.DeclaredOnly);
+        foreach (var action in actions)
+        {
+            if (action.GetCustomAttributes(typeof(AllowAnonymousAttribute), inherit: true).Any())
+            {
+                throw new InvalidOperationException(
+                    $"FATAL SECURITY FAILURE: Action '{action.Name}' on controller '{controller.FullName}' is marked with [AllowAnonymous]. " +
+                    "Only AuthController is permitted to contain anonymous endpoints.");
+            }
+        }
+    }
+}
+

@@ -31,8 +31,13 @@ namespace MMSERP.Api.Services
             return _repository.GetByIdAsync(bomId.Trim());
         }
 
-        public Task<string> SaveBomAsync(BomCompleteRecordDto record, string user = "SYSTEM")
+        public Task<string> SaveBomAsync(BomCompleteRecordDto record, string user)
         {
+            if (string.IsNullOrWhiteSpace(user))
+            {
+                throw new ArgumentException("Authenticated user identity is required.", nameof(user));
+            }
+
             if (record?.Header == null)
             {
                 throw new ArgumentException("BOM Header payload cannot be null.");
@@ -51,8 +56,13 @@ namespace MMSERP.Api.Services
             return _repository.SaveBomAsync(record, user);
         }
 
-        public Task<bool> DeleteBomAsync(string bomId, string user = "SYSTEM")
+        public Task<bool> DeleteBomAsync(string bomId, string user)
         {
+            if (string.IsNullOrWhiteSpace(user))
+            {
+                throw new ArgumentException("Authenticated user identity is required.", nameof(user));
+            }
+
             if (string.IsNullOrWhiteSpace(bomId)) return Task.FromResult(false);
             return _repository.DeleteBomAsync(bomId.Trim(), user);
         }

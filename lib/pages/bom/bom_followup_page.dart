@@ -302,26 +302,21 @@ class _BomFollowupPageState extends State<BomFollowupPage> {
       final result = await _service.closeBomRecords(
         bomIds: _selectedBomIds.toList(),
         asOnDate: _asOnDate,
-        username: 'ADMIN',
-        companyName: 'NEW TECH INFOSOL',
       );
 
       if (result.success) {
         final closedIds = _selectedBomIds.toSet();
         setState(() {
           _saveButtonStatus = ButtonStatus.success;
-          // Closed items immediately vanish from the active table list
           _records.removeWhere((r) => closedIds.contains(r.bomId));
           _selectedBomIds.clear();
         });
 
-        // Zero external banner notifications: Button animation itself is the success notification!
+        _showSnack(result.message, isError: false);
 
         await Future.delayed(const Duration(milliseconds: 1400));
         if (mounted) {
           setState(() => _saveButtonStatus = ButtonStatus.idle);
-          // Query 8: Re-query the database to verify active state
-          await _fetchGridRecords();
         }
       } else {
         setState(() => _saveButtonStatus = ButtonStatus.idle);
@@ -331,11 +326,16 @@ class _BomFollowupPageState extends State<BomFollowupPage> {
       debugPrint('Save close failed: $e');
       setState(() => _saveButtonStatus = ButtonStatus.idle);
       _showSnack('Closure failed: $e', isError: true);
+    } finally {
+      // Always refresh grid after close attempt (success, failure, or exception)
+      if (mounted) {
+        await _fetchGridRecords();
+      }
     }
   }
 
   void _showSnack(String msg, {bool isError = false}) {
-    if (!mounted || !isError) return; // Zero external banner notifications on success
+    if (!mounted) return;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

@@ -12,6 +12,6 @@ namespace MMSERP.Api.Services
         Task<IEnumerable<BomFollowupOrderTypeDto>> GetOrderTypesAsync();
         Task<IEnumerable<BomFollowupRecordDto>> GetOpenRecordsAsync(DateTime? asOnDate, int? departmentCode, int? divisionCode, string? orderType);
         Task<bool> CheckDateLockAsync(DateTime asOnDate);
-        Task<BomFollowupCloseResult> CloseBatchAsync(List<string> bomIds, DateTime asOnDate, string username, string companyName);
+        Task<BomFollowupCloseResult> CloseBatchAsync(List<string> bomIds, DateTime asOnDate, string username);
     }
 }

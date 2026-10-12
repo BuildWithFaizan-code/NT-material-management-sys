@@ -29,6 +29,9 @@ import '../pages/placeholder_module_pages.dart';
 import '../pages/transactions/bill_of_material_page.dart';
 import '../pages/transactions/transaction_placeholder_page.dart';
 import '../pages/bom/bom_followup_page.dart';
+import '../pages/purchase_order/purchase_order_page.dart';
+import '../pages/purchase_order_approval/po_approval_page.dart';
+import '../pages/purchase_order_advance/po_advance_page.dart';
 import '../pages/user_management_page.dart';
 import '../services/auth_service.dart';
 import 'widgets/master_nav_item.dart';
@@ -292,20 +295,11 @@ class LargeScreenLayout extends StatelessWidget {
 
       // Purchase Order
       case 'Generate Purchase Order':
-        return const TransactionPlaceholderPage(
-          title: 'Generate Purchase Order',
-          icon: Icons.shopping_basket_outlined,
-        );
+        return const PurchaseOrderPage();
       case 'Release Purchase Order':
-        return const TransactionPlaceholderPage(
-          title: 'Release Purchase Order',
-          icon: Icons.mark_email_read_outlined,
-        );
+        return const PoApprovalPage();
       case 'PO Advance Entry':
-        return const TransactionPlaceholderPage(
-          title: 'PO Advance Entry',
-          icon: Icons.payments_outlined,
-        );
+        return const PoAdvancePage();
       case 'Freight Memo':
         return const TransactionPlaceholderPage(
           title: 'Freight Memo',

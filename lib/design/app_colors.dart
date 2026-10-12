@@ -52,4 +52,23 @@ class AppColors {
   // Brand Header Accent Colors
   static const Color brandBlue = Color(0xFF2563EB);
   static const Color brandOrange = Color(0xFFF97316);
+
+  // File Brand & Export Tokens
+  static const Color excelGreen = Color(0xFF2E7D32);
+  static const Color excelGreenLight = Color(0xFFEAF5EE);
+  static const Color pdfRed = Color(0xFFC62828);
+  static const Color pdfRedLight = Color(0xFFFFEBEE);
+
+  // Table & UI Surfaces
+  static const Color tableHeaderBg = Color(0xFFF1F5F9);
+  static const Color tableBorder = Color(0xFFE2E8F0);
+  static const Color tableRowHover = Color(0xFFF8FAFC);
+  static const Color surfaceDark = Color(0xFF0F172A);
+
+  // Glow & Tag Accents
+  static const Color glowGold = Color(0xFFF59E0B);
+  static const Color glowCyan = Color(0xFF06B6D4);
+  static const Color glowPink = Color(0xFFEC4899);
+  static const Color glowPurple = Color(0xFF8B5CF6);
+  static const Color tagIndigo = Color(0xFF6366F1);
 }

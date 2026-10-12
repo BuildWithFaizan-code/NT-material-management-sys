@@ -13,9 +13,11 @@ namespace MMSERP.Api.Repositories
     public class BomFollowupRepository : IBomFollowupRepository
     {
         private readonly string _connectionString;
+        private readonly IConfiguration _configuration;
 
         public BomFollowupRepository(IConfiguration configuration)
         {
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _connectionString = DbConnectionHelper.ResolveConnectionString(configuration);
         }
 
@@ -92,6 +94,13 @@ namespace MMSERP.Api.Repositories
             });
         }
 
+        public async Task<DateTime> GetDbDateAsync()
+        {
+            const string sql = "SELECT CAST(GETDATE() AS DATE);";
+            using var conn = CreateConnection();
+            return await conn.ExecuteScalarAsync<DateTime>(sql);
+        }
+
         public async Task<bool> IsDateLockedAsync(DateTime asOnDate)
         {
             const string sql = @"
@@ -105,9 +114,16 @@ namespace MMSERP.Api.Repositories
         }
 
         public async Task<int> CloseBomBatchAsync(
-            List<string> bomIds, DateTime asOnDate, string username, string companyName)
+            List<string> bomIds, DateTime asOnDate, string username)
         {
             if (bomIds == null || bomIds.Count == 0) return 0;
+
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException("Username is required for BOM close audit logging.", nameof(username));
+            }
+
+            var companyName = CompanyConfigHelper.ResolveCompanyName(_configuration);
 
             using var conn = (SqlConnection)CreateConnection();
             await conn.OpenAsync();
@@ -126,40 +142,77 @@ namespace MMSERP.Api.Repositories
                     throw new InvalidOperationException($"The date {asOnDate:yyyy-MM-dd} is locked in LOCKDATAMST. Action rejected.");
                 }
 
-                var now = DateTime.UtcNow;
                 int affectedTotal = 0;
-
-                const string daybookSql = @"
-                    INSERT INTO DAYBOOK(DB_DATE, DB_TYPE, DB_PNAME, DB_AMT, DB_REFNO, DB_ACTION, DB_TYP, DB_DR, DB_COMPNAME)
-                    VALUES(@DbDate, @DbUser, 'BILL OF MATERIAL CLOSE', 0, @BomId, 'EDIT', 'BOM', 1, @CompanyName)";
+                var failedDetails = new List<string>();
 
                 const string updateBomSql = @"
                     UPDATE BOMMST 
-                    SET Status = 'CLOSE', BOM_ClDate = @Now 
-                    WHERE PURPOSE = 'Costing' AND BOMID = @BomId";
+                    SET Status = 'CLOSE', BOM_ClDate = GETDATE() 
+                    WHERE PURPOSE = 'Costing' AND BOMID = @BomId AND Status = 'OPEN';";
+
+                const string daybookSql = @"
+                    INSERT INTO DAYBOOK(DB_DATE, DB_TYPE, DB_PNAME, DB_AMT, DB_REFNO, DB_ACTION, DB_TYP, DB_DR, DB_COMPNAME)
+                    VALUES(GETDATE(), @DbUser, 'BILL OF MATERIAL CLOSE', 0, @BomId, 'EDIT', 'BOM', 1, @CompanyName);";
+
+                const string inspectBomSql = @"
+                    SELECT BOMID, PURPOSE, STATUS 
+                    FROM BOMMST 
+                    WHERE BOMID = @BomId;";
 
                 foreach (var id in bomIds)
                 {
                     if (string.IsNullOrWhiteSpace(id)) continue;
                     var bomId = id.Trim();
 
-                    // Log DAYBOOK audit entry
+                    // Attempt BOMMST UPDATE first
+                    var rows = await conn.ExecuteAsync(updateBomSql, new { BomId = bomId }, tx);
+                    if (rows == 0)
+                    {
+                        // Diagnose reason for failure
+                        var record = await conn.QueryFirstOrDefaultAsync<dynamic>(inspectBomSql, new { BomId = bomId }, tx);
+
+                        if (record == null)
+                        {
+                            failedDetails.Add($"Record '{bomId}' could not be closed: record does not exist.");
+                        }
+                        else
+                        {
+                            string? purpose = (string?)record.PURPOSE;
+                            string? status = (string?)record.STATUS;
+
+                            if (!string.Equals(purpose, "Costing", StringComparison.OrdinalIgnoreCase))
+                            {
+                                failedDetails.Add($"Record '{bomId}' could not be closed: PURPOSE is '{purpose}', expected 'Costing'.");
+                            }
+                            else if (!string.Equals(status, "OPEN", StringComparison.OrdinalIgnoreCase))
+                            {
+                                failedDetails.Add($"Record '{bomId}' could not be closed: already in '{status}' status.");
+                            }
+                            else
+                            {
+                                failedDetails.Add($"Record '{bomId}' could not be closed: status/purpose condition not met.");
+                            }
+                        }
+                        continue;
+                    }
+
+                    // Only write DAYBOOK if the row was actually updated
                     await conn.ExecuteAsync(daybookSql, new
                     {
-                        DbDate = now,
-                        DbUser = string.IsNullOrWhiteSpace(username) ? "ADMIN" : username,
+                        DbUser = username.Trim(),
                         BomId = bomId,
-                        CompanyName = string.IsNullOrWhiteSpace(companyName) ? "NEWTECHINFOSOL" : companyName
-                    }, tx);
-
-                    // Update BOM status
-                    var rows = await conn.ExecuteAsync(updateBomSql, new
-                    {
-                        Now = now,
-                        BomId = bomId
+                        CompanyName = companyName
                     }, tx);
 
                     affectedTotal += rows;
+                }
+
+                if (failedDetails.Count > 0)
+                {
+                    tx.Rollback();
+                    throw new InvalidOperationException(
+                        $"Failed to close BOM batch ({failedDetails.Count} error(s)). No changes were committed:\n" +
+                        string.Join("\n", failedDetails));
                 }
 
                 tx.Commit();

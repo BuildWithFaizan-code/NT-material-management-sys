@@ -58,7 +58,7 @@ namespace MMSERP.Api.Models
     public record BomFollowupCloseRequest
     {
         public List<string> BomIds { get; set; } = new();
-        public DateTime AsOnDate { get; set; } = DateTime.UtcNow;
+        public DateTime AsOnDate { get; set; }
     }
 
     public record BomFollowupCloseResult

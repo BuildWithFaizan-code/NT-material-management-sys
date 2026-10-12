@@ -9,8 +9,8 @@ namespace MMSERP.Api.Services
         Task<string> GetNextBomIdAsync(string mode);
         Task<IEnumerable<BomRecordSummaryDto>> GetAllSummariesAsync(string? mode = null, string? query = null);
         Task<BomCompleteRecordDto?> GetByIdAsync(string bomId);
-        Task<string> SaveBomAsync(BomCompleteRecordDto record, string user = "SYSTEM");
-        Task<bool> DeleteBomAsync(string bomId, string user = "SYSTEM");
+        Task<string> SaveBomAsync(BomCompleteRecordDto record, string user);
+        Task<bool> DeleteBomAsync(string bomId, string user);
         Task<IEnumerable<BomStoreLookupDto>> GetStoresAsync();
         Task<IEnumerable<BomDepartmentLookupDto>> GetDepartmentsAsync();
         Task<IEnumerable<BomUnitLookupDto>> GetUnitsAsync();

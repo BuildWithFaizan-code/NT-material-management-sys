@@ -12,7 +12,6 @@ namespace MMSERP.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [AllowAnonymous]
     public class BomFollowupController : ControllerBase
     {
         private readonly IBomFollowupService _service;
@@ -24,11 +23,11 @@ namespace MMSERP.Api.Controllers
             _logger = logger;
         }
 
-        private string GetCurrentUserName()
+        private string? GetCurrentUserName()
         {
-            return User.FindFirst(ClaimTypes.Name)?.Value 
-                ?? User.Identity?.Name 
-                ?? "ADMIN";
+            var username = User.FindFirst(ClaimTypes.Name)?.Value 
+                ?? User.Identity?.Name;
+            return string.IsNullOrWhiteSpace(username) ? null : username.Trim();
         }
 
         /// <summary>
@@ -105,7 +104,12 @@ namespace MMSERP.Api.Controllers
             try
             {
                 var username = GetCurrentUserName();
-                var result = await _service.CloseBatchAsync(request.BomIds, request.AsOnDate, username, "NEWTECHINFOSOL");
+                if (string.IsNullOrWhiteSpace(username))
+                {
+                    return Unauthorized(ApiResponse<string>.Fail("Authenticated user identity is required."));
+                }
+
+                var result = await _service.CloseBatchAsync(request.BomIds, request.AsOnDate, username);
                 if (!result.Success)
                 {
                     return BadRequest(ApiResponse<BomFollowupCloseResult>.Fail(result.Message));

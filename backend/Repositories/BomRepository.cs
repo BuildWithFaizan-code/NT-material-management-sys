@@ -96,9 +96,11 @@ namespace MMSERP.Api.Repositories
     public class BomRepository : IBomRepository
     {
         private readonly string _connectionString;
+        private readonly IConfiguration _configuration;
 
         public BomRepository(IConfiguration configuration)
         {
+            _configuration = configuration;
             _connectionString = DbConnectionHelper.ResolveConnectionString(configuration);
         }
 
@@ -108,10 +110,10 @@ namespace MMSERP.Api.Repositories
         {
             var isJob = string.Equals(mode, "JOB", StringComparison.OrdinalIgnoreCase);
             var prefix = isJob ? "BMCJ" : "BMCC";
-            var now = DateTime.Now;
-            var fyStart = (now.Month >= 4) ? new DateTime(now.Year, 4, 1) : new DateTime(now.Year - 1, 4, 1);
-            var fyEnd = (now.Month >= 4) ? new DateTime(now.Year + 1, 3, 31) : new DateTime(now.Year, 3, 31);
-            var fyYear = (now.Month >= 4) ? (now.Year % 100) + 1 : (now.Year % 100);
+            var dbNow = await connection.ExecuteScalarAsync<DateTime>("SELECT GETDATE();", transaction: transaction);
+            var fyStart = (dbNow.Month >= 4) ? new DateTime(dbNow.Year, 4, 1) : new DateTime(dbNow.Year - 1, 4, 1);
+            var fyEnd = (dbNow.Month >= 4) ? new DateTime(dbNow.Year + 1, 3, 31) : new DateTime(dbNow.Year, 3, 31);
+            var fyYear = (dbNow.Month >= 4) ? (dbNow.Year % 100) + 1 : (dbNow.Year % 100);
             var fySuffix = fyYear.ToString("D2");
 
             const string sql = @"
@@ -219,7 +221,7 @@ namespace MMSERP.Api.Repositories
                     b.Bom_Date AS BomDate,
                     ISNULL(b.Bom_PO, '') AS BomPo,
                     ISNULL(b.BOM_LOC, 'LWHL26_SQL') AS BomLoc,
-                    ISNULL(b.BOM_UsrName, 'SYSTEM') AS BomUsrName,
+                    ISNULL(b.BOM_UsrName, '') AS BomUsrName,
                     ISNULL(b.BOM_EMode, 'New') AS BomEMode,
                     b.BOM_EDate AS BomEDate
                 FROM BOMMst b
@@ -274,8 +276,15 @@ namespace MMSERP.Api.Repositories
             };
         }
 
-        public async Task<string> SaveBomAsync(BomCompleteRecordDto record, string user = "SYSTEM")
+        public async Task<string> SaveBomAsync(BomCompleteRecordDto record, string user)
         {
+            if (string.IsNullOrWhiteSpace(user))
+            {
+                throw new ArgumentException("User name is required for BOM save and audit logging.", nameof(user));
+            }
+
+            var companyName = CompanyConfigHelper.ResolveCompanyName(_configuration);
+
             using var connection = CreateConnection();
             if (connection.State != ConnectionState.Open) connection.Open();
 
@@ -295,7 +304,21 @@ namespace MMSERP.Api.Repositories
                 }
 
                 string finalBomId;
-                int bomCodeInt = int.TryParse(h.BomCode, out var parsedBc) && parsedBc > 0 ? parsedBc : 1;
+                string bomCodeStr;
+                if (string.IsNullOrWhiteSpace(h.BomCode))
+                {
+                    bomCodeStr = "";
+                }
+                else
+                {
+                    var trimmed = h.BomCode.Trim();
+                    if (trimmed.Length > 50)
+                    {
+                        throw new ArgumentException($"BOMCode '{trimmed}' exceeds maximum allowed length of 50 characters.", nameof(record));
+                    }
+                    bomCodeStr = trimmed;
+                }
+
                 if (!exists)
                 {
                     // Concurrency-safe ID generation within the insert transaction
@@ -311,13 +334,13 @@ namespace MMSERP.Api.Repositories
                         ) VALUES (
                             @BomId, @BomCode, @DepCode, @StrCode, @ICode, @Description, 
                             @Qty, @UnitCode, @Purpose, @Status, @BomType, @BomDate, @BomPo, 
-                            @BomLoc, @BomUsrName, @BomEMode, @BomEDate
+                            @BomLoc, @BomUsrName, @BomEMode, GETDATE()
                         );";
 
                     await connection.ExecuteAsync(insertMasterSql, new
                     {
                         BomId = finalBomId,
-                        BomCode = bomCodeInt,
+                        BomCode = bomCodeStr,
                         h.DepCode,
                         h.StrCode,
                         h.ICode,
@@ -330,9 +353,8 @@ namespace MMSERP.Api.Repositories
                         h.BomDate,
                         h.BomPo,
                         h.BomLoc,
-                        BomUsrName = user,
-                        BomEMode = "New",
-                        BomEDate = DateTime.UtcNow,
+                        BomUsrName = user.Trim(),
+                        BomEMode = "New"
                     }, transaction);
                 }
                 else
@@ -355,7 +377,7 @@ namespace MMSERP.Api.Repositories
                             Bom_PO = @BomPo,
                             BOM_UsrName = @BomUsrName,
                             BOM_EMode = 'Update',
-                            BOM_EDate = @BomEDate
+                            BOM_EDate = GETDATE()
                         WHERE BOMID = @BomId;";
 
                     await connection.ExecuteAsync(updateMasterSql, new
@@ -371,9 +393,8 @@ namespace MMSERP.Api.Repositories
                         h.BomType,
                         h.BomDate,
                         h.BomPo,
-                        BomUsrName = user,
-                        BomEDate = DateTime.UtcNow,
-                        BomId = finalBomId,
+                        BomUsrName = user.Trim(),
+                        BomId = finalBomId
                     }, transaction);
                 }
 
@@ -397,14 +418,19 @@ namespace MMSERP.Api.Repositories
                             @BomFabPhoto, @BomShade, @BomSizeDet, @BomDesNo
                         );";
 
-                    foreach (var item in record.Items)
+                    for (int i = 0; i < record.Items.Count; i++)
                     {
+                        var item = record.Items[i];
                         item.BomsId = finalBomId;
+                        var bomsCode = !string.IsNullOrWhiteSpace(item.BomsCode)
+                            ? item.BomsCode.Trim()
+                            : (i + 1).ToString();
+
                         await connection.ExecuteAsync(insertSubSql, new
                         {
                             BomsId = finalBomId,
-                            BomsCode = !string.IsNullOrWhiteSpace(item.BomsCode) ? item.BomsCode : "1",
-                            BomCode = bomCodeInt,
+                            BomsCode = bomsCode,
+                            BomCode = bomCodeStr,
                             item.ItGroupCd,
                             ICode = item.ICode ?? "",
                             Description = item.Description ?? "",
@@ -435,15 +461,16 @@ namespace MMSERP.Api.Repositories
                     INSERT INTO DAYBOOK (
                         DB_DATE, DB_TYPE, DB_PNAME, DB_AMT, DB_REFNO, DB_ACTION, DB_TYP, DB_DR, DB_COMPNAME
                     ) VALUES (
-                        GETDATE(), @User, '', @Qty, @BomId, @Action, 'BOM', '1', 'NEWTECHINFOSOL'
+                        GETDATE(), @User, '', @Qty, @BomId, @Action, 'BOM', '1', @CompanyName
                     );";
 
                 await connection.ExecuteAsync(daybookSql, new
                 {
-                    User = !string.IsNullOrWhiteSpace(user) ? user : "ADMIN",
+                    User = user.Trim(),
                     Qty = h.Qty,
                     BomId = finalBomId,
                     Action = exists ? "UPDATE" : "NEW",
+                    CompanyName = companyName
                 }, transaction);
 
                 transaction.Commit();
@@ -456,8 +483,15 @@ namespace MMSERP.Api.Repositories
             }
         }
 
-        public async Task<bool> DeleteBomAsync(string bomId, string user = "SYSTEM")
+        public async Task<bool> DeleteBomAsync(string bomId, string user)
         {
+            if (string.IsNullOrWhiteSpace(user))
+            {
+                throw new ArgumentException("User name is required for BOM deletion and audit logging.", nameof(user));
+            }
+
+            var companyName = CompanyConfigHelper.ResolveCompanyName(_configuration);
+
             using var connection = CreateConnection();
             if (connection.State != ConnectionState.Open) connection.Open();
 
@@ -491,13 +525,14 @@ namespace MMSERP.Api.Repositories
                     INSERT INTO DAYBOOK (
                         DB_DATE, DB_TYPE, DB_PNAME, DB_AMT, DB_REFNO, DB_ACTION, DB_TYP, DB_DR, DB_COMPNAME
                     ) VALUES (
-                        GETDATE(), @User, '', 0, @BomId, 'DELETE', 'BOM', '1', 'NEWTECHINFOSOL'
+                        GETDATE(), @User, '', 0, @BomId, 'DELETE', 'BOM', '1', @CompanyName
                     );";
 
                 await connection.ExecuteAsync(daybookSql, new
                 {
-                    User = !string.IsNullOrWhiteSpace(user) ? user : "ADMIN",
+                    User = user.Trim(),
                     BomId = bomId,
+                    CompanyName = companyName
                 }, transaction);
 
                 transaction.Commit();

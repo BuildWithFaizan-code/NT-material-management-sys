@@ -36,9 +36,8 @@ namespace MMSERP.Api.Services
         public async Task<IEnumerable<BomFollowupRecordDto>> GetOpenRecordsAsync(
             DateTime? asOnDate, int? departmentCode, int? divisionCode, string? orderType)
         {
-            var targetDate = asOnDate.HasValue 
-                ? asOnDate.Value.Date.AddHours(23).AddMinutes(59).AddSeconds(59) 
-                : DateTime.UtcNow.Date.AddHours(23).AddMinutes(59).AddSeconds(59);
+            var baseDate = asOnDate ?? await _repo.GetDbDateAsync();
+            var targetDate = baseDate.Date.AddHours(23).AddMinutes(59).AddSeconds(59);
             return await _repo.GetOpenRecordsAsync(targetDate, departmentCode, divisionCode, orderType);
         }
 
@@ -48,15 +47,26 @@ namespace MMSERP.Api.Services
         }
 
         public async Task<BomFollowupCloseResult> CloseBatchAsync(
-            List<string> bomIds, DateTime asOnDate, string username, string companyName)
+            List<string> bomIds, DateTime asOnDate, string username)
         {
-            if (bomIds == null || bomIds.Count == 0)
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException("Username is required for BOM close.", nameof(username));
+            }
+
+            var distinctBomIds = bomIds?
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Select(id => id.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList() ?? new List<string>();
+
+            if (distinctBomIds.Count == 0)
             {
                 return new BomFollowupCloseResult
                 {
                     Success = false,
                     ClosedCount = 0,
-                    Message = "No BOM records selected for closing.",
+                    Message = "No valid BOM records selected for closing.",
                     IsDateLocked = false
                 };
             }
@@ -76,7 +86,13 @@ namespace MMSERP.Api.Services
 
             try
             {
-                var closedCount = await _repo.CloseBomBatchAsync(bomIds, asOnDate, username, companyName);
+                var closedCount = await _repo.CloseBomBatchAsync(distinctBomIds, asOnDate, username);
+                if (closedCount != distinctBomIds.Count)
+                {
+                    _logger.LogError("BOM batch close discrepancy: requested {Requested}, closed {Closed}", distinctBomIds.Count, closedCount);
+                    throw new InvalidOperationException($"Batch close count mismatch: requested {distinctBomIds.Count}, but {closedCount} were closed.");
+                }
+
                 _logger.LogInformation("Successfully closed {Count} BOMs by user {User}", closedCount, username);
 
                 return new BomFollowupCloseResult

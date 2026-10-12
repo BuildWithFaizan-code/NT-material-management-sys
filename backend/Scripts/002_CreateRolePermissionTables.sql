@@ -129,7 +129,11 @@ USING (VALUES
     ('Main Group Master', 'Master', 'MainGroupMasterController'),
     ('Group Master', 'Master', 'GroupMasterController'),
     ('Group Master Definition', 'Master', 'GroupMasterDefinitionController'),
-    ('Charges Master', 'Master', 'ChargesMasterController')
+    ('Charges Master', 'Master', 'ChargesMasterController'),
+    ('Generate Purchase Order', 'Transaction', 'PurchaseOrderController'),
+    ('Release Purchase Order', 'Transaction', 'PoApprovalController'),
+    ('PO Advance Entry', 'Transaction', 'PurchaseOrderAdvanceController'),
+    ('Bill of Material', 'Transaction', 'BillOfMaterialController')
 ) AS source (ModuleName, ModuleGroup, ControllerName)
 ON target.ControllerName = source.ControllerName
 WHEN MATCHED THEN

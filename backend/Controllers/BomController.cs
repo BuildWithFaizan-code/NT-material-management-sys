@@ -22,11 +22,11 @@ namespace MMSERP.Api.Controllers
             _logger = logger;
         }
 
-        private string GetCurrentUserName()
+        private string? GetCurrentUserName()
         {
-            return User.FindFirst(ClaimTypes.Name)?.Value 
-                ?? User.Identity?.Name 
-                ?? "SYSTEM";
+            var username = User.FindFirst(ClaimTypes.Name)?.Value 
+                ?? User.Identity?.Name;
+            return string.IsNullOrWhiteSpace(username) ? null : username.Trim();
         }
 
         /// <summary>
@@ -147,6 +147,11 @@ namespace MMSERP.Api.Controllers
             try
             {
                 var userName = GetCurrentUserName();
+                if (string.IsNullOrWhiteSpace(userName))
+                {
+                    return Unauthorized(ApiResponse<string>.Fail("Authenticated user identity is required."));
+                }
+
                 var finalBomId = await _service.SaveBomAsync(payload, userName);
                 payload.Header.BomId = finalBomId;
 
@@ -187,6 +192,11 @@ namespace MMSERP.Api.Controllers
             {
                 key = Uri.UnescapeDataString(key).Trim();
                 var userName = GetCurrentUserName();
+                if (string.IsNullOrWhiteSpace(userName))
+                {
+                    return Unauthorized(ApiResponse<string>.Fail("Authenticated user identity is required."));
+                }
+
                 var deleted = await _service.DeleteBomAsync(key, userName);
                 if (!deleted)
                 {
@@ -223,6 +233,11 @@ namespace MMSERP.Api.Controllers
             try
             {
                 var userName = GetCurrentUserName();
+                if (string.IsNullOrWhiteSpace(userName))
+                {
+                    return Unauthorized(ApiResponse<string>.Fail("Authenticated user identity is required."));
+                }
+
                 var deleted = await _service.DeleteBomAsync(key, userName);
                 if (!deleted)
                 {
