@@ -162,10 +162,10 @@ class _SoChargesModalDialogState extends State<SoChargesModalDialog> {
         decoration: BoxDecoration(
           color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.divider.withOpacity(0.5)),
+          border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 24,
               offset: const Offset(0, 10),
             ),
@@ -187,16 +187,16 @@ class _SoChargesModalDialogState extends State<SoChargesModalDialog> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.sidebarBackground.withOpacity(0.5),
+        color: AppColors.sidebarBackground.withValues(alpha: 0.5),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-        border: Border(bottom: BorderSide(color: AppColors.divider.withOpacity(0.5))),
+        border: Border(bottom: BorderSide(color: AppColors.divider.withValues(alpha: 0.5))),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(7),
             decoration: BoxDecoration(
-              color: AppColors.primaryColor.withOpacity(0.12),
+              color: AppColors.primaryColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(Icons.calculate_rounded, color: AppColors.primaryColor, size: 20),
@@ -236,7 +236,7 @@ class _SoChargesModalDialogState extends State<SoChargesModalDialog> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: AppColors.divider.withOpacity(0.3))),
+        border: Border(bottom: BorderSide(color: AppColors.divider.withValues(alpha: 0.3))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -278,7 +278,7 @@ class _SoChargesModalDialogState extends State<SoChargesModalDialog> {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       itemCount: _rows.length,
-      separatorBuilder: (_, __) => Divider(height: 1, color: AppColors.divider.withOpacity(0.3)),
+      separatorBuilder: (ctx, idx) => Divider(height: 1, color: AppColors.divider.withValues(alpha: 0.3)),
       itemBuilder: (context, index) {
         final r = _rows[index];
 
@@ -299,8 +299,8 @@ class _SoChargesModalDialogState extends State<SoChargesModalDialog> {
                   height: 32,
                   decoration: BoxDecoration(
                     color: r.addLess == 1
-                        ? AppColors.success.withOpacity(0.12)
-                        : AppColors.error.withOpacity(0.12),
+                        ? AppColors.success.withValues(alpha: 0.12)
+                        : AppColors.error.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
                       color: r.addLess == 1 ? AppColors.success : AppColors.error,
@@ -388,7 +388,7 @@ class _SoChargesModalDialogState extends State<SoChargesModalDialog> {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
-        border: Border(top: BorderSide(color: AppColors.divider.withOpacity(0.5))),
+        border: Border(top: BorderSide(color: AppColors.divider.withValues(alpha: 0.5))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,

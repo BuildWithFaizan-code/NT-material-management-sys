@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../design/app_colors.dart';
@@ -9,6 +10,7 @@ import 'widgets/customer_lookup_dialog.dart';
 import 'widgets/so_animated_success_button.dart';
 import 'widgets/so_charges_modal_dialog.dart';
 import 'widgets/so_export_modal_dialog.dart';
+import 'widgets/so_step_progress_bar.dart';
 import 'widgets/so_terms_modal_dialog.dart';
 
 class SalesOrderPage extends StatefulWidget {
@@ -34,8 +36,9 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
 
   DateTime? _fromDate;
   DateTime? _toDate;
-  int _selectedCostCenter = 0;
+  final int _selectedCostCenter = 0;
   final TextEditingController _searchCtrl = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   final ScrollController _tableScrollCtrl = ScrollController();
 
   // Glow Effect state (Project Master style)
@@ -93,6 +96,7 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
   void dispose() {
     _highlightTimer?.cancel();
     _searchCtrl.dispose();
+    _searchFocusNode.dispose();
     _tableScrollCtrl.dispose();
 
     _soNoCtrl.dispose();
@@ -170,7 +174,7 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
       if (_tableScrollCtrl.hasClients) {
         final idx = _filteredOrders.indexWhere((o) => o.soNo == soNo);
         if (idx != -1) {
-          final targetOffset = (idx * 44.0) - 80.0;
+          final targetOffset = (idx * 40.0) - 80.0;
           _tableScrollCtrl.animateTo(
             targetOffset.clamp(0.0, _tableScrollCtrl.position.maxScrollExtent),
             duration: const Duration(milliseconds: 500),
@@ -390,7 +394,7 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
         _saveButtonStatus = ButtonStatus.success;
       });
 
-      await Future.delayed(const Duration(milliseconds: 600));
+      await Future.delayed(const Duration(milliseconds: 700));
 
       if (mounted) {
         _closeWizard();
@@ -468,20 +472,45 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
       body: Stack(
         children: [
           Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildTopToolbar(),
-                const SizedBox(height: 16),
-                _buildMetricsBanner(),
-                const SizedBox(height: 16),
-                Expanded(child: _buildMainTable()),
-                const SizedBox(height: 12),
-                _buildPaginationFooter(),
-              ],
+            padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 16.0),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.backgroundColor,
+                  borderRadius: BorderRadius.circular(24.0),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 20,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Glassmorphic Corporate Header & Metrics
+                      _buildHeaderCard(),
+                      const SizedBox(height: 14),
+
+                      // Main Responsive Table Body
+                      Expanded(child: _buildMainTableDesk()),
+                      const SizedBox(height: 10),
+
+                      // Pagination Footer
+                      _buildPaginationFooter(),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
+
+          // 3-Step Wizard Overlay Modal
           if (_isWizardOpen) _buildWizardModalOverlay(),
         ],
       ),
@@ -489,95 +518,9 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
   }
 
   // ==========================================================================
-  // TOP TOOLBAR & CONTROLS
+  // 1. CORPORATE HEADER CONTAINER WITH KPI GAUGES (DEPARTMENT MASTER STYLE)
   // ==========================================================================
-  Widget _buildTopToolbar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.divider.withOpacity(0.5)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(Icons.point_of_sale_rounded, color: AppColors.primaryColor, size: 20),
-          ),
-          const SizedBox(width: 12),
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Generate Sales Order',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-              ),
-              Text(
-                'Transaction → Sales Order → Generate Sales Order',
-                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
-              ),
-            ],
-          ),
-          const Spacer(),
-          // Search box
-          SizedBox(
-            width: 240,
-            height: 38,
-            child: TextField(
-              controller: _searchCtrl,
-              style: const TextStyle(fontSize: 12.5, color: AppColors.textPrimary),
-              decoration: InputDecoration(
-                hintText: 'Search SO No, Customer...',
-                prefixIcon: const Icon(Icons.search_rounded, size: 18),
-                contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.divider)),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Export button
-          SoAnimatedExportButton(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (_) => SoExportModalDialog(orders: _filteredOrders),
-              );
-            },
-          ),
-          const SizedBox(width: 12),
-          // Refresh button
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
-            onPressed: _loadInitialData,
-            tooltip: 'Refresh Orders',
-          ),
-          const SizedBox(width: 12),
-          // New Entry Button (Project Master style)
-          ElevatedButton.icon(
-            onPressed: _openNewEntryWizard,
-            icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('New Entry'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ==========================================================================
-  // METRICS BANNER
-  // ==========================================================================
-  Widget _buildMetricsBanner() {
+  Widget _buildHeaderCard() {
     double totalVal = 0.0;
     int totalItems = 0;
     double totalQty = 0.0;
@@ -587,55 +530,258 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
       totalQty += o.totQty;
     }
 
-    return Row(
-      children: [
-        _buildMetricCard('Total Sales Orders', _totalCount.toString(), Icons.receipt_long_rounded, AppColors.primaryColor),
-        const SizedBox(width: 14),
-        _buildMetricCard('Total Items', totalItems.toString(), Icons.category_rounded, AppColors.secondaryColor),
-        const SizedBox(width: 14),
-        _buildMetricCard('Total Quantity', totalQty.toStringAsFixed(1), Icons.scale_rounded, const Color(0xFFE65100)),
-        const SizedBox(width: 14),
-        _buildMetricCard('Total Net Value', '₹ ${totalVal.toStringAsFixed(2)}', Icons.account_balance_wallet_rounded, const Color(0xFF2E7D32)),
-      ],
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xF2FFFFFF),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Row 1: Title & KPI Gauges
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF2563EB), Color(0xFF06B6D4)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF2563EB).withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.point_of_sale_rounded, color: Colors.white, size: 24),
+                  ),
+                  const SizedBox(width: 14),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Generate Sales Order',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF0F172A),
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Transaction → Sales Order → Generate Sales Order',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF64748B),
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+
+              // Modern Gauge KPI Cards
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildKpiCard(
+                    label: 'TOTAL ORDERS',
+                    value: _totalCount.toString(),
+                    gradientColors: const [Color(0xFF2563EB), Color(0xFF06B6D4)],
+                  ),
+                  const SizedBox(width: 10),
+                  _buildKpiCard(
+                    label: 'TOTAL ITEMS',
+                    value: totalItems.toString(),
+                    gradientColors: const [Color(0xFFEC4899), Color(0xFFF43F5E)],
+                  ),
+                  const SizedBox(width: 10),
+                  _buildKpiCard(
+                    label: 'TOTAL QTY',
+                    value: totalQty.toStringAsFixed(1),
+                    gradientColors: const [Color(0xFFF59E0B), Color(0xFFEA580C)],
+                  ),
+                  const SizedBox(width: 10),
+                  _buildKpiCard(
+                    label: 'TOTAL NET VALUE',
+                    value: '₹ ${totalVal.toStringAsFixed(2)}',
+                    gradientColors: const [Color(0xFF10B981), Color(0xFF059669)],
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Row 2: Search Bar + Orbit Export Button + New Entry Button (Project Master style)
+          Row(
+            children: [
+              // Search Input Field
+              Expanded(
+                child: Container(
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceColor,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: AppColors.divider.withValues(alpha: 0.8)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: _searchCtrl,
+                    focusNode: _searchFocusNode,
+                    style: const TextStyle(fontSize: 12, color: AppColors.neutralDark),
+                    decoration: InputDecoration(
+                      hintText: 'Search SO No, Customer, GSTIN, Division...',
+                      hintStyle: TextStyle(fontSize: 11.5, color: AppColors.neutralDark.withValues(alpha: 0.5)),
+                      prefixIcon: const Icon(Icons.search_rounded, size: 16, color: AppColors.primaryColor),
+                      suffixIcon: _searchCtrl.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear_rounded, size: 14),
+                              onPressed: () => _searchCtrl.clear(),
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: const BorderSide(color: AppColors.secondaryColor, width: 1.4),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // Animated Export Orbit Button (100% exact Project Master parity)
+              SoAnimatedExportButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => SoExportModalDialog(orders: _filteredOrders),
+                  );
+                },
+              ),
+
+              const SizedBox(width: 10),
+
+              // Refresh Button
+              IconButton(
+                icon: const Icon(Icons.refresh_rounded, color: Color(0xFF64748B), size: 20),
+                onPressed: _loadInitialData,
+                tooltip: 'Refresh Orders',
+              ),
+
+              const SizedBox(width: 10),
+
+              // + New Entry Button (Project Master style)
+              ElevatedButton.icon(
+                onPressed: _openNewEntryWizard,
+                icon: const Icon(Icons.add_rounded, size: 18, color: Colors.white),
+                label: const Text(
+                  'New Entry',
+                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.secondaryColor,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(0, 38),
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  elevation: 2,
+                  shadowColor: AppColors.secondaryColor.withValues(alpha: 0.35),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildMetricCard(String title, String value, IconData icon, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: AppColors.cardBackground,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.divider.withOpacity(0.5)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
-              child: Icon(icon, color: color, size: 20),
+  Widget _buildKpiCard({
+    required String label,
+    required String value,
+    required List<Color> gradientColors,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.3),
+          ),
+          const SizedBox(height: 2),
+          ShaderMask(
+            shaderCallback: (bounds) => LinearGradient(
+              colors: gradientColors,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ).createShader(bounds),
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900, color: Colors.white),
             ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-                Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-              ],
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   // ==========================================================================
-  // MAIN DASHBOARD TABLE (DEPARTMENT MASTER STYLE)
+  // 2. MAIN DATA GRID DESK (DEPARTMENT MASTER TABLE PARITY)
   // ==========================================================================
-  Widget _buildMainTable() {
+  Widget _buildMainTableDesk() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator(color: AppColors.primaryColor));
     }
 
     if (_loadError != null) {
@@ -653,176 +799,397 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
       );
     }
 
-    if (_filteredOrders.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.inbox_rounded, size: 48, color: AppColors.textSecondary.withOpacity(0.4)),
-            const SizedBox(height: 10),
-            const Text('No sales orders found', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
-          ],
-        ),
-      );
-    }
-
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.divider.withOpacity(0.5)),
+        color: Colors.white.withValues(alpha: 0.88),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          // Table Header Row
+          // Table Card Header
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: AppColors.sidebarBackground.withOpacity(0.4),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
-              border: Border(bottom: BorderSide(color: AppColors.divider.withOpacity(0.5))),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                SizedBox(width: 140, child: Text('SO No', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSecondary))),
-                SizedBox(width: 100, child: Text('Date', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSecondary))),
-                Expanded(flex: 3, child: Text('Customer / Party Name', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSecondary))),
-                Expanded(flex: 2, child: Text('Division', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSecondary))),
-                SizedBox(width: 60, child: Text('Items', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSecondary))),
-                SizedBox(width: 80, child: Text('Total Qty', textAlign: TextAlign.right, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSecondary))),
-                SizedBox(width: 110, child: Text('Net Amount', textAlign: TextAlign.right, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSecondary))),
-                SizedBox(width: 100, child: Center(child: Text('Status', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSecondary)))),
-                SizedBox(width: 90, child: Center(child: Text('Actions', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSecondary)))),
+                const Icon(Icons.table_chart_rounded, color: Color(0xFF2563EB), size: 18),
+                const SizedBox(width: 8),
+                const Text(
+                  'Sales Order Directory Register',
+                  style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.secondaryColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${_filteredOrders.length} Records',
+                    style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900, color: AppColors.secondaryColor),
+                  ),
+                ),
               ],
             ),
           ),
-          // Table Body List
-          Expanded(
-            child: ListView.separated(
-              controller: _tableScrollCtrl,
-              itemCount: _filteredOrders.length,
-              separatorBuilder: (_, __) => Divider(height: 1, color: AppColors.divider.withOpacity(0.3)),
-              itemBuilder: (context, index) {
-                final order = _filteredOrders[index];
-                final isGlowing = _highlightedSoNo == order.soNo;
 
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 500),
-                  color: isGlowing
-                      ? (_isHighlightedEdit
-                          ? const Color(0xFFFFF9C4)
-                          : const Color(0xFFE8F5E9))
-                      : Colors.transparent,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 140,
-                        child: Text(
-                          order.soNo,
-                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppColors.primaryColor),
-                        ),
+          // Responsive Table Body Grid
+          Expanded(
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16)),
+              child: _filteredOrders.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.search_off_rounded, size: 40, color: Colors.grey.shade400),
+                          const SizedBox(height: 8),
+                          Text('No sales order records match your criteria', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Colors.grey.shade500)),
+                        ],
                       ),
-                      SizedBox(
-                        width: 100,
-                        child: Text(
-                          order.soDate.toIso8601String().split('T').first,
-                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 3,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              order.partyName,
-                              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                            ),
-                            if (order.gstin.isNotEmpty)
-                              Text('GSTIN: ${order.gstin}', style: TextStyle(fontSize: 10.5, color: AppColors.textSecondary.withOpacity(0.8))),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          order.costCenterName.isNotEmpty ? order.costCenterName : '—',
-                          style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 60,
-                        child: Text(
-                          order.totItm.toString(),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 80,
-                        child: Text(
-                          order.totQty.toStringAsFixed(1),
-                          textAlign: TextAlign.right,
-                          style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 110,
-                        child: Text(
-                          '₹ ${order.netAmt.toStringAsFixed(2)}',
-                          textAlign: TextAlign.right,
-                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 100,
-                        child: Center(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: order.isRec
-                                  ? AppColors.primaryColor.withOpacity(0.12)
-                                  : (order.approved ? AppColors.success.withOpacity(0.12) : const Color(0xFFFFF3E0)),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              order.isRec ? 'Delivered' : (order.approved ? 'Approved' : 'Pending'),
-                              style: TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.bold,
-                                color: order.isRec
-                                    ? AppColors.primaryColor
-                                    : (order.approved ? AppColors.success : const Color(0xFFE65100)),
-                              ),
+                    )
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        const double minTableWidth = 1350.0;
+                        final double tableWidth = math.max(constraints.maxWidth, minTableWidth);
+
+                        return SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: SizedBox(
+                            width: tableWidth,
+                            child: Column(
+                              children: [
+                                // Column Header Bar with Vector Icons & Natural Color Accents
+                                Container(
+                                  height: 38,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFF1F5F9),
+                                    border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1.2)),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                                  child: const Row(
+                                    children: [
+                                      SizedBox(
+                                        width: 130,
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.sell_outlined, size: 12, color: Color(0xFF2563EB)),
+                                            SizedBox(width: 4),
+                                            Text('SO NO', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 95,
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.calendar_today_rounded, size: 12, color: Color(0xFF0891B2)),
+                                            SizedBox(width: 4),
+                                            Text('DATE', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                          ],
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 3,
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.business_rounded, size: 12, color: Color(0xFF059669)),
+                                            SizedBox(width: 4),
+                                            Text('CUSTOMER NAME', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 140,
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.receipt_long_rounded, size: 12, color: Color(0xFFD97706)),
+                                            SizedBox(width: 4),
+                                            Text('GSTIN', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                          ],
+                                        ),
+                                      ),
+                                      Expanded(
+                                        flex: 2,
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.account_tree_rounded, size: 12, color: Color(0xFF8B5CF6)),
+                                            SizedBox(width: 4),
+                                            Text('DIVISION', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 60,
+                                        child: Center(
+                                          child: Text('ITEMS', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 80,
+                                        child: Align(
+                                          alignment: Alignment.centerRight,
+                                          child: Text('QTY', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 95,
+                                        child: Align(
+                                          alignment: Alignment.centerRight,
+                                          child: Text('GROSS (₹)', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 80,
+                                        child: Align(
+                                          alignment: Alignment.centerRight,
+                                          child: Text('DISC (₹)', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 110,
+                                        child: Align(
+                                          alignment: Alignment.centerRight,
+                                          child: Text('NET AMT (₹)', style: TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 90,
+                                        child: Center(
+                                          child: Text('STATUS', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 80,
+                                        child: Center(
+                                          child: Text('ACTIONS', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // ListView Rows with Project Master Glow Strategy
+                                Expanded(
+                                  child: ListView.separated(
+                                    controller: _tableScrollCtrl,
+                                    itemCount: _filteredOrders.length,
+                                    separatorBuilder: (ctx, idx) => const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+                                    itemBuilder: (context, index) {
+                                      final order = _filteredOrders[index];
+                                      final isGlowing = _highlightedSoNo == order.soNo;
+                                      final isZebra = index % 2 == 1;
+
+                                      Color rowBg = isZebra ? const Color(0xFFF8FAFC) : Colors.white;
+                                      if (isGlowing) {
+                                        rowBg = _isHighlightedEdit ? const Color(0xFFFFF9C4) : const Color(0xFFE8F5E9);
+                                      }
+
+                                      return AnimatedContainer(
+                                        duration: const Duration(milliseconds: 500),
+                                        color: rowBg,
+                                        height: 40,
+                                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                                        child: Row(
+                                          children: [
+                                            // SO No Badge
+                                            SizedBox(
+                                              width: 130,
+                                              child: Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFFEEF2FF),
+                                                    borderRadius: BorderRadius.circular(6),
+                                                    border: Border.all(color: const Color(0xFFC7D2FE)),
+                                                  ),
+                                                  child: Text(
+                                                    order.soNo,
+                                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+
+                                            // Date
+                                            SizedBox(
+                                              width: 95,
+                                              child: Text(
+                                                order.soDate.toIso8601String().split('T').first,
+                                                style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                                              ),
+                                            ),
+
+                                            // Customer Name
+                                            Expanded(
+                                              flex: 3,
+                                              child: Text(
+                                                order.partyName,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                                              ),
+                                            ),
+
+                                            // GSTIN
+                                            SizedBox(
+                                              width: 140,
+                                              child: Text(
+                                                order.gstin.isNotEmpty ? order.gstin : '—',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  fontFamily: order.gstin.isNotEmpty ? 'monospace' : null,
+                                                  color: order.gstin.isNotEmpty ? const Color(0xFFD97706) : const Color(0xFF94A3B8),
+                                                ),
+                                              ),
+                                            ),
+
+                                            // Division
+                                            Expanded(
+                                              flex: 2,
+                                              child: Text(
+                                                order.costCenterName.isNotEmpty ? order.costCenterName : '—',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(fontSize: 11.5, color: Color(0xFF475569)),
+                                              ),
+                                            ),
+
+                                            // Total Items
+                                            SizedBox(
+                                              width: 60,
+                                              child: Center(
+                                                child: Text(
+                                                  order.totItm.toString(),
+                                                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                                                ),
+                                              ),
+                                            ),
+
+                                            // Qty
+                                            SizedBox(
+                                              width: 80,
+                                              child: Align(
+                                                alignment: Alignment.centerRight,
+                                                child: Text(
+                                                  order.totQty.toStringAsFixed(1),
+                                                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF0F172A)),
+                                                ),
+                                              ),
+                                            ),
+
+                                            // Gross
+                                            SizedBox(
+                                              width: 95,
+                                              child: Align(
+                                                alignment: Alignment.centerRight,
+                                                child: Text(
+                                                  order.totAmt.toStringAsFixed(2),
+                                                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                                                ),
+                                              ),
+                                            ),
+
+                                            // Discount
+                                            SizedBox(
+                                              width: 80,
+                                              child: Align(
+                                                alignment: Alignment.centerRight,
+                                                child: Text(
+                                                  order.totDisc.toStringAsFixed(2),
+                                                  style: const TextStyle(fontSize: 11.5, color: Color(0xFFE11D48)),
+                                                ),
+                                              ),
+                                            ),
+
+                                            // Net Amount
+                                            SizedBox(
+                                              width: 110,
+                                              child: Align(
+                                                alignment: Alignment.centerRight,
+                                                child: Text(
+                                                  '₹ ${order.netAmt.toStringAsFixed(2)}',
+                                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
+                                                ),
+                                              ),
+                                            ),
+
+                                            // Status Badge
+                                            SizedBox(
+                                              width: 90,
+                                              child: Center(
+                                                child: Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: order.isRec
+                                                        ? const Color(0xFFDCFCE7)
+                                                        : (order.approved ? const Color(0xFFEFF6FF) : const Color(0xFFFEF3C7)),
+                                                    borderRadius: BorderRadius.circular(10),
+                                                  ),
+                                                  child: Text(
+                                                    order.isRec ? 'Delivered' : (order.approved ? 'Approved' : 'Pending'),
+                                                    style: TextStyle(
+                                                      fontSize: 10,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: order.isRec
+                                                          ? const Color(0xFF15803D)
+                                                          : (order.approved ? const Color(0xFF1D4ED8) : const Color(0xFFB45309)),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+
+                                            // Actions (Edit & Delete)
+                                            SizedBox(
+                                              width: 80,
+                                              child: Row(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  IconButton(
+                                                    icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF2563EB)),
+                                                    onPressed: () => _openEditWizard(order),
+                                                    tooltip: 'Edit Sales Order',
+                                                    splashRadius: 14,
+                                                    padding: EdgeInsets.zero,
+                                                    constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  IconButton(
+                                                    icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFE11D48)),
+                                                    onPressed: () => _confirmDelete(order),
+                                                    tooltip: 'Delete Sales Order',
+                                                    splashRadius: 14,
+                                                    padding: EdgeInsets.zero,
+                                                    constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 90,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit_outlined, size: 17, color: AppColors.primaryColor),
-                              onPressed: () => _openEditWizard(order),
-                              tooltip: 'Edit Order',
-                              splashRadius: 16,
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline_rounded, size: 17, color: AppColors.error),
-                              onPressed: () => _confirmDelete(order),
-                              tooltip: 'Delete Order',
-                              splashRadius: 16,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
+                        );
+                      },
+                    ),
             ),
           ),
         ],
@@ -838,7 +1205,7 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
       children: [
         Text(
           'Total Records: $_totalCount (Showing page $_currentPage of ${totalPages == 0 ? 1 : totalPages})',
-          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
         ),
         Row(
           children: [
@@ -867,41 +1234,61 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
   }
 
   // ==========================================================================
-  // WIZARD OVERLAY MODAL (3-STEP WIZARD)
+  // 3. WIZARD OVERLAY MODAL (BOM-STYLE 3-STEP PROGRESS HEADER)
   // ==========================================================================
   Widget _buildWizardModalOverlay() {
+    final size = MediaQuery.of(context).size;
+    final modalWidth = (size.width * 0.88).clamp(900.0, 1150.0);
+    final modalHeight = (size.height * 0.88).clamp(580.0, 740.0);
+
     return Container(
-      color: Colors.black.withOpacity(0.5),
+      color: Colors.black.withValues(alpha: 0.5),
       child: Center(
         child: Container(
-          width: 980,
-          height: 680,
+          width: modalWidth,
+          height: modalHeight,
           decoration: BoxDecoration(
-            color: AppColors.cardBackground,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.divider.withOpacity(0.6)),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.8), width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.35),
-                blurRadius: 30,
-                offset: const Offset(0, 15),
+                color: Colors.black.withValues(alpha: 0.28),
+                blurRadius: 36,
+                offset: const Offset(0, 14),
               ),
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildWizardHeader(),
-              _buildWizardStepIndicator(),
-              if (_wizardError != null) _buildWizardErrorBanner(),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: _buildCurrentStepContent(),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildWizardHeader(),
+
+                // Dedicated BOM-style 3-Step Progress Bar
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 4),
+                  child: SoStepProgressBar(
+                    currentStep: _currentStep,
+                    onStepSelected: (s) {
+                      setState(() => _currentStep = s);
+                    },
+                  ),
                 ),
-              ),
-              _buildWizardFooter(),
-            ],
+
+                if (_wizardError != null) _buildWizardErrorBanner(),
+
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    child: _buildCurrentStepContent(),
+                  ),
+                ),
+
+                _buildWizardFooter(),
+              ],
+            ),
           ),
         ),
       ),
@@ -910,23 +1297,22 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
 
   Widget _buildWizardHeader() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.sidebarBackground.withOpacity(0.6),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-        border: Border(bottom: BorderSide(color: AppColors.divider.withOpacity(0.5))),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: const BoxDecoration(
+        color: Color(0xFFF8FAFC),
+        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(7),
             decoration: BoxDecoration(
-              color: AppColors.primaryColor.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(8),
+              color: const Color(0xFFEEF2FF),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               _isEditing ? Icons.edit_note_rounded : Icons.post_add_rounded,
-              color: AppColors.primaryColor,
+              color: const Color(0xFF2563EB),
               size: 22,
             ),
           ),
@@ -936,100 +1322,22 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
             children: [
               Text(
                 _isEditing ? 'Edit Sales Order (${_soNoCtrl.text})' : 'Generate New Sales Order',
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
               ),
-              Text(
-                'Complete metadata, add line items, configure duties and save to database',
-                style: TextStyle(fontSize: 11, color: AppColors.textSecondary.withOpacity(0.85)),
+              const Text(
+                'Complete party info, populate line item details, configure duties & save',
+                style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
               ),
             ],
           ),
           const Spacer(),
           IconButton(
-            icon: const Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
+            icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF64748B)),
             onPressed: _closeWizard,
             splashRadius: 18,
+            tooltip: 'Close Modal',
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildWizardStepIndicator() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: AppColors.divider.withOpacity(0.3))),
-      ),
-      child: Row(
-        children: [
-          _buildStepItem(1, 'Header & Customer', 'Order info & customer', _currentStep == 1, _currentStep > 1),
-          const Expanded(child: Divider(color: AppColors.divider, thickness: 1)),
-          _buildStepItem(2, 'Line Items Grid', 'Add catalog items (${_lineItems.length})', _currentStep == 2, _currentStep > 2),
-          const Expanded(child: Divider(color: AppColors.divider, thickness: 1)),
-          _buildStepItem(3, 'Review & Charges', 'Totals & commercial terms', _currentStep == 3, false),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStepItem(int step, String title, String subtitle, bool isActive, bool isDone) {
-    return InkWell(
-      onTap: () => setState(() => _currentStep = step),
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Row(
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isDone
-                    ? AppColors.success
-                    : (isActive ? AppColors.primaryColor : AppColors.surface),
-                border: Border.all(
-                  color: isDone
-                      ? AppColors.success
-                      : (isActive ? AppColors.primaryColor : AppColors.divider),
-                  width: 1.5,
-                ),
-              ),
-              child: Center(
-                child: isDone
-                    ? const Icon(Icons.check_rounded, color: Colors.white, size: 16)
-                    : Text(
-                        step.toString(),
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: isActive ? Colors.white : AppColors.textSecondary,
-                        ),
-                      ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                    color: isActive ? AppColors.primaryColor : AppColors.textPrimary,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: const TextStyle(fontSize: 10.5, color: AppColors.textSecondary),
-                ),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -1037,19 +1345,19 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
   Widget _buildWizardErrorBanner() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      color: AppColors.error.withOpacity(0.1),
+      color: const Color(0xFFFEF2F2),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 16),
+          const Icon(Icons.error_outline_rounded, color: Color(0xFFDC2626), size: 16),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               _wizardError!,
-              style: const TextStyle(color: AppColors.error, fontSize: 12, fontWeight: FontWeight.w500),
+              style: const TextStyle(color: Color(0xFFDC2626), fontSize: 12, fontWeight: FontWeight.w500),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.close_rounded, size: 14, color: AppColors.error),
+            icon: const Icon(Icons.close_rounded, size: 14, color: Color(0xFFDC2626)),
             onPressed: () => setState(() => _wizardError = null),
             splashRadius: 14,
           ),
@@ -1071,7 +1379,7 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
   }
 
   // ==========================================================================
-  // STEP 1: HEADER METADATA
+  // STEP 1: HEADER METADATA & PARTY
   // ==========================================================================
   Widget _buildStep1HeaderMetadata() {
     return SingleChildScrollView(
@@ -1091,7 +1399,7 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('SO Date *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                    const Text('SO Date *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
                     const SizedBox(height: 6),
                     InkWell(
                       onTap: () async {
@@ -1117,15 +1425,15 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                         height: 38,
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.divider),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFCBD5E1)),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(_soDate.toIso8601String().split('T').first, style: const TextStyle(fontSize: 12.5)),
-                            const Icon(Icons.calendar_today_rounded, size: 16, color: AppColors.textSecondary),
+                            const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFF64748B)),
                           ],
                         ),
                       ),
@@ -1145,25 +1453,29 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
               ),
             ],
           ),
+
           const SizedBox(height: 16),
-          // Customer / Debtor Lookup Card
+
+          // Customer / Debtor Lookup Card (Triggers Group Master parity modal)
           _buildCustomerSelectionCard(),
+
           const SizedBox(height: 16),
-          // Row 3: Order Mode, Store Mode, Division
+
+          // Row 2: Mode, Cap Cons Store, Division
           Row(
             children: [
               Expanded(
                 child: _buildDropdown(
                   label: 'Order Mode',
                   value: _soMode,
-                  items: const ['Direct', 'Against Quo', 'Indent'],
+                  items: const ['Direct', 'Through Agent', 'Export', 'Tender'],
                   onChanged: (val) => setState(() => _soMode = val ?? 'Direct'),
                 ),
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: _buildLookupDropdown(
-                  label: 'Store Mode (CapCons)',
+                  label: 'Cap Cons Store Location',
                   value: _somCapMode,
                   items: _lookups?.capModes ?? [],
                   onChanged: (val) => setState(() => _somCapMode = val ?? 0),
@@ -1180,8 +1492,10 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
               ),
             ],
           ),
+
           const SizedBox(height: 16),
-          // Row 4: Credit Days, Delivery Days, Sales Person, Supp Ref
+
+          // Row 3: Credit Days, Delivery Days, Sales Person, Supp Ref
           Row(
             children: [
               Expanded(
@@ -1202,7 +1516,7 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
               ),
               const SizedBox(width: 14),
               Expanded(
-                child: _buildTextField('Customer Order Ref (Supp Ref)', _suppRefCtrl),
+                child: _buildTextField('Supplier Reference', _suppRefCtrl),
               ),
             ],
           ),
@@ -1212,14 +1526,14 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
   }
 
   Widget _buildCustomerSelectionCard() {
-    final hasParty = _pCode > 0;
+    final hasParty = _pCode > 0 && _partyName.isNotEmpty;
 
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: hasParty ? AppColors.primaryColor.withOpacity(0.3) : AppColors.divider),
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: hasParty ? const Color(0xFF10B981) : const Color(0xFFE2E8F0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1229,9 +1543,9 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
             children: [
               const Row(
                 children: [
-                  Icon(Icons.person_pin_rounded, color: AppColors.primaryColor, size: 18),
+                  Icon(Icons.person_pin_rounded, color: Color(0xFF2563EB), size: 18),
                   SizedBox(width: 8),
-                  Text('Customer / Debtor *', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                  Text('Customer / Debtor Account *', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
                 ],
               ),
               ElevatedButton.icon(
@@ -1244,45 +1558,58 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                     setState(() {
                       _pCode = selected.pCode;
                       _partyName = selected.pName;
-                      _gstin = selected.gstin;
-                      _stateCode = selected.stateCode;
+                      _gstin = selected.gstIn;
+                      _stateCode = selected.state;
                       _address = selected.address;
                       _wizardError = null;
                     });
                   }
                 },
-                icon: const Icon(Icons.search_rounded, size: 15),
+                icon: const Icon(Icons.search_rounded, size: 15, color: Colors.white),
                 label: Text(hasParty ? 'Change Customer' : 'Select Customer'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
+                  backgroundColor: const Color(0xFF2563EB),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
               ),
             ],
           ),
           if (hasParty) ...[
             const SizedBox(height: 10),
-            Text(
-              _partyName,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-            ),
-            const SizedBox(height: 4),
             Row(
               children: [
-                Text('GSTIN: ${_gstin.isNotEmpty ? _gstin : 'Unregistered'}', style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEEF2FF),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text('#$_pCode', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  _partyName,
+                  style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Text('GSTIN: ${_gstin.isNotEmpty ? _gstin : 'Unregistered'}', style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
                 const SizedBox(width: 16),
-                Text('State Code: ${_stateCode.isNotEmpty ? _stateCode : 'N/A'}', style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary)),
+                Text('State: ${_stateCode.isNotEmpty ? _stateCode : 'N/A'}', style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
               ],
             ),
             if (_address.isNotEmpty) ...[
-              const SizedBox(height: 2),
-              Text('Address: $_address', style: TextStyle(fontSize: 11, color: AppColors.textSecondary.withOpacity(0.8))),
+              const SizedBox(height: 3),
+              Text('Address: $_address', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
             ],
           ] else ...[
             const SizedBox(height: 8),
-            const Text('No customer selected yet. Click "Select Customer" to search debtors from PARTYMST.', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+            const Text('No customer selected yet. Click "Select Customer" to search debtors from PARTYMST.', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
           ],
         ],
       ),
@@ -1290,21 +1617,22 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
   }
 
   // ==========================================================================
-  // STEP 2: LINE ITEMS GRID
+  // STEP 2: LINE ITEMS GRID (EXACT COLUMNS PARITY WITH ADD ROW DIALOG)
   // ==========================================================================
   Widget _buildStep2LineItemsGrid() {
     return Column(
       children: [
+        // Grid Summary & Add Row Action
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               children: [
-                Text('Line Items (${_lineItems.length})', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                Text('Line Items (${_lineItems.length})', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
                 const SizedBox(width: 14),
-                Text('Total Qty: ${_totalQty.toStringAsFixed(1)}', style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
+                Text('Total Qty: ${_totalQty.toStringAsFixed(1)}', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
                 const SizedBox(width: 14),
-                Text('Gross Amount: ₹ ${_grossAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppColors.primaryColor)),
+                Text('Gross Amount: ₹ ${_grossAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
               ],
             ),
             ElevatedButton.icon(
@@ -1324,125 +1652,171 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                   ),
                 );
               },
-              icon: const Icon(Icons.add_rounded, size: 16),
+              icon: const Icon(Icons.add_rounded, size: 16, color: Colors.white),
               label: const Text('Add Line Item'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryColor,
+                backgroundColor: const Color(0xFF10B981),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
             ),
           ],
         ),
+
         const SizedBox(height: 12),
+
         Expanded(
           child: _lineItems.isEmpty
               ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.inventory_2_outlined, size: 48, color: AppColors.textSecondary.withOpacity(0.4)),
-                      const SizedBox(height: 10),
-                      const Text('No line items added yet. Click "Add Line Item" above.', style: TextStyle(color: AppColors.textSecondary)),
+                      Icon(Icons.inventory_2_outlined, size: 44, color: Colors.grey.shade400),
+                      const SizedBox(height: 8),
+                      const Text('No line items added yet. Click "Add Line Item" above.', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
                     ],
                   ),
                 )
               : Container(
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.divider),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
-                  child: ListView.separated(
-                    itemCount: _lineItems.length,
-                    separatorBuilder: (_, __) => Divider(height: 1, color: AppColors.divider.withOpacity(0.3)),
-                    itemBuilder: (context, index) {
-                      final it = _lineItems[index];
-
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 26,
-                              height: 26,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: AppColors.cardBackground,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: AppColors.divider),
-                              ),
-                              child: Text(it.srNo.toString(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              flex: 4,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(it.itemName, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                                  Text('Code: ${it.iCode} • Division: ${it.divisionName.isNotEmpty ? it.divisionName : 'N/A'}', style: TextStyle(fontSize: 10.5, color: AppColors.textSecondary.withOpacity(0.8))),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              flex: 2,
-                              child: Text('${it.qty} ${it.unitName}', textAlign: TextAlign.right, style: const TextStyle(fontSize: 12, color: AppColors.textPrimary)),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              flex: 2,
-                              child: Text('₹ ${it.rate.toStringAsFixed(2)}', textAlign: TextAlign.right, style: const TextStyle(fontSize: 12, color: AppColors.textPrimary)),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              flex: 2,
-                              child: Text('₹ ${it.disc.toStringAsFixed(2)}', textAlign: TextAlign.right, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              flex: 2,
-                              child: Text('₹ ${it.amount.toStringAsFixed(2)}', textAlign: TextAlign.right, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppColors.primaryColor)),
-                            ),
-                            const SizedBox(width: 8),
-                            IconButton(
-                              icon: const Icon(Icons.edit_outlined, size: 16, color: AppColors.primaryColor),
-                              onPressed: () async {
-                                await showDialog<SalesOrderItem>(
-                                  context: context,
-                                  builder: (_) => AddSoRowDialog(
-                                    service: _service,
-                                    costCenters: _lookups?.costCenters ?? [],
-                                    initialItem: it,
-                                    nextSrNo: it.srNo,
-                                    onSave: (updated) {
-                                      setState(() {
-                                        _lineItems[index] = updated;
-                                      });
-                                    },
-                                  ),
-                                );
-                              },
-                              splashRadius: 16,
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline_rounded, size: 16, color: AppColors.error),
-                              onPressed: () {
-                                setState(() {
-                                  _lineItems.removeAt(index);
-                                  for (int i = 0; i < _lineItems.length; i++) {
-                                    _lineItems[i] = _lineItems[i].copyWith(srNo: i + 1);
-                                  }
-                                });
-                              },
-                              splashRadius: 16,
-                            ),
-                          ],
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Column(
+                      children: [
+                        // Column Headers matching Add Row Dialog exactly
+                        Container(
+                          height: 36,
+                          color: const Color(0xFFF8FAFC),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: const Row(
+                            children: [
+                              SizedBox(width: 35, child: Text('SR', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
+                              SizedBox(width: 90, child: Text('ITEM CODE', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
+                              Expanded(flex: 3, child: Text('ITEM DESCRIPTION', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
+                              SizedBox(width: 100, child: Text('DIVISION', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
+                              SizedBox(width: 60, child: Text('UOM', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
+                              SizedBox(width: 70, child: Text('QTY', textAlign: TextAlign.right, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
+                              SizedBox(width: 80, child: Text('RATE (₹)', textAlign: TextAlign.right, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
+                              SizedBox(width: 75, child: Text('DISC (₹)', textAlign: TextAlign.right, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
+                              SizedBox(width: 95, child: Text('AMOUNT (₹)', textAlign: TextAlign.right, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF059669)))),
+                              SizedBox(width: 80, child: Center(child: Text('ACTIONS', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF475569))))),
+                            ],
+                          ),
                         ),
-                      );
-                    },
+
+                        const Divider(height: 1, color: Color(0xFFE2E8F0)),
+
+                        // Line Items Rows
+                        Expanded(
+                          child: ListView.separated(
+                            itemCount: _lineItems.length,
+                            separatorBuilder: (ctx, idx) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                            itemBuilder: (context, index) {
+                              final it = _lineItems[index];
+
+                              return Container(
+                                height: 40,
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                child: Row(
+                                  children: [
+                                    SizedBox(
+                                      width: 35,
+                                      child: Text(it.srNo.toString(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                                    ),
+                                    SizedBox(
+                                      width: 90,
+                                      child: Text(it.iCode, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
+                                    ),
+                                    Expanded(
+                                      flex: 3,
+                                      child: Text(
+                                        it.itemName,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 100,
+                                      child: Text(it.divisionName.isNotEmpty ? it.divisionName : '—', style: const TextStyle(fontSize: 11, color: Color(0xFF475569))),
+                                    ),
+                                    SizedBox(
+                                      width: 60,
+                                      child: Text(it.unitName.isNotEmpty ? it.unitName : '—', style: const TextStyle(fontSize: 11, color: Color(0xFF475569))),
+                                    ),
+                                    SizedBox(
+                                      width: 70,
+                                      child: Text(it.qty.toStringAsFixed(1), textAlign: TextAlign.right, style: const TextStyle(fontSize: 11.5, color: Color(0xFF0F172A))),
+                                    ),
+                                    SizedBox(
+                                      width: 80,
+                                      child: Text('₹ ${it.rate.toStringAsFixed(2)}', textAlign: TextAlign.right, style: const TextStyle(fontSize: 11.5, color: Color(0xFF0F172A))),
+                                    ),
+                                    SizedBox(
+                                      width: 75,
+                                      child: Text('₹ ${it.disc.toStringAsFixed(2)}', textAlign: TextAlign.right, style: const TextStyle(fontSize: 11.5, color: Color(0xFFE11D48))),
+                                    ),
+                                    SizedBox(
+                                      width: 95,
+                                      child: Text('₹ ${it.amount.toStringAsFixed(2)}', textAlign: TextAlign.right, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
+                                    ),
+                                    SizedBox(
+                                      width: 80,
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          IconButton(
+                                            icon: const Icon(Icons.edit_outlined, size: 15, color: Color(0xFF2563EB)),
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                                            onPressed: () async {
+                                              await showDialog<SalesOrderItem>(
+                                                context: context,
+                                                builder: (_) => AddSoRowDialog(
+                                                  service: _service,
+                                                  costCenters: _lookups?.costCenters ?? [],
+                                                  initialItem: it,
+                                                  nextSrNo: it.srNo,
+                                                  onSave: (updated) {
+                                                    setState(() {
+                                                      _lineItems[index] = updated;
+                                                    });
+                                                  },
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                          const SizedBox(width: 4),
+                                          IconButton(
+                                            icon: const Icon(Icons.delete_outline_rounded, size: 15, color: Color(0xFFE11D48)),
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                                            onPressed: () {
+                                              setState(() {
+                                                _lineItems.removeAt(index);
+                                                // Re-index SrNo
+                                                for (int i = 0; i < _lineItems.length; i++) {
+                                                  _lineItems[i] = _lineItems[i].copyWith(srNo: i + 1);
+                                                }
+                                              });
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
         ),
@@ -1462,23 +1836,36 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.divider),
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
             child: Column(
               children: [
                 _buildTotalRow('Items Gross Amount', '₹ ${_grossAmount.toStringAsFixed(2)}', isBold: false),
                 const SizedBox(height: 6),
-                _buildTotalRow('Total Line Discounts (−)', '₹ ${_totalItemDiscounts.toStringAsFixed(2)}', isBold: false, color: AppColors.error),
+                _buildTotalRow('Total Line Discounts (−)', '₹ ${_totalItemDiscounts.toStringAsFixed(2)}', isBold: false, color: const Color(0xFFE11D48)),
                 const SizedBox(height: 6),
-                _buildTotalRow('Duties & Additional Charges (Net)', '${_chargesNetEffect >= 0 ? '+' : ''} ₹ ${_chargesNetEffect.toStringAsFixed(2)}', isBold: false, color: _chargesNetEffect >= 0 ? AppColors.success : AppColors.error),
-                const Divider(height: 16, color: AppColors.divider),
-                _buildTotalRow('Final Order Net Amount', '₹ ${_finalNetAmount.toStringAsFixed(2)}', isBold: true, color: AppColors.primaryColor, fontSize: 16),
+                _buildTotalRow(
+                  'Duties & Additional Charges (Net)',
+                  '${_chargesNetEffect >= 0 ? '+' : ''} ₹ ${_chargesNetEffect.toStringAsFixed(2)}',
+                  isBold: false,
+                  color: _chargesNetEffect >= 0 ? const Color(0xFF059669) : const Color(0xFFE11D48),
+                ),
+                const Divider(height: 16, color: Color(0xFFE2E8F0)),
+                _buildTotalRow(
+                  'Final Order Net Amount',
+                  '₹ ${_finalNetAmount.toStringAsFixed(2)}',
+                  isBold: true,
+                  color: const Color(0xFF059669),
+                  fontSize: 16,
+                ),
               ],
             ),
           ),
+
           const SizedBox(height: 16),
+
           // Auxiliary Action Buttons (Charges & Terms)
           Row(
             children: [
@@ -1497,11 +1884,11 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                       setState(() => _charges = res);
                     }
                   },
-                  icon: const Icon(Icons.calculate_rounded, size: 18),
+                  icon: const Icon(Icons.calculate_rounded, size: 18, color: Color(0xFF2563EB)),
                   label: Text('Duties & Additional Charges (${_charges.length})'),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ),
@@ -1517,28 +1904,30 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                       setState(() => _conditions = res);
                     }
                   },
-                  icon: const Icon(Icons.gavel_rounded, size: 18),
+                  icon: const Icon(Icons.gavel_rounded, size: 18, color: Color(0xFF8B5CF6)),
                   label: Text('Terms & Conditions (${_conditions.length})'),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ),
             ],
           ),
+
           const SizedBox(height: 16),
+
           // Remarks Field & Autocomplete Chips
-          const Text('Order Remarks / Special Notes', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          const Text('Order Remarks / Special Notes', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
           const SizedBox(height: 6),
           TextField(
             controller: _remarkCtrl,
             maxLines: 2,
-            style: const TextStyle(fontSize: 12.5, color: AppColors.textPrimary),
+            style: const TextStyle(fontSize: 12.5, color: Color(0xFF0F172A)),
             decoration: InputDecoration(
               hintText: 'Enter general order remarks, internal remarks, or special instructions...',
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.divider)),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
             ),
           ),
           if (_remarkSuggestions.isNotEmpty) ...[
@@ -1571,8 +1960,8 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(fontSize: fontSize, fontWeight: isBold ? FontWeight.bold : FontWeight.w500, color: AppColors.textPrimary)),
-        Text(value, style: TextStyle(fontSize: fontSize, fontWeight: isBold ? FontWeight.bold : FontWeight.w600, color: color ?? AppColors.textPrimary)),
+        Text(label, style: TextStyle(fontSize: fontSize, fontWeight: isBold ? FontWeight.bold : FontWeight.w500, color: const Color(0xFF0F172A))),
+        Text(value, style: TextStyle(fontSize: fontSize, fontWeight: isBold ? FontWeight.bold : FontWeight.w600, color: color ?? const Color(0xFF0F172A))),
       ],
     );
   }
@@ -1583,10 +1972,9 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
   Widget _buildWizardFooter() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(14)),
-        border: Border(top: BorderSide(color: AppColors.divider.withOpacity(0.5))),
+      decoration: const BoxDecoration(
+        color: Color(0xFFF8FAFC),
+        border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1595,7 +1983,7 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
             onPressed: _closeWizard,
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text('Cancel'),
           ),
@@ -1608,7 +1996,7 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                   label: const Text('Back'),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -1629,13 +2017,13 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                       _currentStep++;
                     });
                   },
-                  icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+                  icon: const Icon(Icons.arrow_forward_rounded, size: 16, color: Colors.white),
                   label: const Text('Next Step'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryColor,
+                    backgroundColor: const Color(0xFF2563EB),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 )
               else
@@ -1660,18 +2048,19 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
         const SizedBox(height: 6),
         TextField(
           controller: ctrl,
           readOnly: readOnly,
           keyboardType: keyboardType,
-          style: TextStyle(fontSize: 12.5, color: readOnly ? AppColors.textSecondary : AppColors.textPrimary),
+          style: TextStyle(fontSize: 12.5, color: readOnly ? const Color(0xFF64748B) : const Color(0xFF0F172A)),
           decoration: InputDecoration(
             filled: readOnly,
-            fillColor: readOnly ? AppColors.surface : AppColors.cardBackground,
+            fillColor: readOnly ? const Color(0xFFF1F5F9) : Colors.white,
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.divider)),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
           ),
         ),
       ],
@@ -1687,21 +2076,21 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
         const SizedBox(height: 6),
         Container(
           height: 38,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.divider),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFCBD5E1)),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: items.contains(value) ? value : (items.isNotEmpty ? items.first : null),
               isExpanded: true,
-              style: const TextStyle(fontSize: 12.5, color: AppColors.textPrimary),
+              style: const TextStyle(fontSize: 12.5, color: Color(0xFF0F172A)),
               items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
               onChanged: onChanged,
             ),
@@ -1720,21 +2109,21 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
         const SizedBox(height: 6),
         Container(
           height: 38,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.divider),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFCBD5E1)),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<int>(
               value: items.any((e) => e.code == value) ? value : (items.isNotEmpty ? items.first.code : null),
               isExpanded: true,
-              style: const TextStyle(fontSize: 12.5, color: AppColors.textPrimary),
+              style: const TextStyle(fontSize: 12.5, color: Color(0xFF0F172A)),
               items: items.map((e) => DropdownMenuItem(value: e.code, child: Text(e.name))).toList(),
               onChanged: onChanged,
             ),

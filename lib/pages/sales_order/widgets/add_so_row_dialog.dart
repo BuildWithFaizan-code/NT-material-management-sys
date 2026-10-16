@@ -167,10 +167,10 @@ class _AddSoRowDialogState extends State<AddSoRowDialog> {
         decoration: BoxDecoration(
           color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.divider.withOpacity(0.5)),
+          border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 24,
               offset: const Offset(0, 10),
             ),
@@ -219,16 +219,16 @@ class _AddSoRowDialogState extends State<AddSoRowDialog> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.sidebarBackground.withOpacity(0.5),
+        color: AppColors.sidebarBackground.withValues(alpha: 0.5),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-        border: Border(bottom: BorderSide(color: AppColors.divider.withOpacity(0.5))),
+        border: Border(bottom: BorderSide(color: AppColors.divider.withValues(alpha: 0.5))),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: AppColors.primaryColor.withOpacity(0.12),
+              color: AppColors.primaryColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Icon(
@@ -266,7 +266,7 @@ class _AddSoRowDialogState extends State<AddSoRowDialog> {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: _itemError != null ? AppColors.error : AppColors.divider.withOpacity(0.6),
+          color: _itemError != null ? AppColors.error : AppColors.divider.withValues(alpha: 0.6),
         ),
       ),
       child: Row(
@@ -445,9 +445,9 @@ class _AddSoRowDialogState extends State<AddSoRowDialog> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.primaryColor.withOpacity(0.06),
+        color: AppColors.primaryColor.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.primaryColor.withOpacity(0.2)),
+        border: Border.all(color: AppColors.primaryColor.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -481,7 +481,7 @@ class _AddSoRowDialogState extends State<AddSoRowDialog> {
           style: const TextStyle(fontSize: 12.5, color: AppColors.textPrimary),
           decoration: InputDecoration(
             hintText: 'Enter technical specifications, batch criteria, or notes...',
-            hintStyle: TextStyle(fontSize: 12, color: AppColors.textSecondary.withOpacity(0.7)),
+            hintStyle: TextStyle(fontSize: 12, color: AppColors.textSecondary.withValues(alpha: 0.7)),
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppColors.divider)),
           ),
@@ -496,7 +496,7 @@ class _AddSoRowDialogState extends State<AddSoRowDialog> {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
-        border: Border(top: BorderSide(color: AppColors.divider.withOpacity(0.5))),
+        border: Border(top: BorderSide(color: AppColors.divider.withValues(alpha: 0.5))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,

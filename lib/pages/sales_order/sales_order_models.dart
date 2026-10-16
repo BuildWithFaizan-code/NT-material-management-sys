@@ -648,6 +648,9 @@ class CustomerLookup {
   final String stateCode;
   final String address;
 
+  String get gstIn => gstin;
+  String get state => stateCode;
+
   const CustomerLookup({
     required this.pCode,
     required this.pName,
@@ -676,6 +679,11 @@ class SalesOrderItemLookup {
   final String unitName;
   final int iBlock;
   final String hsn;
+
+  String get hsnCode => hsn;
+  String get groupName => '';
+  double get balQty => 0.0;
+  double get rate => 0.0;
 
   const SalesOrderItemLookup({
     required this.iCode,
