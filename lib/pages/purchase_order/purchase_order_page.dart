@@ -693,11 +693,29 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage> {
       try {
         await _service.deletePurchaseOrder(poNo);
         await _loadInitialData();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Purchase Order $poNo deleted successfully.'),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       } catch (e) {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = 'Failed to delete PO: $e';
-        });
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete PO: $e'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
       }
     }
   }

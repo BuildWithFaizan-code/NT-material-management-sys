@@ -810,14 +810,9 @@ namespace MMSERP.Api.Repositories
                     throw new KeyNotFoundException($"Purchase Order '{poNo}' was not found.");
                 }
 
-                int appVal = 0, recVal = 0;
-                try { appVal = Convert.ToInt32(po.Approved); } catch { }
+                int recVal = 0;
                 try { recVal = Convert.ToInt32(po.IsRec); } catch { }
 
-                if (appVal != 0)
-                {
-                    throw new InvalidOperationException($"Purchase Order '{poNo}' is APPROVED and cannot be deleted.");
-                }
                 if (recVal != 0)
                 {
                     throw new InvalidOperationException($"Purchase Order '{poNo}' has Goods Receipt Notes (GRN) and cannot be deleted.");
@@ -845,7 +840,8 @@ namespace MMSERP.Api.Repositories
                     CompanyName = companyName
                 }, tx);
 
-                // 3. Delete records
+                // 3. Delete records (including advances, stockreg commitments, charges, conditions, and items)
+                await conn.ExecuteAsync("DELETE FROM POADVANCEMST WHERE LTRIM(RTRIM(PO_NO)) = @PoNo;", new { PoNo = poNo }, tx);
                 await conn.ExecuteAsync("DELETE FROM stockregnew WHERE LTRIM(RTRIM(SR_Code)) = @PoNo AND mode IN ('PO');", new { PoNo = poNo }, tx);
                 await conn.ExecuteAsync("DELETE FROM ChargesDet WHERE mode = 'PURCHASE' AND LTRIM(RTRIM(Code)) = @PoNo;", new { PoNo = poNo }, tx);
                 await conn.ExecuteAsync("DELETE FROM ConditionDet WHERE LTRIM(RTRIM(Code)) = @PoNo;", new { PoNo = poNo }, tx);
