@@ -919,20 +919,23 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                         ],
                       ),
                     )
-                  : Scrollbar(
-                      controller: _tableHorizScrollCtrl,
-                      thumbVisibility: true,
-                      trackVisibility: true,
-                      scrollbarOrientation: ScrollbarOrientation.bottom,
-                      child: SingleChildScrollView(
-                        controller: _tableHorizScrollCtrl,
-                        scrollDirection: Axis.horizontal,
-                        physics: const ClampingScrollPhysics(),
-                        child: SizedBox(
-                          width: 1700.0,
-                          child: Column(
-                            children: [
-                              // Column Header Bar with Vector Icons & Natural Color Accents
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        final tableWidth = constraints.maxWidth > 1760.0 ? constraints.maxWidth : 1760.0;
+                        return Scrollbar(
+                          controller: _tableHorizScrollCtrl,
+                          thumbVisibility: true,
+                          trackVisibility: true,
+                          scrollbarOrientation: ScrollbarOrientation.bottom,
+                          child: SingleChildScrollView(
+                            controller: _tableHorizScrollCtrl,
+                            scrollDirection: Axis.horizontal,
+                            physics: const ClampingScrollPhysics(),
+                            child: SizedBox(
+                              width: tableWidth,
+                              child: Column(
+                                children: [
+                                  // Column Header Bar with Vector Icons & Natural Color Accents
                               Container(
                                 height: 38,
                                 decoration: const BoxDecoration(
@@ -1300,7 +1303,9 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                           ),
                         ),
                       ),
-                    ),
+                    );
+                  },
+                ),
             ),
           ),
         ],
