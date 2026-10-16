@@ -71,4 +71,11 @@ class AppColors {
   static const Color glowPink = Color(0xFFEC4899);
   static const Color glowPurple = Color(0xFF8B5CF6);
   static const Color tagIndigo = Color(0xFF6366F1);
+
+  // Surface and Typography Aliases
+  static const Color surface = surfaceColor;
+  static const Color cardBackground = surfaceColor;
+  static const Color sidebarBackground = primaryColor;
+  static const Color textPrimary = bodyText;
+  static const Color textSecondary = slateMuted;
 }

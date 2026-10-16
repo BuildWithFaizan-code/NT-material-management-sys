@@ -252,6 +252,8 @@ builder.Services.AddScoped<IPurchaseOrderApprovalRepository, PurchaseOrderApprov
 builder.Services.AddScoped<IPurchaseOrderApprovalService, PurchaseOrderApprovalService>();
 builder.Services.AddScoped<IPurchaseOrderAdvanceRepository, PurchaseOrderAdvanceRepository>();
 builder.Services.AddScoped<IPurchaseOrderAdvanceService, PurchaseOrderAdvanceService>();
+builder.Services.AddScoped<ISalesOrderRepository, SalesOrderRepository>();
+builder.Services.AddScoped<ISalesOrderService, SalesOrderService>();
 
 var app = builder.Build();
 

@@ -32,6 +32,7 @@ import '../pages/bom/bom_followup_page.dart';
 import '../pages/purchase_order/purchase_order_page.dart';
 import '../pages/purchase_order_approval/po_approval_page.dart';
 import '../pages/purchase_order_advance/po_advance_page.dart';
+import '../pages/sales_order/sales_order_page.dart';
 import '../pages/user_management_page.dart';
 import '../services/auth_service.dart';
 import 'widgets/master_nav_item.dart';
@@ -283,10 +284,7 @@ class LargeScreenLayout extends StatelessWidget {
 
       // Sales Order
       case 'Generate Sales Order':
-        return const TransactionPlaceholderPage(
-          title: 'Generate Sales Order',
-          icon: Icons.add_shopping_cart_outlined,
-        );
+        return const SalesOrderPage();
       case 'Release Sales Order':
         return const TransactionPlaceholderPage(
           title: 'Release Sales Order',

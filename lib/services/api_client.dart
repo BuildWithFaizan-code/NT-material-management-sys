@@ -114,8 +114,11 @@ class ApiClient {
   }
 
   /// Sends a DELETE request
-  Future<http.Response> delete(String url, {Map<String, String>? headers, Object? body}) async {
-    final uri = Uri.parse(url);
+  Future<http.Response> delete(String url, {Map<String, String>? headers, Map<String, String>? queryParams, Object? body}) async {
+    var uri = Uri.parse(url);
+    if (queryParams != null && queryParams.isNotEmpty) {
+      uri = uri.replace(queryParameters: queryParams);
+    }
     return _sendWithRetry(() async {
       final token = await TokenStorageService.instance.getAccessToken();
       return _client

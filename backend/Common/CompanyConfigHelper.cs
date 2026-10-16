@@ -25,5 +25,25 @@ namespace MMSERP.Api.Common
 
             return companyName.Trim();
         }
+
+        private const string DefaultLocationCode = "LWHL26_SQL";
+
+        /// <summary>
+        /// Reads LOCATION_CODE from environment variable or configuration.
+        /// Falls back to default 'LWHL26_SQL' if not explicitly configured.
+        /// </summary>
+        public static string ResolveLocationCode(IConfiguration configuration)
+        {
+            var locCode = Environment.GetEnvironmentVariable("LOCATION_CODE")
+                ?? configuration["LOCATION_CODE"]
+                ?? configuration["LocationCode"];
+
+            if (string.IsNullOrWhiteSpace(locCode))
+            {
+                return DefaultLocationCode;
+            }
+
+            return locCode.Trim();
+        }
     }
 }
