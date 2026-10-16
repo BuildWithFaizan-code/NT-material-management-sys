@@ -60,6 +60,7 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
 
   // Step 1: Header Metadata
   final TextEditingController _soNoCtrl = TextEditingController();
+  final TextEditingController _partyCtrl = TextEditingController();
   DateTime _soDate = DateTime.now();
   int _pCode = 0;
   String _partyName = '';
@@ -100,6 +101,7 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
     _tableScrollCtrl.dispose();
 
     _soNoCtrl.dispose();
+    _partyCtrl.dispose();
     _soCrDaysCtrl.dispose();
     _somDelDaysCtrl.dispose();
     _suppRefCtrl.dispose();
@@ -199,6 +201,7 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
     _soDate = DateTime.now();
     _pCode = 0;
     _partyName = '';
+    _partyCtrl.text = '';
     _gstin = '';
     _stateCode = '';
     _address = '';
@@ -237,6 +240,7 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
         _soDate = fullOrder.soDate;
         _pCode = fullOrder.pCode;
         _partyName = fullOrder.partyName;
+        _partyCtrl.text = fullOrder.partyName;
         _gstin = fullOrder.gstin;
         _stateCode = fullOrder.stateCode;
         _address = fullOrder.address;
@@ -1525,94 +1529,136 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
     );
   }
 
+  Future<void> _openCustomerLookup() async {
+    final selected = await showDialog<CustomerLookup>(
+      context: context,
+      builder: (_) => CustomerLookupDialog(service: _service),
+    );
+    if (selected != null) {
+      setState(() {
+        _pCode = selected.pCode;
+        _partyName = selected.pName;
+        _partyCtrl.text = selected.pName;
+        _gstin = selected.gstIn;
+        _stateCode = selected.state;
+        _address = selected.address;
+        _wizardError = null;
+      });
+    }
+  }
+
   Widget _buildCustomerSelectionCard() {
     final hasParty = _pCode > 0 && _partyName.isNotEmpty;
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: hasParty ? const Color(0xFF10B981) : const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Row(
-                children: [
-                  Icon(Icons.person_pin_rounded, color: Color(0xFF2563EB), size: 18),
-                  SizedBox(width: 8),
-                  Text('Customer / Debtor Account *', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEEF2FF),
+                borderRadius: BorderRadius.circular(5),
               ),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  final selected = await showDialog<CustomerLookup>(
-                    context: context,
-                    builder: (_) => CustomerLookupDialog(service: _service),
-                  );
-                  if (selected != null) {
-                    setState(() {
-                      _pCode = selected.pCode;
-                      _partyName = selected.pName;
-                      _gstin = selected.gstIn;
-                      _stateCode = selected.state;
-                      _address = selected.address;
-                      _wizardError = null;
-                    });
-                  }
-                },
-                icon: const Icon(Icons.search_rounded, size: 15, color: Colors.white),
-                label: Text(hasParty ? 'Change Customer' : 'Select Customer'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2563EB),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              child: const Icon(Icons.person_pin_rounded, size: 13, color: Color(0xFF6366F1)),
+            ),
+            const SizedBox(width: 5),
+            const Text(
+              'CUSTOMER / DEBTOR ACCOUNT',
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF6366F1),
+                letterSpacing: 0.4,
+              ),
+            ),
+            const Text(' *', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
+            if (hasParty) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEEF2FF),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: const Color(0xFFC7D2FE)),
+                ),
+                child: Text(
+                  '#$_pCode',
+                  style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF4338CA)),
                 ),
               ),
             ],
-          ),
-          if (hasParty) ...[
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          ],
+        ),
+        const SizedBox(height: 4),
+        SizedBox(
+          height: 35,
+          child: TextField(
+            controller: _partyCtrl,
+            readOnly: true,
+            onTap: _openCustomerLookup,
+            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+            decoration: InputDecoration(
+              hintText: 'Select or pick Customer / Debtor...',
+              hintStyle: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+              contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
+              filled: true,
+              fillColor: Colors.white,
+              suffixIcon: InkWell(
+                onTap: _openCustomerLookup,
+                borderRadius: BorderRadius.circular(6),
+                child: Container(
+                  margin: const EdgeInsets.all(3),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEEF2FF),
                     borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFFC7D2FE)),
                   ),
-                  child: Text('#$_pCode', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.search_rounded, size: 13, color: Color(0xFF4338CA)),
+                      SizedBox(width: 3),
+                      Text('Pick', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF4338CA))),
+                    ],
+                  ),
                 ),
-                const SizedBox(width: 10),
-                Text(
-                  _partyName,
-                  style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+              ),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5)),
+            ),
+          ),
+        ),
+        if (hasParty) ...[
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Text(
+                'GSTIN: ${_gstin.isNotEmpty ? _gstin : 'Unregistered'}',
+                style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(width: 14),
+              Text(
+                'State: ${_stateCode.isNotEmpty ? _stateCode : 'N/A'}',
+                style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+              ),
+              if (_address.isNotEmpty) ...[
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    'Address: $_address',
+                    style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
-            ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Text('GSTIN: ${_gstin.isNotEmpty ? _gstin : 'Unregistered'}', style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
-                const SizedBox(width: 16),
-                Text('State: ${_stateCode.isNotEmpty ? _stateCode : 'N/A'}', style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
-              ],
-            ),
-            if (_address.isNotEmpty) ...[
-              const SizedBox(height: 3),
-              Text('Address: $_address', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
             ],
-          ] else ...[
-            const SizedBox(height: 8),
-            const Text('No customer selected yet. Click "Select Customer" to search debtors from PARTYMST.', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-          ],
+          ),
         ],
-      ),
+      ],
     );
   }
 

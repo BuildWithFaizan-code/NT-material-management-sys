@@ -34,6 +34,7 @@ class _AddSoRowDialogState extends State<AddSoRowDialog> {
   int _khCode = 0;
   String _divisionName = '';
 
+  final TextEditingController _itemCtrl = TextEditingController();
   final TextEditingController _qtyCtrl = TextEditingController(text: '1.0');
   final TextEditingController _rateCtrl = TextEditingController(text: '0.0');
   final TextEditingController _discCtrl = TextEditingController(text: '0.0');
@@ -49,6 +50,7 @@ class _AddSoRowDialogState extends State<AddSoRowDialog> {
       final it = widget.initialItem!;
       _iCode = it.iCode;
       _itemName = it.itemName;
+      _itemCtrl.text = _iCode.isNotEmpty ? (_itemName.isNotEmpty ? '$_iCode - $_itemName' : _iCode) : '';
       _uom = it.uom;
       _unitName = it.unitName;
       _khCode = it.khCode;
@@ -73,6 +75,7 @@ class _AddSoRowDialogState extends State<AddSoRowDialog> {
 
   @override
   void dispose() {
+    _itemCtrl.dispose();
     _qtyCtrl.dispose();
     _rateCtrl.dispose();
     _discCtrl.dispose();
@@ -103,6 +106,7 @@ class _AddSoRowDialogState extends State<AddSoRowDialog> {
       setState(() {
         _iCode = selected.iCode;
         _itemName = selected.iName;
+        _itemCtrl.text = selected.iCode.isNotEmpty ? (selected.iName.isNotEmpty ? '${selected.iCode} - ${selected.iName}' : selected.iCode) : '';
         _uom = selected.unitCode;
         _unitName = selected.unitName;
         _itemError = null;
@@ -260,61 +264,119 @@ class _AddSoRowDialogState extends State<AddSoRowDialog> {
   Widget _buildItemSelector() {
     final hasItem = _iCode.isNotEmpty;
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: _itemError != null ? AppColors.error : AppColors.divider.withValues(alpha: 0.6),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  hasItem ? _itemName : 'Select Item from Catalog *',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: hasItem ? AppColors.textPrimary : AppColors.textSecondary,
-                  ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEEF2FF),
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: const Icon(Icons.sell_outlined, size: 13, color: Color(0xFF6366F1)),
+            ),
+            const SizedBox(width: 5),
+            const Text(
+              'ITEM CODE & NAME',
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF6366F1),
+                letterSpacing: 0.4,
+              ),
+            ),
+            const Text(' *', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold)),
+            if (hasItem) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEEF2FF),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: const Color(0xFFC7D2FE)),
                 ),
-                if (hasItem) ...[
-                  const SizedBox(height: 4),
-                  Row(
+                child: Text(
+                  '#$_iCode',
+                  style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF4338CA)),
+                ),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 4),
+        SizedBox(
+          height: 35,
+          child: TextField(
+            controller: _itemCtrl,
+            readOnly: true,
+            onTap: _openItemLookup,
+            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+            decoration: InputDecoration(
+              hintText: 'Select or pick Item from Catalog...',
+              hintStyle: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+              contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
+              filled: true,
+              fillColor: Colors.white,
+              suffixIcon: InkWell(
+                onTap: _openItemLookup,
+                borderRadius: BorderRadius.circular(6),
+                child: Container(
+                  margin: const EdgeInsets.all(3),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEEF2FF),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFFC7D2FE)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        'Code: $_iCode',
-                        style: const TextStyle(fontSize: 11, color: AppColors.primaryColor, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(width: 14),
-                      Text(
-                        'Unit: ${_unitName.isNotEmpty ? _unitName : 'N/A'}',
-                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                      ),
+                      Icon(Icons.search_rounded, size: 13, color: Color(0xFF4338CA)),
+                      SizedBox(width: 3),
+                      Text('Pick', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF4338CA))),
                     ],
                   ),
-                ],
-              ],
+                ),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: _itemError != null ? AppColors.error : const Color(0xFFCBD5E1)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: _itemError != null ? AppColors.error : const Color(0xFFCBD5E1)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+              ),
             ),
           ),
-          ElevatedButton.icon(
-            onPressed: _openItemLookup,
-            icon: const Icon(Icons.search_rounded, size: 16),
-            label: Text(hasItem ? 'Change' : 'Browse'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-            ),
+        ),
+        if (hasItem) ...[
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Text(
+                'Unit: ${_unitName.isNotEmpty ? _unitName : 'N/A'}',
+                style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+              ),
+              if (_itemName.isNotEmpty) ...[
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    _itemName,
+                    style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ],
           ),
         ],
-      ),
+      ],
     );
   }
 
