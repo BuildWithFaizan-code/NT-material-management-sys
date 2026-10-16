@@ -82,8 +82,9 @@ else
         Console.WriteLine("⚠️ WARNING: 'CORS_ALLOWED_ORIGINS' environment variable is NOT set in Production! Cross-origin requests may be blocked.");
         Console.ResetColor();
     }
-    // Hardcoded fallback origin if unset
+    // Hardcoded fallback origins if unset
     allowedOriginsList.Add("https://newtech-mms.netlify.app");
+    allowedOriginsList.Add("https://newtech-mms.vercel.app");
 }
 
 if (builder.Environment.IsDevelopment())
@@ -111,10 +112,24 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins(allowedOriginsList.ToArray())
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+        policy.SetIsOriginAllowed(origin =>
+        {
+            if (string.IsNullOrWhiteSpace(origin)) return false;
+            var cleanOrigin = origin.TrimEnd('/');
+            if (allowedOriginsList.Contains(cleanOrigin, StringComparer.OrdinalIgnoreCase)) return true;
+            if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+            {
+                if (uri.Host.EndsWith("vercel.app", StringComparison.OrdinalIgnoreCase) ||
+                    uri.Host.EndsWith("netlify.app", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            return false;
+        })
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
     });
 });
 
