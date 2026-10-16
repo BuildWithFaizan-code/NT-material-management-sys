@@ -477,7 +477,7 @@ namespace MMSERP.Api.Repositories
                 const string partyNameSql = "SELECT P_NAME FROM PARTYMST WHERE P_CODE = @PCode;";
                 var partyName = await conn.ExecuteScalarAsync<string>(partyNameSql, new { PCode = request.PCode }, tx) ?? "CUSTOMER";
 
-                var isNew = string.IsNullOrWhiteSpace(request.SoNo);
+                var isNew = !request.IsEdit || string.IsNullOrWhiteSpace(request.SoNo);
                 string soNo;
 
                 if (isNew)

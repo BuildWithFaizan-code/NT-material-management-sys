@@ -358,7 +358,7 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
 
     final payload = {
       'isEdit': _isEditing,
-      'soNo': _soNoCtrl.text.trim(),
+      'soNo': _isEditing ? _soNoCtrl.text.trim() : null,
       'soDate': _soDate.toIso8601String(),
       'pCode': _pCode,
       'deptCode': 0,

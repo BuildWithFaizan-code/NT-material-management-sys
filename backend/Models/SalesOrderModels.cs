@@ -185,6 +185,7 @@ namespace MMSERP.Api.Models
 
     public class SalesOrderSaveRequest
     {
+        public bool IsEdit { get; set; } = false;
         public string? SoNo { get; set; } // null or empty for new order
         public DateTime SoDate { get; set; } = DateTime.Today;
         public int PCode { get; set; }
