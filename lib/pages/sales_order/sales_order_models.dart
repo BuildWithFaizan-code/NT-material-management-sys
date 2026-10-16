@@ -742,7 +742,7 @@ class SalesOrderLookups {
           final m = e as Map<String, dynamic>;
           return LookupCodeName(
             code: (m['locCode'] as num?)?.toInt() ?? 0,
-            name: m['location']?.toString() ?? '',
+            name: (m['locationName'] ?? m['location'] ?? '').toString(),
           );
         }).toList() ??
         [];

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../design/app_colors.dart';
@@ -31,7 +30,7 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
   bool _isLoading = true;
   String? _loadError;
   int _totalCount = 0;
-  int _currentPage = 1;
+  final int _currentPage = 1;
   final int _pageSize = 50;
 
   DateTime? _fromDate;
@@ -40,6 +39,7 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
   final TextEditingController _searchCtrl = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   final ScrollController _tableScrollCtrl = ScrollController();
+  final ScrollController _tableHorizScrollCtrl = ScrollController();
 
   // Glow Effect state (Project Master style)
   String? _highlightedSoNo;
@@ -99,6 +99,7 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
     _searchCtrl.dispose();
     _searchFocusNode.dispose();
     _tableScrollCtrl.dispose();
+    _tableHorizScrollCtrl.dispose();
 
     _soNoCtrl.dispose();
     _partyCtrl.dispose();
@@ -503,10 +504,6 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
 
                       // Main Responsive Table Body
                       Expanded(child: _buildMainTableDesk()),
-                      const SizedBox(height: 10),
-
-                      // Pagination Footer
-                      _buildPaginationFooter(),
                     ],
                   ),
                 ),
@@ -833,6 +830,65 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                   style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
                 ),
                 const Spacer(),
+                // Left & Right Horizontal Navigation Buttons
+                Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      InkWell(
+                        onTap: () {
+                          if (_tableHorizScrollCtrl.hasClients) {
+                            _tableHorizScrollCtrl.animateTo(
+                              (_tableHorizScrollCtrl.offset - 300).clamp(0.0, _tableHorizScrollCtrl.position.maxScrollExtent),
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeOut,
+                            );
+                          }
+                        },
+                        borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          child: Row(
+                            children: [
+                              Icon(Icons.arrow_back_ios_new_rounded, size: 12, color: Color(0xFF2563EB)),
+                              SizedBox(width: 3),
+                              Text('Left', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Container(width: 1, height: 16, color: const Color(0xFFCBD5E1)),
+                      InkWell(
+                        onTap: () {
+                          if (_tableHorizScrollCtrl.hasClients) {
+                            _tableHorizScrollCtrl.animateTo(
+                              (_tableHorizScrollCtrl.offset + 300).clamp(0.0, _tableHorizScrollCtrl.position.maxScrollExtent),
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeOut,
+                            );
+                          }
+                        },
+                        borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          child: Row(
+                            children: [
+                              Text('Right', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
+                              SizedBox(width: 3),
+                              Icon(Icons.arrow_forward_ios_rounded, size: 12, color: Color(0xFF2563EB)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
                   decoration: BoxDecoration(
@@ -848,7 +904,7 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
             ),
           ),
 
-          // Responsive Table Body Grid
+          // Responsive Table Body Grid with Draggable Horizontal Scrollbar
           Expanded(
             child: ClipRRect(
               borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16)),
@@ -863,129 +919,150 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                         ],
                       ),
                     )
-                  : LayoutBuilder(
-                      builder: (context, constraints) {
-                        const double minTableWidth = 1350.0;
-                        final double tableWidth = math.max(constraints.maxWidth, minTableWidth);
-
-                        return SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: SizedBox(
-                            width: tableWidth,
-                            child: Column(
-                              children: [
-                                // Column Header Bar with Vector Icons & Natural Color Accents
-                                Container(
-                                  height: 38,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFF1F5F9),
-                                    border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1.2)),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                                  child: const Row(
-                                    children: [
-                                      SizedBox(
-                                        width: 130,
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.sell_outlined, size: 12, color: Color(0xFF2563EB)),
-                                            SizedBox(width: 4),
-                                            Text('SO NO', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
-                                          ],
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 95,
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.calendar_today_rounded, size: 12, color: Color(0xFF0891B2)),
-                                            SizedBox(width: 4),
-                                            Text('DATE', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
-                                          ],
-                                        ),
-                                      ),
-                                      Expanded(
-                                        flex: 3,
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.business_rounded, size: 12, color: Color(0xFF059669)),
-                                            SizedBox(width: 4),
-                                            Text('CUSTOMER NAME', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
-                                          ],
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 140,
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.receipt_long_rounded, size: 12, color: Color(0xFFD97706)),
-                                            SizedBox(width: 4),
-                                            Text('GSTIN', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
-                                          ],
-                                        ),
-                                      ),
-                                      Expanded(
-                                        flex: 2,
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.account_tree_rounded, size: 12, color: Color(0xFF8B5CF6)),
-                                            SizedBox(width: 4),
-                                            Text('DIVISION', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
-                                          ],
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 60,
-                                        child: Center(
-                                          child: Text('ITEMS', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 80,
-                                        child: Align(
-                                          alignment: Alignment.centerRight,
-                                          child: Text('QTY', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 95,
-                                        child: Align(
-                                          alignment: Alignment.centerRight,
-                                          child: Text('GROSS (₹)', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 80,
-                                        child: Align(
-                                          alignment: Alignment.centerRight,
-                                          child: Text('DISC (₹)', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 110,
-                                        child: Align(
-                                          alignment: Alignment.centerRight,
-                                          child: Text('NET AMT (₹)', style: TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.w800, fontSize: 10.5)),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 90,
-                                        child: Center(
-                                          child: Text('STATUS', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 80,
-                                        child: Center(
-                                          child: Text('ACTIONS', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                  : Scrollbar(
+                      controller: _tableHorizScrollCtrl,
+                      thumbVisibility: true,
+                      trackVisibility: true,
+                      scrollbarOrientation: ScrollbarOrientation.bottom,
+                      child: SingleChildScrollView(
+                        controller: _tableHorizScrollCtrl,
+                        scrollDirection: Axis.horizontal,
+                        physics: const ClampingScrollPhysics(),
+                        child: SizedBox(
+                          width: 1700.0,
+                          child: Column(
+                            children: [
+                              // Column Header Bar with Vector Icons & Natural Color Accents
+                              Container(
+                                height: 38,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFF1F5F9),
+                                  border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1.2)),
                                 ),
+                                padding: const EdgeInsets.symmetric(horizontal: 14),
+                                child: const Row(
+                                  children: [
+                                    SizedBox(
+                                      width: 135,
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.sell_outlined, size: 12, color: Color(0xFF2563EB)),
+                                          SizedBox(width: 4),
+                                          Text('SO NO', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 95,
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.calendar_today_rounded, size: 12, color: Color(0xFF0891B2)),
+                                          SizedBox(width: 4),
+                                          Text('DATE', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 240,
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.business_rounded, size: 12, color: Color(0xFF059669)),
+                                          SizedBox(width: 4),
+                                          Text('CUSTOMER NAME', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 145,
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.receipt_long_rounded, size: 12, color: Color(0xFFD97706)),
+                                          SizedBox(width: 4),
+                                          Text('GSTIN', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 175,
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.account_tree_rounded, size: 12, color: Color(0xFF8B5CF6)),
+                                          SizedBox(width: 4),
+                                          Text('DIVISION', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 65,
+                                      child: Center(
+                                        child: Text('ITEMS', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 85,
+                                      child: Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Text('QTY', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 105,
+                                      child: Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Text('GROSS (₹)', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 90,
+                                      child: Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Text('DISC (₹)', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 115,
+                                      child: Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Text('NET AMT (₹)', style: TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 70,
+                                      child: Center(
+                                        child: Text('CURR', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 190,
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.comment_outlined, size: 12, color: Color(0xFF64748B)),
+                                          SizedBox(width: 4),
+                                          Text('REMARK', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 95,
+                                      child: Center(
+                                        child: Text('STATUS', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 90,
+                                      child: Center(
+                                        child: Text('ACTIONS', style: TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w800, fontSize: 10.5)),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
 
-                                // ListView Rows with Project Master Glow Strategy
-                                Expanded(
+                              // ListView Rows with Project Master Glow Strategy
+                              Expanded(
+                                child: Scrollbar(
+                                  controller: _tableScrollCtrl,
+                                  thumbVisibility: true,
                                   child: ListView.separated(
                                     controller: _tableScrollCtrl,
                                     itemCount: _filteredOrders.length,
@@ -1007,9 +1084,9 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                                         padding: const EdgeInsets.symmetric(horizontal: 14),
                                         child: Row(
                                           children: [
-                                            // SO No Badge
+                                            // 1. SO No Badge
                                             SizedBox(
-                                              width: 130,
+                                              width: 135,
                                               child: Align(
                                                 alignment: Alignment.centerLeft,
                                                 child: Container(
@@ -1027,7 +1104,7 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                                               ),
                                             ),
 
-                                            // Date
+                                            // 2. Date
                                             SizedBox(
                                               width: 95,
                                               child: Text(
@@ -1036,9 +1113,9 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                                               ),
                                             ),
 
-                                            // Customer Name
-                                            Expanded(
-                                              flex: 3,
+                                            // 3. Customer Name
+                                            SizedBox(
+                                              width: 240,
                                               child: Text(
                                                 order.partyName,
                                                 maxLines: 1,
@@ -1047,9 +1124,9 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                                               ),
                                             ),
 
-                                            // GSTIN
+                                            // 4. GSTIN
                                             SizedBox(
-                                              width: 140,
+                                              width: 145,
                                               child: Text(
                                                 order.gstin.isNotEmpty ? order.gstin : '—',
                                                 style: TextStyle(
@@ -1060,9 +1137,9 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                                               ),
                                             ),
 
-                                            // Division
-                                            Expanded(
-                                              flex: 2,
+                                            // 5. Division
+                                            SizedBox(
+                                              width: 175,
                                               child: Text(
                                                 order.costCenterName.isNotEmpty ? order.costCenterName : '—',
                                                 maxLines: 1,
@@ -1071,9 +1148,9 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                                               ),
                                             ),
 
-                                            // Total Items
+                                            // 6. Total Items
                                             SizedBox(
-                                              width: 60,
+                                              width: 65,
                                               child: Center(
                                                 child: Text(
                                                   order.totItm.toString(),
@@ -1082,9 +1159,9 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                                               ),
                                             ),
 
-                                            // Qty
+                                            // 7. Qty
                                             SizedBox(
-                                              width: 80,
+                                              width: 85,
                                               child: Align(
                                                 alignment: Alignment.centerRight,
                                                 child: Text(
@@ -1094,9 +1171,9 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                                               ),
                                             ),
 
-                                            // Gross
+                                            // 8. Gross
                                             SizedBox(
-                                              width: 95,
+                                              width: 105,
                                               child: Align(
                                                 alignment: Alignment.centerRight,
                                                 child: Text(
@@ -1106,9 +1183,9 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                                               ),
                                             ),
 
-                                            // Discount
+                                            // 9. Discount
                                             SizedBox(
-                                              width: 80,
+                                              width: 90,
                                               child: Align(
                                                 alignment: Alignment.centerRight,
                                                 child: Text(
@@ -1118,9 +1195,9 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                                               ),
                                             ),
 
-                                            // Net Amount
+                                            // 10. Net Amount
                                             SizedBox(
-                                              width: 110,
+                                              width: 115,
                                               child: Align(
                                                 alignment: Alignment.centerRight,
                                                 child: Text(
@@ -1130,9 +1207,39 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                                               ),
                                             ),
 
-                                            // Status Badge
+                                            // 11. Currency
                                             SizedBox(
-                                              width: 90,
+                                              width: 70,
+                                              child: Center(
+                                                child: Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFFF1F5F9),
+                                                    borderRadius: BorderRadius.circular(4),
+                                                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                                                  ),
+                                                  child: Text(
+                                                    order.curr.isNotEmpty ? order.curr : 'INR',
+                                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+
+                                            // 12. Remark
+                                            SizedBox(
+                                              width: 190,
+                                              child: Text(
+                                                order.remark.isNotEmpty ? order.remark : '—',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                              ),
+                                            ),
+
+                                            // 13. Status Badge
+                                            SizedBox(
+                                              width: 95,
                                               child: Center(
                                                 child: Container(
                                                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
@@ -1156,9 +1263,9 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                                               ),
                                             ),
 
-                                            // Actions (Edit & Delete)
+                                            // 14. Actions (Edit & Delete)
                                             SizedBox(
-                                              width: 80,
+                                              width: 90,
                                               child: Row(
                                                 mainAxisAlignment: MainAxisAlignment.center,
                                                 children: [
@@ -1188,52 +1295,16 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
                                     },
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                        );
-                      },
+                        ),
+                      ),
                     ),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildPaginationFooter() {
-    final totalPages = (_totalCount / _pageSize).ceil();
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          'Total Records: $_totalCount (Showing page $_currentPage of ${totalPages == 0 ? 1 : totalPages})',
-          style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
-        ),
-        Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.chevron_left_rounded, size: 20),
-              onPressed: _currentPage > 1
-                  ? () {
-                      setState(() => _currentPage--);
-                      _loadInitialData();
-                    }
-                  : null,
-            ),
-            IconButton(
-              icon: const Icon(Icons.chevron_right_rounded, size: 20),
-              onPressed: _currentPage < totalPages
-                  ? () {
-                      setState(() => _currentPage++);
-                      _loadInitialData();
-                    }
-                  : null,
-            ),
-          ],
-        ),
-      ],
     );
   }
 
@@ -2151,7 +2222,16 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
     required int value,
     required List<LookupCodeName> items,
     required ValueChanged<int?> onChanged,
+    String noneLabel = 'None / Default',
   }) {
+    final effectiveItems = items.isEmpty
+        ? [LookupCodeName(code: 0, name: noneLabel)]
+        : items;
+
+    final selectedValue = effectiveItems.any((e) => e.code == value)
+        ? value
+        : effectiveItems.first.code;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2167,10 +2247,16 @@ class _SalesOrderPageState extends State<SalesOrderPage> {
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<int>(
-              value: items.any((e) => e.code == value) ? value : (items.isNotEmpty ? items.first.code : null),
+              value: selectedValue,
               isExpanded: true,
               style: const TextStyle(fontSize: 12.5, color: Color(0xFF0F172A)),
-              items: items.map((e) => DropdownMenuItem(value: e.code, child: Text(e.name))).toList(),
+              items: effectiveItems.map((e) {
+                final display = e.name.trim().isNotEmpty ? e.name.trim() : 'Option #${e.code}';
+                return DropdownMenuItem<int>(
+                  value: e.code,
+                  child: Text(display, overflow: TextOverflow.ellipsis),
+                );
+              }).toList(),
               onChanged: onChanged,
             ),
           ),

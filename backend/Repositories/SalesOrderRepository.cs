@@ -287,7 +287,7 @@ namespace MMSERP.Api.Repositories
 
             // 3. CapCons Location Stores
             const string capModesSql = @"
-                SELECT LOC_CODE AS LocCode, LOCATION AS Location 
+                SELECT LOC_CODE AS LocCode, ISNULL(LOCATION, '') AS LocationName 
                 FROM LOCATIONMST 
                 WHERE MODE = 'CAPCONS' 
                 ORDER BY LOCATION;";
