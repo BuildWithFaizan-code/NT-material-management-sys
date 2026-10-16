@@ -52,10 +52,11 @@ namespace MMSERP.Api.Controllers
             {
                 return BadRequest(ApiResponse<PurchaseOrderHeaderDto>.Fail("Purchase order number is required."));
             }
-            var po = await _service.GetPurchaseOrderByNoAsync(poNo.Trim());
+            var cleanPo = Uri.UnescapeDataString(poNo).Trim();
+            var po = await _service.GetPurchaseOrderByNoAsync(cleanPo);
             if (po == null)
             {
-                return NotFound(ApiResponse<PurchaseOrderHeaderDto>.Fail($"Purchase Order '{poNo}' was not found."));
+                return NotFound(ApiResponse<PurchaseOrderHeaderDto>.Fail($"Purchase Order '{cleanPo}' was not found."));
             }
             return Ok(ApiResponse<PurchaseOrderHeaderDto>.Ok(po));
         }
@@ -71,10 +72,11 @@ namespace MMSERP.Api.Controllers
             {
                 return BadRequest(ApiResponse<PurchaseOrderHeaderDto>.Fail("Purchase order number is required."));
             }
-            var po = await _service.GetPurchaseOrderByNoAsync(poNo.Trim());
+            var cleanPo = Uri.UnescapeDataString(poNo).Trim();
+            var po = await _service.GetPurchaseOrderByNoAsync(cleanPo);
             if (po == null)
             {
-                return NotFound(ApiResponse<PurchaseOrderHeaderDto>.Fail($"Purchase Order '{poNo}' was not found."));
+                return NotFound(ApiResponse<PurchaseOrderHeaderDto>.Fail($"Purchase Order '{cleanPo}' was not found."));
             }
             return Ok(ApiResponse<PurchaseOrderHeaderDto>.Ok(po));
         }
@@ -181,12 +183,22 @@ namespace MMSERP.Api.Controllers
         }
 
         /// <summary>
-        /// DELETE api/purchaseorder/{poNo}
+        /// DELETE api/purchaseorder?poNo=... or DELETE api/purchaseorder/{**poNo}
         /// Deletes a Purchase Order if not approved or received.
         /// </summary>
-        [HttpDelete("{poNo}")]
-        public async Task<IActionResult> DeletePurchaseOrder(string poNo)
+        [HttpDelete]
+        [HttpDelete("{**poNo}")]
+        [HttpDelete("by-no")]
+        public async Task<IActionResult> DeletePurchaseOrder([FromRoute] string? poNo = null, [FromQuery(Name = "poNo")] string? poNoQuery = null)
         {
+            var targetPoNo = !string.IsNullOrWhiteSpace(poNoQuery) ? poNoQuery : poNo;
+            if (string.IsNullOrWhiteSpace(targetPoNo))
+            {
+                return BadRequest(ApiResponse<bool>.Fail("Purchase order number is required."));
+            }
+
+            targetPoNo = Uri.UnescapeDataString(targetPoNo).Trim();
+
             var username = GetCurrentUserName();
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -195,12 +207,12 @@ namespace MMSERP.Api.Controllers
 
             try
             {
-                var success = await _service.DeletePurchaseOrderAsync(poNo, username);
+                var success = await _service.DeletePurchaseOrderAsync(targetPoNo, username);
                 if (!success)
                 {
-                    return BadRequest(ApiResponse<bool>.Fail($"Could not delete Purchase Order '{poNo}'."));
+                    return BadRequest(ApiResponse<bool>.Fail($"Could not delete Purchase Order '{targetPoNo}'."));
                 }
-                return Ok(ApiResponse<bool>.Ok(true, $"Purchase Order '{poNo}' deleted successfully."));
+                return Ok(ApiResponse<bool>.Ok(true, $"Purchase Order '{targetPoNo}' deleted successfully."));
             }
             catch (KeyNotFoundException ex)
             {
@@ -213,7 +225,7 @@ namespace MMSERP.Api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Server error while deleting Purchase Order '{PoNo}'", poNo);
+                _logger.LogError(ex, "Server error while deleting Purchase Order '{PoNo}'", targetPoNo);
                 return StatusCode(500, ApiResponse<bool>.Fail("Failed to delete Purchase Order. An unexpected server error occurred."));
             }
         }

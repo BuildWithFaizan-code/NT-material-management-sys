@@ -189,7 +189,8 @@ class PurchaseOrderService {
   }
 
   Future<bool> deletePurchaseOrder(String poNo) async {
-    final response = await _client.delete('$baseUrl/${Uri.encodeComponent(poNo.trim())}');
+    final cleanPo = Uri.encodeQueryComponent(poNo.trim());
+    final response = await _client.delete('$baseUrl?poNo=$cleanPo');
     final decoded = jsonDecode(response.body);
     if (response.statusCode == 200 && decoded is Map && decoded['success'] == true) {
       return true;

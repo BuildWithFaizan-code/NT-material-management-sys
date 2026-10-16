@@ -111,6 +111,7 @@ namespace MMSERP.Api.Repositories
         public async Task<PurchaseOrderHeaderDto?> GetPurchaseOrderByNoAsync(string poNo)
         {
             if (string.IsNullOrWhiteSpace(poNo)) return null;
+            poNo = Uri.UnescapeDataString(poNo).Trim();
 
             const string headerSql = @"
                 SELECT pom.Po_No AS PoNo, pom.PO_Date AS PoDate, pom.P_Code AS PCode, 
@@ -142,7 +143,7 @@ namespace MMSERP.Api.Repositories
                 LEFT JOIN STOREMST sm ON pom.P_Str_Code = sm.STR_CODE
                 LEFT JOIN LABOURMST lm ON pom.Dept_Code = lm.LAB_CODE
                 LEFT JOIN BROKERMST bm ON pom.POM_BrCode = bm.BR_CODE
-                WHERE pom.Po_No = @PoNo;";
+                WHERE LTRIM(RTRIM(pom.Po_No)) = @PoNo;";
 
             const string itemsSql = @"
                 SELECT pod.P_Id AS PId, pod.po_no AS PoNo, ISNULL(pod.SrNo, 1) AS SrNo,
@@ -171,7 +172,7 @@ namespace MMSERP.Api.Repositories
                 LEFT JOIN LABOURMST lm ON pod.DEP_CODE = lm.LAB_CODE
                 LEFT JOIN UNITMST convU ON pod.POD_ConvUOM = convU.UNIT_CODE
                 LEFT JOIN LOCATIONMST makerLoc ON pod.POD_MakeID = makerLoc.LOC_CODE AND makerLoc.MODE = 'MAKER'
-                WHERE pod.po_no = @PoNo
+                WHERE LTRIM(RTRIM(pod.po_no)) = @PoNo
                 ORDER BY pod.SrNo;";
 
             const string chargesSql = @"
@@ -185,22 +186,22 @@ namespace MMSERP.Api.Repositories
                        ISNULL(cm.EXP, '') AS Exp, ISNULL(cd.Remark, '') AS Remark
                 FROM ChargesDet cd
                 LEFT JOIN CHARGESMST cm ON cd.Chg_Id = cm.CHG_ID
-                WHERE cd.Code = @PoNo AND cd.Mode = 'PURCHASE'
+                WHERE LTRIM(RTRIM(cd.Code)) = @PoNo AND cd.Mode = 'PURCHASE'
                 ORDER BY cm.PRIORITY;";
 
             const string conditionsSql = @"
                 SELECT ConId AS ConId, ISNULL(Con_No, 0) AS ConNo, Code AS Code, '' AS ConditionText
                 FROM ConditionDet
-                WHERE Code = @PoNo
+                WHERE LTRIM(RTRIM(Code)) = @PoNo
                 ORDER BY Con_No;";
 
             using var conn = CreateConnection();
-            var header = await conn.QueryFirstOrDefaultAsync<PurchaseOrderHeaderDto>(headerSql, new { PoNo = poNo.Trim() });
+            var header = await conn.QueryFirstOrDefaultAsync<PurchaseOrderHeaderDto>(headerSql, new { PoNo = poNo });
             if (header == null) return null;
 
-            header.Items = (await conn.QueryAsync<PurchaseOrderItemDto>(itemsSql, new { PoNo = poNo.Trim() })).ToList();
-            header.Charges = (await conn.QueryAsync<PurchaseOrderChargeDto>(chargesSql, new { PoNo = poNo.Trim() })).ToList();
-            header.Conditions = (await conn.QueryAsync<PurchaseOrderConditionDto>(conditionsSql, new { PoNo = poNo.Trim() })).ToList();
+            header.Items = (await conn.QueryAsync<PurchaseOrderItemDto>(itemsSql, new { PoNo = poNo })).ToList();
+            header.Charges = (await conn.QueryAsync<PurchaseOrderChargeDto>(chargesSql, new { PoNo = poNo })).ToList();
+            header.Conditions = (await conn.QueryAsync<PurchaseOrderConditionDto>(conditionsSql, new { PoNo = poNo })).ToList();
 
             return header;
         }
@@ -783,6 +784,8 @@ namespace MMSERP.Api.Repositories
                 throw new ArgumentException("Username is required for audit logging.", nameof(username));
             }
 
+            poNo = Uri.UnescapeDataString(poNo).Trim();
+
             var companyName = CompanyConfigHelper.ResolveCompanyName(_configuration);
 
             using var conn = (SqlConnection)CreateConnection();
@@ -799,9 +802,9 @@ namespace MMSERP.Api.Repositories
                            CAST(ISNULL(pom.ClosePO, 0) AS BIT) AS ClosePO
                     FROM Pur_Ord_Mst pom
                     LEFT JOIN partymst pm ON pom.P_Code = pm.P_Code
-                    WHERE pom.Po_No = @PoNo;";
+                    WHERE LTRIM(RTRIM(pom.Po_No)) = @PoNo;";
 
-                var po = await conn.QueryFirstOrDefaultAsync<dynamic>(checkSql, new { PoNo = poNo.Trim() }, tx);
+                var po = await conn.QueryFirstOrDefaultAsync<dynamic>(checkSql, new { PoNo = poNo }, tx);
                 if (po == null)
                 {
                     throw new KeyNotFoundException($"Purchase Order '{poNo}' was not found.");
@@ -838,16 +841,16 @@ namespace MMSERP.Api.Repositories
                     DbUser = username.Trim(),
                     PName = (string)po.PartyName,
                     Amt = (double)po.NetAmt,
-                    RefNo = poNo.Trim(),
+                    RefNo = poNo,
                     CompanyName = companyName
                 }, tx);
 
                 // 3. Delete records
-                await conn.ExecuteAsync("DELETE FROM stockregnew WHERE SR_Code = @PoNo AND mode IN ('PO');", new { PoNo = poNo.Trim() }, tx);
-                await conn.ExecuteAsync("DELETE FROM ChargesDet WHERE mode = 'PURCHASE' AND Code = @PoNo;", new { PoNo = poNo.Trim() }, tx);
-                await conn.ExecuteAsync("DELETE FROM ConditionDet WHERE Code = @PoNo;", new { PoNo = poNo.Trim() }, tx);
-                await conn.ExecuteAsync("DELETE FROM Pur_Ordr_Det WHERE po_no = @PoNo;", new { PoNo = poNo.Trim() }, tx);
-                var rows = await conn.ExecuteAsync("DELETE FROM Pur_Ord_Mst WHERE Po_No = @PoNo;", new { PoNo = poNo.Trim() }, tx);
+                await conn.ExecuteAsync("DELETE FROM stockregnew WHERE LTRIM(RTRIM(SR_Code)) = @PoNo AND mode IN ('PO');", new { PoNo = poNo }, tx);
+                await conn.ExecuteAsync("DELETE FROM ChargesDet WHERE mode = 'PURCHASE' AND LTRIM(RTRIM(Code)) = @PoNo;", new { PoNo = poNo }, tx);
+                await conn.ExecuteAsync("DELETE FROM ConditionDet WHERE LTRIM(RTRIM(Code)) = @PoNo;", new { PoNo = poNo }, tx);
+                await conn.ExecuteAsync("DELETE FROM Pur_Ordr_Det WHERE LTRIM(RTRIM(po_no)) = @PoNo;", new { PoNo = poNo }, tx);
+                var rows = await conn.ExecuteAsync("DELETE FROM Pur_Ord_Mst WHERE LTRIM(RTRIM(Po_No)) = @PoNo;", new { PoNo = poNo }, tx);
 
                 tx.Commit();
                 return rows > 0;

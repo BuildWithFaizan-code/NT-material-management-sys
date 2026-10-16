@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -82,6 +83,7 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage> {
 
   // Step 2: Line Items
   List<PurchaseOrderItem> _lineItems = [];
+  final ScrollController _lineItemsHorizontalScrollCtrl = ScrollController();
 
   // Step 3: Auxiliary Modals Data & Calculations
   List<PurchaseOrderCharge> _charges = [];
@@ -106,6 +108,7 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage> {
     _searchCtrl.dispose();
     _searchFocusNode.dispose();
     _tableScrollCtrl.dispose();
+    _lineItemsHorizontalScrollCtrl.dispose();
 
     _poNoCtrl.dispose();
     _partyNameCtrl.dispose();
@@ -113,6 +116,38 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage> {
     _poCrDaysCtrl.dispose();
     _pomDelDaysCtrl.dispose();
     super.dispose();
+  }
+
+  void _scrollLineItemsLeft() {
+    if (_lineItemsHorizontalScrollCtrl.hasClients) {
+      final current = _lineItemsHorizontalScrollCtrl.offset;
+      final target = (current - 450.0).clamp(0.0, _lineItemsHorizontalScrollCtrl.position.maxScrollExtent);
+      _lineItemsHorizontalScrollCtrl.animateTo(
+        target,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
+  void _scrollLineItemsRight() {
+    if (_lineItemsHorizontalScrollCtrl.hasClients) {
+      final current = _lineItemsHorizontalScrollCtrl.offset;
+      final target = (current + 450.0).clamp(0.0, _lineItemsHorizontalScrollCtrl.position.maxScrollExtent);
+      _lineItemsHorizontalScrollCtrl.animateTo(
+        target,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
+  void _resetLineItemsScroll() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_lineItemsHorizontalScrollCtrl.hasClients) {
+        _lineItemsHorizontalScrollCtrl.jumpTo(0.0);
+      }
+    });
   }
 
   Future<void> _loadInitialData() async {
@@ -200,6 +235,7 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage> {
       _isWizardOpen = true;
       _currentStep = 1;
     });
+    _resetLineItemsScroll();
   }
 
   Future<void> _openEditModal(String poNo) async {
@@ -254,6 +290,7 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage> {
         _isWizardOpen = true;
         _currentStep = 1;
       });
+      _resetLineItemsScroll();
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -1318,6 +1355,9 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage> {
     return InkWell(
       onTap: () {
         setState(() => _currentStep = stepIndex);
+        if (stepIndex == 2) {
+          _resetLineItemsScroll();
+        }
       },
       borderRadius: BorderRadius.circular(8),
       child: Padding(
@@ -1877,7 +1917,39 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage> {
                 'Line Items Catalog Grid (24 Exact Columns)',
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.neutralDark),
               ),
+              const SizedBox(width: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(color: AppColors.primaryColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+                child: Text('${_lineItems.length} items', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryColor)),
+              ),
               const Spacer(),
+              // Horizontal Scroll Left Button
+              OutlinedButton.icon(
+                onPressed: _scrollLineItemsLeft,
+                icon: const Icon(Icons.arrow_back_rounded, size: 14),
+                label: const Text('Scroll Left', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.neutralDark,
+                  side: const BorderSide(color: AppColors.tableBorder),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Horizontal Scroll Right Button
+              OutlinedButton.icon(
+                onPressed: _scrollLineItemsRight,
+                icon: const Icon(Icons.arrow_forward_rounded, size: 14),
+                label: const Text('Scroll Right', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.neutralDark,
+                  side: const BorderSide(color: AppColors.tableBorder),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
+                ),
+              ),
+              const SizedBox(width: 12),
               ElevatedButton.icon(
                 onPressed: _addNewLineRow,
                 icon: const Icon(Icons.add_rounded, size: 16),
@@ -1914,11 +1986,26 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage> {
                     ],
                   ),
                 )
-              : SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: SizedBox(
-                    width: 2400, // accommodate all 24 columns nicely
-                    child: Column(
+              : ScrollConfiguration(
+                  behavior: ScrollConfiguration.of(context).copyWith(
+                    dragDevices: {
+                      PointerDeviceKind.touch,
+                      PointerDeviceKind.mouse,
+                      PointerDeviceKind.trackpad,
+                      PointerDeviceKind.stylus,
+                    },
+                  ),
+                  child: Scrollbar(
+                    controller: _lineItemsHorizontalScrollCtrl,
+                    thumbVisibility: true,
+                    trackVisibility: true,
+                    scrollbarOrientation: ScrollbarOrientation.bottom,
+                    child: SingleChildScrollView(
+                      controller: _lineItemsHorizontalScrollCtrl,
+                      scrollDirection: Axis.horizontal,
+                      child: SizedBox(
+                        width: 2400, // accommodate all 24 columns nicely
+                        child: Column(
                       children: [
                         // Column Headers
                         Container(
@@ -2022,6 +2109,8 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage> {
                     ),
                   ),
                 ),
+              ),
+            ),
         ),
 
         // Grid Bottom Summary Bar
@@ -2271,7 +2360,12 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage> {
 
           if (_currentStep > 1) ...[
             OutlinedButton.icon(
-              onPressed: () => setState(() => _currentStep--),
+              onPressed: () {
+                setState(() => _currentStep--);
+                if (_currentStep == 2) {
+                  _resetLineItemsScroll();
+                }
+              },
               icon: const Icon(Icons.arrow_back_rounded, size: 16),
               label: const Text('Back', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
               style: OutlinedButton.styleFrom(
@@ -2294,6 +2388,9 @@ class _PurchaseOrderPageState extends State<PurchaseOrderPage> {
                   _wizardError = null;
                   _currentStep++;
                 });
+                if (_currentStep == 2) {
+                  _resetLineItemsScroll();
+                }
               },
               icon: const Icon(Icons.arrow_forward_rounded, size: 16),
               label: const Text('Next Step', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
