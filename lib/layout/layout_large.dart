@@ -219,6 +219,16 @@ class LargeScreenLayout extends StatelessWidget {
         ? layoutState.selectedTransactionSubItem
         : 'Bill of Material (BOM)';
 
+    // Route Guard (Defense-in-depth UX enforcement):
+    final auth = AuthService.instance;
+    final bool isAdmin = (auth.currentUser?.isAdmin ?? false) ||
+        (auth.myPermissions?.isAdmin ?? false);
+    final perms = auth.myPermissions;
+
+    if (!isAdmin && perms != null && !perms.canViewModule(sub)) {
+      return _buildAccessDenied(sub);
+    }
+
     switch (sub) {
       // Top group
       case 'Bill of Material (BOM)':

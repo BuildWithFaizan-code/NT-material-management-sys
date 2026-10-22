@@ -57,8 +57,28 @@ class App extends StatelessWidget {
           scrollBehavior: const AppScrollBehavior(),
           home: homeWidget,
           routes: {
+            '/enquiry-creation': (context) {
+              layoutState.setTransactionSubItem('Enquiry Creation');
+              return homeWidget;
+            },
+            '/quotation-manager': (context) {
+              layoutState.setTransactionSubItem('Quotation Manager');
+              return homeWidget;
+            },
             '/sub-department-master': (context) => const SubDepartmentMasterPage(),
             '/head-master': (context) => const HeadMasterPage(),
+          },
+          onGenerateRoute: (settings) {
+            final name = (settings.name ?? '').replaceAll('/', '').toLowerCase().trim();
+            if (name == 'enquirycreation' || name == 'enquiry-creation' || name == 'enquiry') {
+              layoutState.setTransactionSubItem('Enquiry Creation');
+              return MaterialPageRoute(builder: (_) => homeWidget);
+            }
+            if (name == 'quotationmanager' || name == 'quotation-manager' || name == 'quotation') {
+              layoutState.setTransactionSubItem('Quotation Manager');
+              return MaterialPageRoute(builder: (_) => homeWidget);
+            }
+            return null;
           },
         );
       },

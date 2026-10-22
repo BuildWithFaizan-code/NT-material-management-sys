@@ -92,6 +92,14 @@ class LayoutState extends ChangeNotifier {
   void initFromUri([Uri? customUri]) {
     try {
       final uri = customUri ?? Uri.base;
+
+      // Check clean URL path first (e.g. /enquiry-creation, /quotation-manager)
+      final rawPath = uri.path.replaceAll('/', '').trim();
+      if (rawPath.isNotEmpty) {
+        if (_trySetMasterBySlug(rawPath)) return;
+        if (_trySetTransactionBySlug(rawPath)) return;
+      }
+
       final params = uri.queryParameters;
       if (params.isEmpty) return;
 

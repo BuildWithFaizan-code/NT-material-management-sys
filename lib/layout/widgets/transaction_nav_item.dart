@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../services/auth_service.dart';
+import '../../services/role_service.dart';
 import 'expandable_nav_accordion.dart';
 
 /// Data class representing an entry in the Transaction navigation submenu.
@@ -70,7 +72,7 @@ const List<TransactionSubSection> transactionSubSections = [
     ],
   ),
 
-  // Indent
+  // Indent (Core workflow items only)
   TransactionSubSection(
     sectionTitle: 'Indent',
     sectionIcon: Icons.description_outlined,
@@ -83,10 +85,24 @@ const List<TransactionSubSection> transactionSubSections = [
         title: 'Indent Approval',
         icon: Icons.approval_outlined,
       ),
+    ],
+  ),
+
+  // Enquiry Creation (Standalone Transaction Module)
+  TransactionSubSection(
+    sectionTitle: null,
+    items: [
       TransactionMenuEntry(
         title: 'Enquiry Creation',
         icon: Icons.contact_support_outlined,
       ),
+    ],
+  ),
+
+  // Quotation Manager (Standalone Transaction Module)
+  TransactionSubSection(
+    sectionTitle: null,
+    items: [
       TransactionMenuEntry(
         title: 'Quotation Manager',
         icon: Icons.request_quote_outlined,
@@ -303,26 +319,41 @@ class TransactionNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ExpandableNavAccordion(
-      icon: Icons.receipt_long_outlined,
-      title: 'Transaction',
-      isSelected: isTransactionSelected,
-      onHeaderTap: onTransactionHeaderTap,
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: _buildSubList(),
-      ),
+    return AnimatedBuilder(
+      animation: AuthService.instance,
+      builder: (context, _) {
+        final auth = AuthService.instance;
+        final bool isAdmin = (auth.currentUser?.isAdmin ?? false) ||
+            (auth.myPermissions?.isAdmin ?? false);
+        final perms = auth.myPermissions;
+
+        return ExpandableNavAccordion(
+          icon: Icons.receipt_long_outlined,
+          title: 'Transaction',
+          isSelected: isTransactionSelected,
+          onHeaderTap: onTransactionHeaderTap,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: _buildSubList(isAdmin, perms),
+          ),
+        );
+      },
     );
   }
 
-  List<Widget> _buildSubList() {
+  List<Widget> _buildSubList(bool isAdmin, MyPermissions? perms) {
     final List<Widget> widgets = [];
 
     for (final section in transactionSubSections) {
       if (section.sectionTitle == null) {
-        // Unlabeled top group: render items directly
-        for (final item in section.items) {
+        // Unlabeled group / standalone items: render directly
+        final visibleItems = section.items.where((item) {
+          if (isAdmin || perms == null) return true;
+          return perms.canViewModule(item.title);
+        }).toList();
+
+        for (final item in visibleItems) {
           final bool isSelected = activeSubItem == item.title;
           widgets.add(
             NavSubItemTile(
@@ -335,8 +366,15 @@ class TransactionNavItem extends StatelessWidget {
         }
       } else {
         // Sub-section with dropdown
+        final visibleItems = section.items.where((item) {
+          if (isAdmin || perms == null) return true;
+          return perms.canViewModule(item.title);
+        }).toList();
+
+        if (visibleItems.isEmpty) continue;
+
         final bool hasActiveChild =
-            section.items.any((item) => item.title == activeSubItem);
+            visibleItems.any((item) => item.title == activeSubItem);
 
         widgets.add(
           NavNestedDropdown(
@@ -346,7 +384,7 @@ class TransactionNavItem extends StatelessWidget {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: section.items.map((item) {
+              children: visibleItems.map((item) {
                 final bool isSelected = activeSubItem == item.title;
                 return NavSubItemTile(
                   icon: item.icon,
