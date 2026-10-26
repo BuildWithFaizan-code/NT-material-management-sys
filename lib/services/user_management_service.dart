@@ -46,7 +46,7 @@ class UserManagementItem {
 /// Service handling User Management operations.
 /// Follows established conventions and routes exclusively through ApiClient.instance.
 class UserManagementService {
-  static final String _baseUrl = '${ApiConfig.baseUrl}/usermanagement/users';
+  static String get _baseUrl => '${ApiConfig.baseUrl}/usermanagement/users';
 
   static Future<List<UserManagementItem>> fetchUsers() async {
     final response = await ApiClient.instance.get(_baseUrl);

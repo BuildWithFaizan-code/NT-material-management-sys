@@ -34,6 +34,8 @@ import '../pages/purchase_order_approval/po_approval_page.dart';
 import '../pages/purchase_order_advance/po_advance_page.dart';
 import '../pages/sales_order/sales_order_page.dart';
 import '../pages/sales_order_approval/so_approval_page.dart';
+import '../pages/indent/indent_page.dart';
+import '../pages/indent_approval/indent_approval_page.dart';
 import '../pages/user_management_page.dart';
 import '../services/auth_service.dart';
 import 'widgets/master_nav_item.dart';
@@ -273,15 +275,9 @@ class LargeScreenLayout extends StatelessWidget {
 
       // Indent
       case 'Create Indent':
-        return const TransactionPlaceholderPage(
-          title: 'Create Indent',
-          icon: Icons.note_add_outlined,
-        );
+        return const IndentPage();
       case 'Indent Approval':
-        return const TransactionPlaceholderPage(
-          title: 'Indent Approval',
-          icon: Icons.approval_outlined,
-        );
+        return const IndentApprovalPage();
       case 'Enquiry Creation':
         return const TransactionPlaceholderPage(
           title: 'Enquiry Creation',

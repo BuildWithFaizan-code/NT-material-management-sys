@@ -62,6 +62,7 @@ class ApiClient {
     if (queryParams != null && queryParams.isNotEmpty) {
       uri = uri.replace(queryParameters: queryParams);
     }
+    debugPrint('[API GET] $uri');
     return _sendWithRetry(() async {
       final token = await TokenStorageService.instance.getAccessToken();
       return _client.get(uri, headers: _buildHeaders(headers, token)).timeout(_timeout);
@@ -71,6 +72,7 @@ class ApiClient {
   /// Sends a POST request
   Future<http.Response> post(String url, {Map<String, String>? headers, Object? body}) async {
     final uri = Uri.parse(url);
+    debugPrint('[API POST] $uri');
     return _sendWithRetry(() async {
       final token = await TokenStorageService.instance.getAccessToken();
       return _client
@@ -86,6 +88,7 @@ class ApiClient {
   /// Sends a PUT request
   Future<http.Response> put(String url, {Map<String, String>? headers, Object? body}) async {
     final uri = Uri.parse(url);
+    debugPrint('[API PUT] $uri');
     return _sendWithRetry(() async {
       final token = await TokenStorageService.instance.getAccessToken();
       return _client
@@ -119,6 +122,7 @@ class ApiClient {
     if (queryParams != null && queryParams.isNotEmpty) {
       uri = uri.replace(queryParameters: queryParams);
     }
+    debugPrint('[API DELETE] $uri');
     return _sendWithRetry(() async {
       final token = await TokenStorageService.instance.getAccessToken();
       return _client

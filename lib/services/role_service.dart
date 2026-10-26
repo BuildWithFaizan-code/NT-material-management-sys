@@ -157,7 +157,7 @@ class MatrixMetadata {
 /// Service handling Role and Permission API operations.
 /// Exclusively routes through ApiClient.instance (no raw http calls).
 class RoleService {
-  static final String _rolesBaseUrl = '${ApiConfig.baseUrl}/roles';
+  static String get _rolesBaseUrl => '${ApiConfig.baseUrl}/roles';
 
   static Future<List<RoleItem>> fetchRoles() async {
     final response = await ApiClient.instance.get(_rolesBaseUrl);

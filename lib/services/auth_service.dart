@@ -111,7 +111,7 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  final String _authBaseUrl = '${ApiConfig.baseUrl}/auth';
+  String get _authBaseUrl => '${ApiConfig.baseUrl}/auth';
 
   /// Initializes session state at app startup.
   /// On Web: silently queries /api/auth/refresh-web to check for valid HttpOnly cookie.

@@ -15,11 +15,18 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Load optional developer-local overrides (gitignored)
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+builder.Configuration.AddJsonFile(Path.Combine(builder.Environment.ContentRootPath, "appsettings.Local.json"), optional: true, reloadOnChange: true);
 
 // ============================================================================
 // 1. Secrets & Environment Validation
 // ============================================================================
 var dbConnectionString = DbConnectionHelper.ResolveConnectionString(builder.Configuration);
+try
+{
+    var builderCs = new SqlConnectionStringBuilder(dbConnectionString);
+    Console.WriteLine($"[DATABASE] Target DataSource: {builderCs.DataSource}, InitialCatalog: {builderCs.InitialCatalog}");
+}
+catch { }
 
 var jwtSigningKey = Environment.GetEnvironmentVariable("JWT_SIGNING_KEY")
     ?? builder.Configuration["JWT_SIGNING_KEY"];
@@ -119,6 +126,13 @@ builder.Services.AddCors(options =>
             if (allowedOriginsList.Contains(cleanOrigin, StringComparer.OrdinalIgnoreCase)) return true;
             if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
             {
+                if (builder.Environment.IsDevelopment() &&
+                    (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                     uri.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase)))
+                {
+                    return true;
+                }
+
                 if (uri.Host.EndsWith("vercel.app", StringComparison.OrdinalIgnoreCase) ||
                     uri.Host.EndsWith("netlify.app", StringComparison.OrdinalIgnoreCase))
                 {
@@ -271,6 +285,10 @@ builder.Services.AddScoped<ISalesOrderRepository, SalesOrderRepository>();
 builder.Services.AddScoped<ISalesOrderService, SalesOrderService>();
 builder.Services.AddScoped<ISalesOrderApprovalRepository, SalesOrderApprovalRepository>();
 builder.Services.AddScoped<ISalesOrderApprovalService, SalesOrderApprovalService>();
+builder.Services.AddScoped<IIndentRepository, IndentRepository>();
+builder.Services.AddScoped<IIndentService, IndentService>();
+builder.Services.AddScoped<IIndentApprovalRepository, IndentApprovalRepository>();
+builder.Services.AddScoped<IIndentApprovalService, IndentApprovalService>();
 
 var app = builder.Build();
 
