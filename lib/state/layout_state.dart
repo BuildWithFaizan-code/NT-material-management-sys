@@ -274,7 +274,6 @@ class LayoutState extends ChangeNotifier {
       'issuemanager': 'Issue Manager',
       'wipapproval': 'WIP Approval',
       'materialreturn': 'Material Return From/To',
-      'inputscreen': 'Input Screen',
       'costofmaintenance': 'Cost of Maintenance',
       'costofmaterial': 'Cost Of Material',
       'palletreturnable': 'Pallet Returnable Entry',

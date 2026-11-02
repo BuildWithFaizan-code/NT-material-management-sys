@@ -206,10 +206,6 @@ const List<TransactionSubSection> transactionSubSections = [
         title: 'Material Return From/To',
         icon: Icons.replay_outlined,
       ),
-      TransactionMenuEntry(
-        title: 'Input Screen',
-        icon: Icons.input_outlined,
-      ),
     ],
   ),
 

@@ -36,6 +36,9 @@ import '../pages/sales_order/sales_order_page.dart';
 import '../pages/sales_order_approval/so_approval_page.dart';
 import '../pages/indent/indent_page.dart';
 import '../pages/indent_approval/indent_approval_page.dart';
+import '../pages/stock_transfer/stock_transfer_page.dart';
+import '../pages/issue_manager/issue_manager_page.dart';
+import '../pages/material_return/material_return_page.dart';
 import '../pages/user_management_page.dart';
 import '../services/auth_service.dart';
 import 'widgets/master_nav_item.dart';
@@ -337,30 +340,16 @@ class LargeScreenLayout extends StatelessWidget {
 
       // Issue
       case 'Stock Transfer':
-        return const TransactionPlaceholderPage(
-          title: 'Stock Transfer',
-          icon: Icons.swap_horiz_outlined,
-        );
+        return const StockTransferPage();
       case 'Issue Manager':
-        return const TransactionPlaceholderPage(
-          title: 'Issue Manager',
-          icon: Icons.output_outlined,
-        );
+        return const IssueManagerPage();
       case 'WIP Approval':
         return const TransactionPlaceholderPage(
           title: 'WIP Approval',
           icon: Icons.thumb_up_alt_outlined,
         );
       case 'Material Return From/To':
-        return const TransactionPlaceholderPage(
-          title: 'Material Return From/To',
-          icon: Icons.replay_outlined,
-        );
-      case 'Input Screen':
-        return const TransactionPlaceholderPage(
-          title: 'Input Screen',
-          icon: Icons.input_outlined,
-        );
+        return const MaterialReturnPage();
 
       // Consumption Module
       case 'Cost of Maintenance':
@@ -709,3 +698,4 @@ class _FloatingSidebarAnimatorState extends State<_FloatingSidebarAnimator>
     );
   }
 }
+

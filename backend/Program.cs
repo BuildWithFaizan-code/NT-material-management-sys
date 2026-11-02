@@ -289,6 +289,12 @@ builder.Services.AddScoped<IIndentRepository, IndentRepository>();
 builder.Services.AddScoped<IIndentService, IndentService>();
 builder.Services.AddScoped<IIndentApprovalRepository, IndentApprovalRepository>();
 builder.Services.AddScoped<IIndentApprovalService, IndentApprovalService>();
+builder.Services.AddScoped<IStockTransferRepository, StockTransferRepository>();
+builder.Services.AddScoped<IStockTransferService, StockTransferService>();
+builder.Services.AddScoped<IIssueManagerRepository, IssueManagerRepository>();
+builder.Services.AddScoped<IIssueManagerService, IssueManagerService>();
+builder.Services.AddScoped<IMaterialReturnRepository, MaterialReturnRepository>();
+builder.Services.AddScoped<IMaterialReturnService, MaterialReturnService>();
 
 var app = builder.Build();
 
