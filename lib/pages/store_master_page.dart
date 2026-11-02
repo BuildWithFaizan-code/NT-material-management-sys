@@ -3680,17 +3680,31 @@ class _ThreeDIntegratedNatureWidgetState
     _truckMoveCtrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 6),
-    )..repeat();
+    );
 
     _waveCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
-    )..repeat(reverse: true);
+    );
 
     _cloudFloatCtrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 4),
-    )..repeat(reverse: true);
+    );
+  }
+
+  void _onEnter(PointerEvent _) {
+    if (!mounted) return;
+    _truckMoveCtrl.repeat();
+    _waveCtrl.repeat(reverse: true);
+    _cloudFloatCtrl.repeat(reverse: true);
+  }
+
+  void _onExit(PointerEvent _) {
+    if (!mounted) return;
+    _truckMoveCtrl.stop();
+    _waveCtrl.stop();
+    _cloudFloatCtrl.stop();
   }
 
   @override
@@ -3703,18 +3717,24 @@ class _ThreeDIntegratedNatureWidgetState
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: Listenable.merge([_truckMoveCtrl, _waveCtrl, _cloudFloatCtrl]),
-      builder: (context, _) {
-        return CustomPaint(
-          size: Size.infinite,
-          painter: _ThreeDIntegratedNaturePainter(
-            truckProgress: _truckMoveCtrl.value,
-            waveProgress: _waveCtrl.value,
-            cloudProgress: _cloudFloatCtrl.value,
-          ),
-        );
-      },
+    return RepaintBoundary(
+      child: MouseRegion(
+        onEnter: _onEnter,
+        onExit: _onExit,
+        child: AnimatedBuilder(
+          animation: Listenable.merge([_truckMoveCtrl, _waveCtrl, _cloudFloatCtrl]),
+          builder: (context, _) {
+            return CustomPaint(
+              size: Size.infinite,
+              painter: _ThreeDIntegratedNaturePainter(
+                truckProgress: _truckMoveCtrl.value,
+                waveProgress: _waveCtrl.value,
+                cloudProgress: _cloudFloatCtrl.value,
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 }

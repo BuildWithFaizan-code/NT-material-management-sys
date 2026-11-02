@@ -1206,7 +1206,20 @@ class _IndentAnimatedExportButtonState extends State<IndentAnimatedExportButton>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2200),
-    )..repeat();
+    );
+  }
+
+  void _onEnter(PointerEvent _) {
+    if (!mounted) return;
+    setState(() => _isHovered = true);
+    _controller.repeat();
+  }
+
+  void _onExit(PointerEvent _) {
+    if (!mounted) return;
+    setState(() => _isHovered = false);
+    _controller.stop();
+    _controller.reset();
   }
 
   @override
@@ -1218,8 +1231,8 @@ class _IndentAnimatedExportButtonState extends State<IndentAnimatedExportButton>
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
+      onEnter: _onEnter,
+      onExit: _onExit,
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: widget.onPressed,

@@ -1567,7 +1567,7 @@ class _Paced3DLottieModel extends StatefulWidget {
 class _Paced3DLottieModelState extends State<_Paced3DLottieModel>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-  double _opacity = 1.0;
+  static const double _opacity = 1.0;
   bool _isDisposed = false;
   bool _hasStarted = false;
 
@@ -1587,90 +1587,47 @@ class _Paced3DLottieModelState extends State<_Paced3DLottieModel>
   void _onCompositionLoaded(LottieComposition composition) {
     if (_hasStarted || _isDisposed || !mounted) return;
     _hasStarted = true;
-    // Set a steady, majestic pace (6.8s) for the complete assembly animation
-    _controller.duration = const Duration(milliseconds: 6800);
     _runPacedAnimationCycle();
   }
 
   Future<void> _runPacedAnimationCycle() async {
-    // Normalization bounds based on composition frame counts:
-    // Frame 110: Scene is 100% assembled; team discussion/gesture loop starts
-    // Frame 170: Team discussion/gesture loop completes with identical resting poses
-    const double idleStart = 110.0 / 171.0;
-    const double idleEnd = 170.0 / 171.0;
-    const int idleLoopDurationMs = 2000;
-
-    while (!_isDisposed && mounted) {
-      if (mounted) setState(() => _opacity = 1.0);
-
-      // 1. Initial Assembly: Build up all elements from frame 0 to frame 170
-      _controller.value = 0.0;
-      try {
-        await _controller.animateTo(
-          idleEnd,
-          duration: const Duration(milliseconds: 6200),
-          curve: Curves.linear,
-        ).orCancel;
-      } catch (_) {
-        break; // Cancelled if widget is disposed
+    // Settle into final complete composition pose (frame 170) once, then permanently freeze to 0 FPS.
+    const double targetFrame = 170.0 / 171.0;
+    try {
+      await _controller.animateTo(
+        targetFrame,
+        duration: const Duration(milliseconds: 2800),
+        curve: Curves.easeOutCubic,
+      ).orCancel;
+      if (!_isDisposed && mounted) {
+        _controller.stop();
       }
-
-      if (_isDisposed || !mounted) break;
-
-      // 2. Active Hold Interval: Continue the live animation loop of the complete 3D model
-      // Run the seamless 110-170 frame gesture cycle 3 times (~6.0s total).
-      // Keeps the complete model actively gesturing, pointing at charts, and nodding without pausing!
-      for (int i = 0; i < 3; i++) {
-        if (_isDisposed || !mounted) break;
-        _controller.value = idleStart;
-        try {
-          await _controller.animateTo(
-            idleEnd,
-            duration: const Duration(milliseconds: idleLoopDurationMs),
-            curve: Curves.linear,
-          ).orCancel;
-        } catch (_) {
-          break;
-        }
-      }
-
-      if (_isDisposed || !mounted) break;
-
-      // 3. Gentle crossfade transition before starting the next full assembly cycle
-      if (mounted) {
-        setState(() => _opacity = 0.0);
-      }
-      await Future.delayed(const Duration(milliseconds: 350));
-
-      if (_isDisposed || !mounted) break;
-
-      _controller.value = 0.0;
-      if (mounted) {
-        setState(() => _opacity = 1.0);
-      }
-      await Future.delayed(const Duration(milliseconds: 200));
+    } catch (_) {
+      // Disposed or cancelled
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedOpacity(
-      opacity: _opacity,
-      duration: const Duration(milliseconds: 350),
-      curve: Curves.easeInOut,
-      child: Container(
-        constraints: BoxConstraints(
-          maxWidth: widget.maxWidth ?? double.infinity,
-          maxHeight: widget.maxHeight ?? double.infinity,
-        ),
-        child: Lottie.asset(
-          'assets/animations/business_analysis_3d.json',
-          controller: _controller,
-          onLoaded: _onCompositionLoaded,
-          fit: BoxFit.contain,
-          frameRate: FrameRate.max,
-          options: LottieOptions(enableMergePaths: true),
-          filterQuality: FilterQuality.medium,
+    return RepaintBoundary(
+      child: AnimatedOpacity(
+        opacity: _opacity,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeInOut,
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: widget.maxWidth ?? double.infinity,
+            maxHeight: widget.maxHeight ?? double.infinity,
+          ),
+          child: Lottie.asset(
+            'assets/animations/business_analysis_3d.json',
+            controller: _controller,
+            onLoaded: _onCompositionLoaded,
+            fit: BoxFit.contain,
+            frameRate: const FrameRate(30),
+            options: LottieOptions(enableMergePaths: true),
+            filterQuality: FilterQuality.low,
+          ),
         ),
       ),
     );

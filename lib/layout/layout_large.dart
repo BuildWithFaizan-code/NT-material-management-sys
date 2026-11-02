@@ -1,45 +1,46 @@
 import 'package:flutter/material.dart';
 import 'widgets/sidebar.dart';
 import 'widgets/app_header.dart';
+import 'widgets/deferred_widget.dart';
 import '../state/layout_state.dart';
 import '../state/status_state.dart';
 import '../pages/dashboard_page.dart';
 import '../design/app_colors.dart';
 import '../design/app_dimensions.dart';
 
-import '../pages/project_master_page.dart';
-import '../pages/location_master_page.dart';
-import '../pages/store_master_page.dart';
-import '../pages/operator_master_page.dart';
-import '../pages/operation_master_page.dart';
-import '../pages/department_master_page.dart';
-import '../pages/sub_department_master_page.dart';
-import '../pages/head_master_page.dart';
-import '../pages/book_master_page.dart';
-import '../pages/non_stockable_item_master_page.dart';
-import '../pages/fabric_size_master_page.dart';
-import '../pages/makers_master_page.dart';
-import '../pages/capital_consumable_master_page.dart';
-import '../pages/grade_master_page.dart';
-import '../pages/main_group_master_page.dart';
-import '../pages/group_master_page.dart';
-import '../pages/group_master_definition_page.dart';
-import '../pages/charges_master_page.dart';
+import '../pages/project_master_page.dart' deferred as project_page;
+import '../pages/location_master_page.dart' deferred as location_page;
+import '../pages/store_master_page.dart' deferred as store_page;
+import '../pages/operator_master_page.dart' deferred as operator_page;
+import '../pages/operation_master_page.dart' deferred as operation_page;
+import '../pages/department_master_page.dart' deferred as department_page;
+import '../pages/sub_department_master_page.dart' deferred as sub_dept_page;
+import '../pages/head_master_page.dart' deferred as head_page;
+import '../pages/book_master_page.dart' deferred as book_page;
+import '../pages/non_stockable_item_master_page.dart' deferred as non_stock_page;
+import '../pages/fabric_size_master_page.dart' deferred as fabric_page;
+import '../pages/makers_master_page.dart' deferred as makers_page;
+import '../pages/capital_consumable_master_page.dart' deferred as capital_page;
+import '../pages/grade_master_page.dart' deferred as grade_page;
+import '../pages/main_group_master_page.dart' deferred as main_group_page;
+import '../pages/group_master_page.dart' deferred as group_page;
+import '../pages/group_master_definition_page.dart' deferred as group_def_page;
+import '../pages/charges_master_page.dart' deferred as charges_page;
 import '../pages/placeholder_module_pages.dart';
-import '../pages/transactions/bill_of_material_page.dart';
+import '../pages/transactions/bill_of_material_page.dart' deferred as bom_page;
 import '../pages/transactions/transaction_placeholder_page.dart';
-import '../pages/bom/bom_followup_page.dart';
-import '../pages/purchase_order/purchase_order_page.dart';
-import '../pages/purchase_order_approval/po_approval_page.dart';
-import '../pages/purchase_order_advance/po_advance_page.dart';
-import '../pages/sales_order/sales_order_page.dart';
-import '../pages/sales_order_approval/so_approval_page.dart';
-import '../pages/indent/indent_page.dart';
-import '../pages/indent_approval/indent_approval_page.dart';
-import '../pages/stock_transfer/stock_transfer_page.dart';
-import '../pages/issue_manager/issue_manager_page.dart';
-import '../pages/material_return/material_return_page.dart';
-import '../pages/user_management_page.dart';
+import '../pages/bom/bom_followup_page.dart' deferred as bom_followup_page;
+import '../pages/purchase_order/purchase_order_page.dart' deferred as po_page;
+import '../pages/purchase_order_approval/po_approval_page.dart' deferred as po_approval_page;
+import '../pages/purchase_order_advance/po_advance_page.dart' deferred as po_advance_page;
+import '../pages/sales_order/sales_order_page.dart' deferred as so_page;
+import '../pages/sales_order_approval/so_approval_page.dart' deferred as so_approval_page;
+import '../pages/indent/indent_page.dart' deferred as indent_page;
+import '../pages/indent_approval/indent_approval_page.dart' deferred as indent_approval_page;
+import '../pages/stock_transfer/stock_transfer_page.dart' deferred as stock_transfer_page;
+import '../pages/issue_manager/issue_manager_page.dart' deferred as issue_manager_page;
+import '../pages/material_return/material_return_page.dart' deferred as mat_return_page;
+import '../pages/user_management_page.dart' deferred as user_mgmt_page;
 import '../services/auth_service.dart';
 import 'widgets/master_nav_item.dart';
 import 'widgets/modern_collapsed_rail.dart';
@@ -76,16 +77,20 @@ class LargeScreenLayout extends StatelessWidget {
             padding: EdgeInsets.only(left: contentShift),
             child: Column(
               children: [
-                AppHeader(
-                  title: _getPageTitle(layoutState.currentPageIndex),
-                  isNavbarOpen: isOpen,
-                  onMenuTap: layoutState.toggleNavbar,
+                RepaintBoundary(
+                  child: AppHeader(
+                    title: _getPageTitle(layoutState.currentPageIndex),
+                    isNavbarOpen: isOpen,
+                    onMenuTap: layoutState.toggleNavbar,
+                  ),
                 ),
                 Expanded(
-                  child: KeyedSubtree(
-                    key: ValueKey(
-                        'page_${layoutState.currentPageIndex}_${layoutState.currentPageIndex == 1 ? layoutState.selectedMasterSubItem : (layoutState.currentPageIndex == 2 ? layoutState.selectedTransactionSubItem : "")}'),
-                    child: _buildPage(layoutState.currentPageIndex),
+                  child: RepaintBoundary(
+                    child: KeyedSubtree(
+                      key: ValueKey(
+                          'page_${layoutState.currentPageIndex}_${layoutState.currentPageIndex == 1 ? layoutState.selectedMasterSubItem : (layoutState.currentPageIndex == 2 ? layoutState.selectedTransactionSubItem : "")}'),
+                      child: _buildPage(layoutState.currentPageIndex),
+                    ),
                   ),
                 ),
               ],
@@ -98,41 +103,43 @@ class LargeScreenLayout extends StatelessWidget {
             top: m,
             bottom: m,
             width: rw,
-            child: IgnorePointer(
-              ignoring: isOpen,
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOut,
-                opacity: isOpen ? 0.0 : 1.0,
-                child: ModernCollapsedRail(
-                  currentIndex: layoutState.currentPageIndex,
-                  onItemSelected: (idx) {
-                    if (idx == 1) {
-                      final auth = AuthService.instance;
-                      final isAdmin = (auth.currentUser?.isAdmin ?? false) ||
-                          (auth.myPermissions?.isAdmin ?? false);
-                      final perms = auth.myPermissions;
-                      String defaultModule = 'Project Master';
-                      if (!isAdmin && perms != null) {
-                        final permitted = masterSubSections
-                            .where((s) => perms.canViewModule(s.title))
-                            .toList();
-                        if (permitted.isNotEmpty) {
-                          defaultModule = permitted.first.title;
+            child: RepaintBoundary(
+              child: IgnorePointer(
+                ignoring: isOpen,
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOut,
+                  opacity: isOpen ? 0.0 : 1.0,
+                  child: ModernCollapsedRail(
+                    currentIndex: layoutState.currentPageIndex,
+                    onItemSelected: (idx) {
+                      if (idx == 1) {
+                        final auth = AuthService.instance;
+                        final isAdmin = (auth.currentUser?.isAdmin ?? false) ||
+                            (auth.myPermissions?.isAdmin ?? false);
+                        final perms = auth.myPermissions;
+                        String defaultModule = 'Project Master';
+                        if (!isAdmin && perms != null) {
+                          final permitted = masterSubSections
+                              .where((s) => perms.canViewModule(s.title))
+                              .toList();
+                          if (permitted.isNotEmpty) {
+                            defaultModule = permitted.first.title;
+                          }
                         }
+                        layoutState.setMasterSubItem(defaultModule);
+                      } else if (idx == 2) {
+                        layoutState.setTransactionSubItem(
+                          layoutState.selectedTransactionSubItem.isNotEmpty
+                              ? layoutState.selectedTransactionSubItem
+                              : 'Bill of Material (BOM)',
+                        );
+                      } else {
+                        layoutState.setPage(idx);
                       }
-                      layoutState.setMasterSubItem(defaultModule);
-                    } else if (idx == 2) {
-                      layoutState.setTransactionSubItem(
-                        layoutState.selectedTransactionSubItem.isNotEmpty
-                            ? layoutState.selectedTransactionSubItem
-                            : 'Bill of Material (BOM)',
-                      );
-                    } else {
-                      layoutState.setPage(idx);
-                    }
-                  },
-                  onExpand: layoutState.toggleNavbar,
+                    },
+                    onExpand: layoutState.toggleNavbar,
+                  ),
                 ),
               ),
             ),
@@ -143,15 +150,17 @@ class LargeScreenLayout extends StatelessWidget {
             isOpen: isOpen,
             sidebarWidth: sw,
             margin: m,
-            child: Sidebar(
-              currentIndex: layoutState.currentPageIndex,
-              activeSubItem: layoutState.selectedMasterSubItem,
-              activeTransactionSubItem: layoutState.selectedTransactionSubItem,
-              onItemSelected: layoutState.setPage,
-              onSubItemSelected: layoutState.setMasterSubItem,
-              onTransactionSubItemSelected: layoutState.setTransactionSubItem,
-              onToggle: layoutState.toggleNavbar,
-              isOpen: isOpen,
+            child: RepaintBoundary(
+              child: Sidebar(
+                currentIndex: layoutState.currentPageIndex,
+                activeSubItem: layoutState.selectedMasterSubItem,
+                activeTransactionSubItem: layoutState.selectedTransactionSubItem,
+                onItemSelected: layoutState.setPage,
+                onSubItemSelected: layoutState.setMasterSubItem,
+                onTransactionSubItemSelected: layoutState.setTransactionSubItem,
+                onToggle: layoutState.toggleNavbar,
+                isOpen: isOpen,
+              ),
             ),
           ),
         ],
@@ -213,7 +222,11 @@ class LargeScreenLayout extends StatelessWidget {
       case 7:
         return const DownloadPage(key: ValueKey('download_page'));
       case 8:
-        return const UserManagementPage(key: ValueKey('user_management_page'));
+        return DeferredWidget(
+          key: const ValueKey('user_management_page'),
+          loader: user_mgmt_page.loadLibrary,
+          builder: () => user_mgmt_page.UserManagementPage(key: const ValueKey('user_management_page')),
+        );
       default:
         return const DashboardPage(key: ValueKey('default_dashboard'));
     }
@@ -237,14 +250,22 @@ class LargeScreenLayout extends StatelessWidget {
     switch (sub) {
       // Top group
       case 'Bill of Material (BOM)':
-        return const BillOfMaterialPage();
+        return DeferredWidget(
+          key: const ValueKey('deferred_bom_page'),
+          loader: bom_page.loadLibrary,
+          builder: () => bom_page.BillOfMaterialPage(),
+        );
       case 'Production Order':
         return const TransactionPlaceholderPage(
           title: 'Production Order',
           icon: Icons.precision_manufacturing_outlined,
         );
       case 'BOM Followup':
-        return const BomFollowupPage();
+        return DeferredWidget(
+          key: const ValueKey('deferred_bom_followup_page'),
+          loader: bom_followup_page.loadLibrary,
+          builder: () => bom_followup_page.BomFollowupPage(),
+        );
       case 'Production Order Close':
         return const TransactionPlaceholderPage(
           title: 'Production Order Close',
@@ -278,9 +299,17 @@ class LargeScreenLayout extends StatelessWidget {
 
       // Indent
       case 'Create Indent':
-        return const IndentPage();
+        return DeferredWidget(
+          key: const ValueKey('deferred_indent_page'),
+          loader: indent_page.loadLibrary,
+          builder: () => indent_page.IndentPage(),
+        );
       case 'Indent Approval':
-        return const IndentApprovalPage();
+        return DeferredWidget(
+          key: const ValueKey('deferred_indent_approval_page'),
+          loader: indent_approval_page.loadLibrary,
+          builder: () => indent_approval_page.IndentApprovalPage(),
+        );
       case 'Enquiry Creation':
         return const TransactionPlaceholderPage(
           title: 'Enquiry Creation',
@@ -294,17 +323,37 @@ class LargeScreenLayout extends StatelessWidget {
 
       // Sales Order
       case 'Generate Sales Order':
-        return const SalesOrderPage();
+        return DeferredWidget(
+          key: const ValueKey('deferred_so_page'),
+          loader: so_page.loadLibrary,
+          builder: () => so_page.SalesOrderPage(),
+        );
       case 'Release Sales Order':
-        return const SoApprovalPage();
+        return DeferredWidget(
+          key: const ValueKey('deferred_so_approval_page'),
+          loader: so_approval_page.loadLibrary,
+          builder: () => so_approval_page.SoApprovalPage(),
+        );
 
       // Purchase Order
       case 'Generate Purchase Order':
-        return const PurchaseOrderPage();
+        return DeferredWidget(
+          key: const ValueKey('deferred_po_page'),
+          loader: po_page.loadLibrary,
+          builder: () => po_page.PurchaseOrderPage(),
+        );
       case 'Release Purchase Order':
-        return const PoApprovalPage();
+        return DeferredWidget(
+          key: const ValueKey('deferred_po_approval_page'),
+          loader: po_approval_page.loadLibrary,
+          builder: () => po_approval_page.PoApprovalPage(),
+        );
       case 'PO Advance Entry':
-        return const PoAdvancePage();
+        return DeferredWidget(
+          key: const ValueKey('deferred_po_advance_page'),
+          loader: po_advance_page.loadLibrary,
+          builder: () => po_advance_page.PoAdvancePage(),
+        );
       case 'Freight Memo':
         return const TransactionPlaceholderPage(
           title: 'Freight Memo',
@@ -340,16 +389,28 @@ class LargeScreenLayout extends StatelessWidget {
 
       // Issue
       case 'Stock Transfer':
-        return const StockTransferPage();
+        return DeferredWidget(
+          key: const ValueKey('deferred_stock_transfer_page'),
+          loader: stock_transfer_page.loadLibrary,
+          builder: () => stock_transfer_page.StockTransferPage(),
+        );
       case 'Issue Manager':
-        return const IssueManagerPage();
+        return DeferredWidget(
+          key: const ValueKey('deferred_issue_manager_page'),
+          loader: issue_manager_page.loadLibrary,
+          builder: () => issue_manager_page.IssueManagerPage(),
+        );
       case 'WIP Approval':
         return const TransactionPlaceholderPage(
           title: 'WIP Approval',
           icon: Icons.thumb_up_alt_outlined,
         );
       case 'Material Return From/To':
-        return const MaterialReturnPage();
+        return DeferredWidget(
+          key: const ValueKey('deferred_mat_return_page'),
+          loader: mat_return_page.loadLibrary,
+          builder: () => mat_return_page.MaterialReturnPage(),
+        );
 
       // Consumption Module
       case 'Cost of Maintenance':
@@ -462,68 +523,148 @@ class LargeScreenLayout extends StatelessWidget {
       return _buildAccessDenied(sub);
     }
 
-    if (sub == 'Location Master') return const LocationMasterPage();
-    if (sub == 'Store Master') return const StoreMasterPage();
-    if (sub == 'Operator Master') return const OperatorMasterPage();
-    if (sub == 'Operation Master') return const OperationMasterPage();
+    if (sub == 'Location Master') {
+      return DeferredWidget(
+        key: const ValueKey('deferred_location_master'),
+        loader: location_page.loadLibrary,
+        builder: () => location_page.LocationMasterPage(),
+      );
+    }
+    if (sub == 'Store Master') {
+      return DeferredWidget(
+        key: const ValueKey('deferred_store_master'),
+        loader: store_page.loadLibrary,
+        builder: () => store_page.StoreMasterPage(),
+      );
+    }
+    if (sub == 'Operator Master') {
+      return DeferredWidget(
+        key: const ValueKey('deferred_operator_master'),
+        loader: operator_page.loadLibrary,
+        builder: () => operator_page.OperatorMasterPage(),
+      );
+    }
+    if (sub == 'Operation Master') {
+      return DeferredWidget(
+        key: const ValueKey('deferred_operation_master'),
+        loader: operation_page.loadLibrary,
+        builder: () => operation_page.OperationMasterPage(),
+      );
+    }
     if (sub == 'Department Master' || sub == 'Department') {
-      return const DepartmentMasterPage();
+      return DeferredWidget(
+        key: const ValueKey('deferred_department_master'),
+        loader: department_page.loadLibrary,
+        builder: () => department_page.DepartmentMasterPage(),
+      );
     }
     if (sub == 'Sub-Department Master' ||
         sub == 'Sub-Department' ||
         sub == 'Sub Department') {
-      return const SubDepartmentMasterPage();
+      return DeferredWidget(
+        key: const ValueKey('deferred_sub_department_master'),
+        loader: sub_dept_page.loadLibrary,
+        builder: () => sub_dept_page.SubDepartmentMasterPage(),
+      );
     }
     if (sub == 'Head Master' ||
         sub == 'Head Master (Costing Head)' ||
         sub == 'Costing Head') {
-      return const HeadMasterPage();
+      return DeferredWidget(
+        key: const ValueKey('deferred_head_master'),
+        loader: head_page.loadLibrary,
+        builder: () => head_page.HeadMasterPage(),
+      );
     }
     if (sub == 'Book Master' || sub == 'Book') {
-      return const BookMasterPage();
+      return DeferredWidget(
+        key: const ValueKey('deferred_book_master'),
+        loader: book_page.loadLibrary,
+        builder: () => book_page.BookMasterPage(),
+      );
     }
     if (sub == 'Fabric Size Master' || sub == 'Fabric Size') {
-      return const FabricSizeMasterPage();
+      return DeferredWidget(
+        key: const ValueKey('deferred_fabric_size_master'),
+        loader: fabric_page.loadLibrary,
+        builder: () => fabric_page.FabricSizeMasterPage(),
+      );
     }
     if (sub == 'Makers Master' || sub == 'Makers' || sub == 'Maker Master') {
-      return const MakersMasterPage();
+      return DeferredWidget(
+        key: const ValueKey('deferred_makers_master'),
+        loader: makers_page.loadLibrary,
+        builder: () => makers_page.MakersMasterPage(),
+      );
     }
     if (sub == 'Capital / Consumable' ||
         sub == 'Capital Consumable Master' ||
         sub == 'Capital / Consumable Master' ||
         sub == 'Capital Consumable') {
-      return const CapitalConsumableMasterPage();
+      return DeferredWidget(
+        key: const ValueKey('deferred_capital_consumable_master'),
+        loader: capital_page.loadLibrary,
+        builder: () => capital_page.CapitalConsumableMasterPage(),
+      );
     }
     if (sub == 'Grade Master' ||
         sub == 'Grade' ||
         sub == 'Grade Definition') {
-      return const GradeMasterPage();
+      return DeferredWidget(
+        key: const ValueKey('deferred_grade_master'),
+        loader: grade_page.loadLibrary,
+        builder: () => grade_page.GradeMasterPage(),
+      );
     }
     if (sub == 'Main Group Master' ||
         sub == 'Main Group' ||
         sub == 'Main Group (WIPMST)') {
-      return const MainGroupMasterPage();
+      return DeferredWidget(
+        key: const ValueKey('deferred_main_group_master'),
+        loader: main_group_page.loadLibrary,
+        builder: () => main_group_page.MainGroupMasterPage(),
+      );
     }
     if (sub == 'Group Master' ||
         sub == 'Group Master (Category)' ||
         sub == 'Category Master' ||
         sub == 'Group (Category)') {
-      return const GroupMasterPage();
+      return DeferredWidget(
+        key: const ValueKey('deferred_group_master'),
+        loader: group_page.loadLibrary,
+        builder: () => group_page.GroupMasterPage(),
+      );
     }
     if (sub == 'Group Master Definition' ||
         sub == 'Group Definition' ||
         sub == 'Group Definition Master' ||
         sub == 'Sub Group Mapping') {
-      return const GroupMasterDefinitionPage();
+      return DeferredWidget(
+        key: const ValueKey('deferred_group_master_definition'),
+        loader: group_def_page.loadLibrary,
+        builder: () => group_def_page.GroupMasterDefinitionPage(),
+      );
     }
     if (sub == 'Non-Stockable Item' ||
         sub == 'Non-Stockable Item Master') {
-      return const NonStockableItemMasterPage();
+      return DeferredWidget(
+        key: const ValueKey('deferred_non_stockable_item_master'),
+        loader: non_stock_page.loadLibrary,
+        builder: () => non_stock_page.NonStockableItemMasterPage(),
+      );
     }
     if (sub == 'Charges Master' || sub == 'Charges') {
-      return const ChargesMasterPage();
+      return DeferredWidget(
+        key: const ValueKey('deferred_charges_master'),
+        loader: charges_page.loadLibrary,
+        builder: () => charges_page.ChargesMasterPage(),
+      );
     }
-    return const ProjectMasterPage();
+    return DeferredWidget(
+      key: const ValueKey('deferred_project_master'),
+      loader: project_page.loadLibrary,
+      builder: () => project_page.ProjectMasterPage(),
+    );
   }
 
   Widget _buildAccessDenied(String moduleName) {

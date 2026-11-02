@@ -2353,11 +2353,11 @@ class _Realistic3DEarthMapCardState extends State<_Realistic3DEarthMapCard>
   void initState() {
     super.initState();
 
-    // 1. Earth Globe Rotation
+    // 1. Earth Globe Rotation (Active only on cursor hover for 0-FPS idle)
     _globeRotateCtrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 12),
-    )..repeat();
+    );
 
     // 2. Character Sneaking & Tapping Animation
     _characterSneakCtrl = AnimationController(
@@ -2369,15 +2369,15 @@ class _Realistic3DEarthMapCardState extends State<_Realistic3DEarthMapCard>
     _bubbleFloatCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1600),
-    )..repeat(reverse: true);
+    );
 
     // 4. Wavy Sine Wave Energy Flow Animation
     _wavyWaveCtrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 3),
-    )..repeat();
+    );
 
-    // 5. Dynamic Notification Pop-Up Controller (Pops in, stays briefly, pops out)
+    // 5. Dynamic Notification Pop-Up Controller (Runs once on load)
     _notifPopCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2600),
@@ -2390,17 +2390,21 @@ class _Realistic3DEarthMapCardState extends State<_Realistic3DEarthMapCard>
       duration: const Duration(milliseconds: 1400),
     );
     _charFlightCtrl.forward();
-
-    // Auto cycle locations every 4 seconds
-    _startAutoCycle();
   }
 
-  void _startAutoCycle() async {
-    while (mounted) {
-      await Future.delayed(const Duration(seconds: 4));
-      if (!mounted) break;
-      _triggerNextLocation();
-    }
+  void _onGlobeEnter(PointerEvent _) {
+    if (!mounted) return;
+    _globeRotateCtrl.repeat();
+    _bubbleFloatCtrl.repeat(reverse: true);
+    _wavyWaveCtrl.repeat();
+    _triggerNextLocation();
+  }
+
+  void _onGlobeExit(PointerEvent _) {
+    if (!mounted) return;
+    _globeRotateCtrl.stop();
+    _bubbleFloatCtrl.stop();
+    _wavyWaveCtrl.stop();
   }
 
   void _triggerNextLocation() {
@@ -2428,9 +2432,13 @@ class _Realistic3DEarthMapCardState extends State<_Realistic3DEarthMapCard>
   Widget build(BuildContext context) {
     final activeLoc = _earthLocations[_currentLocIndex];
 
-    return Container(
-      width: double.infinity,
-      height: 185,
+    return RepaintBoundary(
+      child: MouseRegion(
+        onEnter: _onGlobeEnter,
+        onExit: _onGlobeExit,
+        child: Container(
+          width: double.infinity,
+          height: 185,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: const LinearGradient(
@@ -2622,7 +2630,9 @@ class _Realistic3DEarthMapCardState extends State<_Realistic3DEarthMapCard>
           },
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 }
 
@@ -4938,7 +4948,7 @@ class _FoldedMapPinLogoWidgetState extends State<_FoldedMapPinLogoWidget>
     _hopController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1800),
-    )..repeat();
+    );
   }
 
   @override
@@ -4949,19 +4959,30 @@ class _FoldedMapPinLogoWidgetState extends State<_FoldedMapPinLogoWidget>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _hopController,
-      builder: (context, child) {
-        return SizedBox(
-          width: widget.size * 1.15,
-          height: widget.size,
-          child: CustomPaint(
-            painter: _FoldedMapPinLogoPainter(
-              hopProgress: _hopController.value,
-            ),
-          ),
-        );
+    return MouseRegion(
+      onEnter: (_) {
+        if (mounted) _hopController.repeat();
       },
+      onExit: (_) {
+        if (mounted) {
+          _hopController.stop();
+          _hopController.reset();
+        }
+      },
+      child: AnimatedBuilder(
+        animation: _hopController,
+        builder: (context, child) {
+          return SizedBox(
+            width: widget.size * 1.15,
+            height: widget.size,
+            child: CustomPaint(
+              painter: _FoldedMapPinLogoPainter(
+                hopProgress: _hopController.value,
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }

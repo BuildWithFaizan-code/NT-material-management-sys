@@ -2917,23 +2917,37 @@ class _RealisticMaterialManagement3DCardState
   void initState() {
     super.initState();
 
-    // 1. Truck Drive Loop (Drives across, pauses/loops continuously)
+    // 1. Truck Drive Loop (Triggered on hover for 0-FPS idle state in RDP)
     _driveCtrl = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 8),
-    )..repeat();
+    );
 
     // 2. Driver Hand Waving Animation
     _waveCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
-    )..repeat(reverse: true);
+    );
 
     // 3. Floating Speech Bubble Bobbing Animation
     _bubbleFloatCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1800),
-    )..repeat(reverse: true);
+    );
+  }
+
+  void _onEnter(PointerEvent _) {
+    if (!mounted) return;
+    _driveCtrl.repeat();
+    _waveCtrl.repeat(reverse: true);
+    _bubbleFloatCtrl.repeat(reverse: true);
+  }
+
+  void _onExit(PointerEvent _) {
+    if (!mounted) return;
+    _driveCtrl.stop();
+    _waveCtrl.stop();
+    _bubbleFloatCtrl.stop();
   }
 
   @override
@@ -2946,7 +2960,11 @@ class _RealisticMaterialManagement3DCardState
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return RepaintBoundary(
+      child: MouseRegion(
+        onEnter: _onEnter,
+        onExit: _onExit,
+        child: Container(
       width: double.infinity,
       height: 220,
       decoration: BoxDecoration(
@@ -3080,8 +3098,10 @@ class _RealisticMaterialManagement3DCardState
           },
         ),
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 }
 
 // ============================================================================

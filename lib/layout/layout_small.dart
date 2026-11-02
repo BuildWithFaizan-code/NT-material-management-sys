@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'widgets/app_header.dart';
 import 'widgets/status_bar.dart';
 import 'widgets/navigation_drawer.dart';
+import 'widgets/deferred_widget.dart';
 import '../state/layout_state.dart';
 import '../state/status_state.dart';
 import '../pages/dashboard_page.dart';
-import '../pages/project_master_page.dart';
+import '../pages/project_master_page.dart' deferred as project_page;
 
 import '../pages/placeholder_module_pages.dart';
-import '../pages/user_management_page.dart';
+import '../pages/user_management_page.dart' deferred as user_mgmt_page;
 
 class SmallScreenLayout extends StatelessWidget {
   final LayoutState layoutState;
@@ -30,13 +31,19 @@ class SmallScreenLayout extends StatelessWidget {
       ),
       body: Column(
         children: [
-          AppHeader(
-            onMenuTap: layoutState.openDrawer,
+          RepaintBoundary(
+            child: AppHeader(
+              onMenuTap: layoutState.openDrawer,
+            ),
           ),
           Expanded(
-            child: _buildPage(layoutState.currentPageIndex),
+            child: RepaintBoundary(
+              child: _buildPage(layoutState.currentPageIndex),
+            ),
           ),
-          StatusBar(status: statusState),
+          RepaintBoundary(
+            child: StatusBar(status: statusState),
+          ),
         ],
       ),
     );
@@ -47,7 +54,10 @@ class SmallScreenLayout extends StatelessWidget {
       case 0:
         return const DashboardPage();
       case 1:
-        return const ProjectMasterPage();
+        return DeferredWidget(
+          loader: project_page.loadLibrary,
+          builder: () => project_page.ProjectMasterPage(),
+        );
       case 2:
         return const TransactionsPage();
       case 3:
@@ -61,7 +71,10 @@ class SmallScreenLayout extends StatelessWidget {
       case 7:
         return const DownloadPage();
       case 8:
-        return const UserManagementPage();
+        return DeferredWidget(
+          loader: user_mgmt_page.loadLibrary,
+          builder: () => user_mgmt_page.UserManagementPage(),
+        );
       default:
         return const DashboardPage();
     }
