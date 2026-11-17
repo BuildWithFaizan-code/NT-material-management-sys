@@ -852,34 +852,20 @@ class _AnimativeAdminProfileState extends State<_AnimativeAdminProfile>
   @override
   void initState() {
     super.initState();
-    // 1. Aura Pulse Animation (Triggered on hover for 0-FPS idle)
+    // 1. Aura Pulse Animation
     _auraCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2200),
-    );
-    _glowAnim = Tween<double>(begin: 0.3, end: 0.8).animate(
+    )..repeat(reverse: true);
+    _glowAnim = Tween<double>(begin: 0.2, end: 0.8).animate(
       CurvedAnimation(parent: _auraCtrl, curve: Curves.easeInOut),
     );
 
-    // 2. Ambient Gradient Rotation (Active on hover only to preserve CPU in RDP)
+    // 2. Slow Ambient Gradient Rotation
     _rotateCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 4),
-    );
-  }
-
-  void _onEnter(PointerEvent _) {
-    if (!mounted) return;
-    _rotateCtrl.repeat();
-    _auraCtrl.repeat(reverse: true);
-  }
-
-  void _onExit(PointerEvent _) {
-    if (!mounted) return;
-    _rotateCtrl.stop();
-    _rotateCtrl.reset();
-    _auraCtrl.stop();
-    _auraCtrl.reset();
+      duration: const Duration(seconds: 8),
+    )..repeat();
   }
 
   @override
@@ -984,8 +970,6 @@ class _AnimativeAdminProfileState extends State<_AnimativeAdminProfile>
         ];
       },
       child: MouseRegion(
-        onEnter: _onEnter,
-        onExit: _onExit,
         cursor: SystemMouseCursors.click,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),

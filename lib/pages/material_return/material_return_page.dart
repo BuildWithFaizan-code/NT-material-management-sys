@@ -334,11 +334,7 @@ class _MaterialReturnPageState extends State<MaterialReturnPage> {
                                         children: [
                                           LayoutBuilder(
                                             builder: (context, constraints) {
-                                              const double baseWidth = 1348.0;
-                                              final double tableWidth = math.max(constraints.maxWidth, baseWidth);
-                                              final double extraWidth = tableWidth - baseWidth;
-                                              final double col5Width = 220.0 + (extraWidth * 0.6);
-                                              final double col8Width = 180.0 + (extraWidth * 0.4);
+                                              final double tableWidth = math.max(constraints.maxWidth, 1320.0);
 
                                               return Scrollbar(
                                                 controller: _horizontalScrollCtrl,
@@ -351,7 +347,7 @@ class _MaterialReturnPageState extends State<MaterialReturnPage> {
                                                     child: Column(
                                                       children: [
                                                         // Synchronized Table Header (Department Master Design)
-                                                        _buildTableHeader(col5Width: col5Width, col8Width: col8Width),
+                                                        _buildTableHeader(),
 
                                                         // Table Body Data Rows
                                                         Expanded(
@@ -377,8 +373,6 @@ class _MaterialReturnPageState extends State<MaterialReturnPage> {
                                                                   idx: idx,
                                                                   isGlowing: isGlowing,
                                                                   isSelected: isSelected,
-                                                                  col5Width: col5Width,
-                                                                  col8Width: col8Width,
                                                                   onTap: () => setState(() => _selectedRowCode = r.retCode),
                                                                   onView: () => _openViewEntryModal(r.retCode),
                                                                   onEdit: () => _openEditEntryWizard(r.retCode),
@@ -447,32 +441,26 @@ class _MaterialReturnPageState extends State<MaterialReturnPage> {
           child: const Icon(Icons.assignment_return_rounded, color: AppColors.secondaryColor, size: 24),
         ),
         const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Material Return (From / To)',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A),
-                  letterSpacing: -0.3,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Material Return (From / To)',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0F172A),
+                letterSpacing: -0.3,
               ),
-              const SizedBox(height: 2),
-              Text(
-                'Transaction → Issue → Material Return From/To • Real-time stockregnew incrementation',
-                style: TextStyle(fontSize: 12, color: AppColors.slateMuted),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Transaction → Issue → Material Return From/To • Real-time stockregnew incrementation',
+              style: TextStyle(fontSize: 12, color: AppColors.slateMuted),
+            ),
+          ],
         ),
-        const SizedBox(width: 16),
+        const Spacer(),
 
         // Export Button (100% Project Master Animated Button)
         MaterialReturnAnimatedExportButton(onPressed: _openExportModal),
@@ -736,7 +724,7 @@ class _MaterialReturnPageState extends State<MaterialReturnPage> {
     );
   }
 
-  Widget _buildTableHeader({required double col5Width, required double col8Width}) {
+  Widget _buildTableHeader() {
     return Container(
       height: 38,
       decoration: const BoxDecoration(
@@ -744,10 +732,10 @@ class _MaterialReturnPageState extends State<MaterialReturnPage> {
         border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1.2)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: Row(
+      child: const Row(
         children: [
           // Col 1: SR NO
-          const SizedBox(
+          SizedBox(
             width: 45,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -758,10 +746,10 @@ class _MaterialReturnPageState extends State<MaterialReturnPage> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
 
           // Col 2: RETURN CODE
-          const SizedBox(
+          SizedBox(
             width: 135,
             child: Row(
               children: [
@@ -771,10 +759,10 @@ class _MaterialReturnPageState extends State<MaterialReturnPage> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
 
           // Col 3: DATE
-          const SizedBox(
+          SizedBox(
             width: 90,
             child: Row(
               children: [
@@ -784,10 +772,10 @@ class _MaterialReturnPageState extends State<MaterialReturnPage> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
 
           // Col 4: RETURN MODE
-          const SizedBox(
+          SizedBox(
             width: 125,
             child: Row(
               children: [
@@ -797,12 +785,12 @@ class _MaterialReturnPageState extends State<MaterialReturnPage> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
 
           // Col 5: RETURN TO / BY
-          SizedBox(
-            width: col5Width,
-            child: const Row(
+          Expanded(
+            flex: 3,
+            child: Row(
               children: [
                 Icon(Icons.business_outlined, size: 12, color: Color(0xFF8B5CF6)),
                 SizedBox(width: 4),
@@ -810,10 +798,10 @@ class _MaterialReturnPageState extends State<MaterialReturnPage> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
 
           // Col 6: TOTAL QTY
-          const SizedBox(
+          SizedBox(
             width: 95,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -824,10 +812,10 @@ class _MaterialReturnPageState extends State<MaterialReturnPage> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
 
           // Col 7: ITEMS
-          const SizedBox(
+          SizedBox(
             width: 65,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -838,12 +826,12 @@ class _MaterialReturnPageState extends State<MaterialReturnPage> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
 
           // Col 8: REMARK
-          SizedBox(
-            width: col8Width,
-            child: const Row(
+          Expanded(
+            flex: 2,
+            child: Row(
               children: [
                 Icon(Icons.notes_rounded, size: 12, color: Color(0xFF64748B)),
                 SizedBox(width: 4),
@@ -851,11 +839,11 @@ class _MaterialReturnPageState extends State<MaterialReturnPage> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
 
           // Col 9: OPERATOR
-          const SizedBox(
-            width: 110,
+          SizedBox(
+            width: 105,
             child: Row(
               children: [
                 Icon(Icons.person_outline_rounded, size: 12, color: Color(0xFF475569)),
@@ -864,11 +852,11 @@ class _MaterialReturnPageState extends State<MaterialReturnPage> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
 
           // Col 10: LOCATION
-          const SizedBox(
-            width: 80,
+          SizedBox(
+            width: 75,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -878,10 +866,10 @@ class _MaterialReturnPageState extends State<MaterialReturnPage> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
 
           // Col 11: ACTIONS
-          const SizedBox(
+          SizedBox(
             width: 95,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1185,8 +1173,6 @@ class _AnimatedMaterialReturnRow extends StatefulWidget {
   final int idx;
   final bool isGlowing;
   final bool isSelected;
-  final double col5Width;
-  final double col8Width;
   final VoidCallback onTap;
   final VoidCallback onView;
   final VoidCallback onEdit;
@@ -1198,8 +1184,6 @@ class _AnimatedMaterialReturnRow extends StatefulWidget {
     required this.idx,
     required this.isGlowing,
     required this.isSelected,
-    required this.col5Width,
-    required this.col8Width,
     required this.onTap,
     required this.onView,
     required this.onEdit,
@@ -1348,8 +1332,8 @@ class _AnimatedMaterialReturnRowState extends State<_AnimatedMaterialReturnRow> 
                 const SizedBox(width: 8),
 
                 // Col 5: RETURN TO / BY
-                SizedBox(
-                  width: widget.col5Width,
+                Expanded(
+                  flex: 3,
                   child: Tooltip(
                     message: r.retToName.isNotEmpty ? r.retToName : 'No Party/Dept Specified',
                     waitDuration: const Duration(milliseconds: 500),
@@ -1404,8 +1388,8 @@ class _AnimatedMaterialReturnRowState extends State<_AnimatedMaterialReturnRow> 
                 const SizedBox(width: 8),
 
                 // Col 8: REMARK
-                SizedBox(
-                  width: widget.col8Width,
+                Expanded(
+                  flex: 2,
                   child: Tooltip(
                     message: r.remark.isNotEmpty ? r.remark : 'No Remark',
                     waitDuration: const Duration(milliseconds: 500),
@@ -1425,7 +1409,7 @@ class _AnimatedMaterialReturnRowState extends State<_AnimatedMaterialReturnRow> 
 
                 // Col 9: OPERATOR
                 SizedBox(
-                  width: 110,
+                  width: 105,
                   child: Text(
                     r.operatorName.isEmpty ? '-' : r.operatorName,
                     style: TextStyle(
@@ -1441,7 +1425,7 @@ class _AnimatedMaterialReturnRowState extends State<_AnimatedMaterialReturnRow> 
 
                 // Col 10: LOCATION
                 SizedBox(
-                  width: 80,
+                  width: 75,
                   child: Center(
                     child: Text(
                       r.location.isEmpty ? '-' : r.location,

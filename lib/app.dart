@@ -3,10 +3,9 @@ import 'design/app_colors.dart';
 import 'design/app_theme.dart';
 import 'design/web_scroll_behavior.dart';
 import 'layout/app_shell.dart';
-import 'layout/widgets/deferred_widget.dart';
-import 'pages/head_master_page.dart' deferred as head_page;
+import 'pages/head_master_page.dart';
 import 'pages/login_page.dart';
-import 'pages/sub_department_master_page.dart' deferred as sub_dept_page;
+import 'pages/sub_department_master_page.dart';
 import 'services/auth_service.dart';
 import 'state/layout_state.dart';
 import 'state/status_state.dart';
@@ -66,14 +65,8 @@ class App extends StatelessWidget {
               layoutState.setTransactionSubItem('Quotation Manager');
               return homeWidget;
             },
-            '/sub-department-master': (context) => DeferredWidget(
-              loader: sub_dept_page.loadLibrary,
-              builder: () => sub_dept_page.SubDepartmentMasterPage(),
-            ),
-            '/head-master': (context) => DeferredWidget(
-              loader: head_page.loadLibrary,
-              builder: () => head_page.HeadMasterPage(),
-            ),
+            '/sub-department-master': (context) => const SubDepartmentMasterPage(),
+            '/head-master': (context) => const HeadMasterPage(),
           },
           onGenerateRoute: (settings) {
             final name = (settings.name ?? '').replaceAll('/', '').toLowerCase().trim();
