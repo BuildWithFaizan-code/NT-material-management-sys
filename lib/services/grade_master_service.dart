@@ -82,9 +82,24 @@ class GradeMasterService {
       );
 
       if (response.statusCode == 200) {
-        json.decode(response.body);
+        final body = json.decode(response.body);
+        final ok = body['success'] == true;
+        if (ok) {
+          _inMemoryItems.removeWhere((m) => m.gradeSrl == item.gradeSrl);
+          _inMemoryItems.add(item);
+        }
+        return ok;
       }
+
+      // 409 Conflict = duplicate rejected by server
+      if (response.statusCode == 409) return false;
     } catch (_) {}
+
+    // Offline fallback: check in-memory for duplicates before adding
+    final duplicateInMemory = _inMemoryItems.any(
+      (m) => m.gradeCode.trim().toUpperCase() == item.gradeCode.trim().toUpperCase(),
+    );
+    if (duplicateInMemory) return false;
 
     _inMemoryItems.removeWhere((m) => m.gradeSrl == item.gradeSrl);
     _inMemoryItems.add(item);
@@ -99,9 +114,30 @@ class GradeMasterService {
       );
 
       if (response.statusCode == 200) {
-        json.decode(response.body);
+        final body = json.decode(response.body);
+        final ok = body['success'] == true;
+        if (ok) {
+          final idx = _inMemoryItems.indexWhere((m) => m.gradeSrl == item.gradeSrl);
+          if (idx != -1) {
+            _inMemoryItems[idx] = item;
+          } else {
+            _inMemoryItems.add(item);
+          }
+        }
+        return ok;
       }
+
+      // 409 Conflict = duplicate rejected by server
+      if (response.statusCode == 409) return false;
     } catch (_) {}
+
+    // Offline fallback: check in-memory for duplicates (exclude self)
+    final duplicateInMemory = _inMemoryItems.any(
+      (m) =>
+          m.gradeCode.trim().toUpperCase() == item.gradeCode.trim().toUpperCase() &&
+          m.gradeSrl != item.gradeSrl,
+    );
+    if (duplicateInMemory) return false;
 
     final idx = _inMemoryItems.indexWhere((m) => m.gradeSrl == item.gradeSrl);
     if (idx != -1) {

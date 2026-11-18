@@ -34,6 +34,10 @@ class _GradeMasterPageState extends State<GradeMasterPage> {
   final TextEditingController _codeCtrl = TextEditingController();
   final FocusNode _codeFocusNode = FocusNode();
 
+  // Duplicate-value error hover tooltip state
+  String? _duplicateErrorMessage;
+  final GlobalKey _saveButtonKey = GlobalKey();
+
   // Search state (Focus-Isolated)
   final TextEditingController _searchCtrl = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
@@ -125,6 +129,7 @@ class _GradeMasterPageState extends State<GradeMasterPage> {
       _codeCtrl.clear();
       _selectedRowSrl = null;
       _saveStatus = ButtonStatus.idle;
+      _duplicateErrorMessage = null;
     });
     _service.getNextGradeSrl().then((nextSrl) {
       if (mounted) {
@@ -140,12 +145,110 @@ class _GradeMasterPageState extends State<GradeMasterPage> {
       _codeCtrl.text = item.gradeCode;
       _selectedRowSrl = item.gradeSrl;
       _saveStatus = ButtonStatus.idle;
+      _duplicateErrorMessage = null;
     });
     _codeFocusNode.requestFocus();
   }
 
+  /// Shows a floating tooltip-style error anchored to the Save button.
+  void _showDuplicateHoverError(String message) {
+    setState(() {
+      _duplicateErrorMessage = message;
+      _saveStatus = ButtonStatus.error;
+    });
+
+    // Show a Tooltip-style overlay near the save button
+    final ctx = _saveButtonKey.currentContext;
+    if (ctx != null) {
+      final renderBox = ctx.findRenderObject() as RenderBox?;
+      if (renderBox != null) {
+        final offset = renderBox.localToGlobal(Offset.zero);
+        final size = renderBox.size;
+
+        final overlay = Overlay.of(ctx);
+        late OverlayEntry entry;
+        entry = OverlayEntry(
+          builder: (context) => Positioned(
+            left: offset.dx,
+            top: offset.dy - 52,
+            width: size.width,
+            child: Material(
+              color: Colors.transparent,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: const Duration(milliseconds: 220),
+                builder: (context, value, child) => Opacity(
+                  opacity: value,
+                  child: Transform.translate(
+                    offset: Offset(0, (1 - value) * 6),
+                    child: child,
+                  ),
+                ),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDC2626),
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFDC2626).withValues(alpha: 0.35),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 13),
+                      const SizedBox(width: 5),
+                      Expanded(
+                        child: Text(
+                          message,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        overlay.insert(entry);
+
+        Future.delayed(const Duration(milliseconds: 2800), () {
+          entry.remove();
+          if (mounted) {
+            setState(() {
+              _duplicateErrorMessage = null;
+              _saveStatus = ButtonStatus.idle;
+            });
+          }
+        });
+      }
+    } else {
+      // Fallback: auto-clear after delay if context not found
+      Future.delayed(const Duration(milliseconds: 2800), () {
+        if (mounted) {
+          setState(() {
+            _duplicateErrorMessage = null;
+            _saveStatus = ButtonStatus.idle;
+          });
+        }
+      });
+    }
+  }
+
   Future<void> _submitForm() async {
-    final String code = _codeCtrl.text.trim();
+    final String code = _codeCtrl.text.trim().toUpperCase();
 
     if (code.isEmpty) {
       setState(() => _saveStatus = ButtonStatus.error);
@@ -155,12 +258,27 @@ class _GradeMasterPageState extends State<GradeMasterPage> {
       return;
     }
 
+    // ── Duplicate-value guard ────────────────────────────────────────────────
+    // When inserting: no existing item may share the same gradeCode.
+    // When editing:   no OTHER item (different gradeSrl) may share the same gradeCode.
+    final duplicateExists = _items.any((item) {
+      final sameCode = item.gradeCode.trim().toUpperCase() == code;
+      final otherRow = item.gradeSrl != _formGradeSrl;
+      return _isEditing ? (sameCode && otherRow) : sameCode;
+    });
+
+    if (duplicateExists) {
+      _showDuplicateHoverError('Grade "$code" already exists. Duplicate values are not allowed.');
+      return;
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
     setState(() => _saveStatus = ButtonStatus.loading);
 
     try {
       final item = GradeItem(
         gradeSrl: _formGradeSrl,
-        gradeCode: code.toUpperCase(),
+        gradeCode: code,
       );
       bool ok = false;
       final wasEditing = _isEditing;
@@ -535,6 +653,7 @@ class _GradeMasterPageState extends State<GradeMasterPage> {
               Expanded(
                 flex: 2,
                 child: AnimatedSuccessButton(
+                  key: _saveButtonKey,
                   status: _saveStatus,
                   onPressed: _submitForm,
                   idleText: _isEditing ? 'Update Grade' : 'Save Grade',

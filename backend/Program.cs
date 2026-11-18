@@ -49,6 +49,7 @@ if (keyBytes.Length < 32)
 // 2. Caching, Controllers & JSON Options with Global Permission Filter
 // ============================================================================
 builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient();
 
 builder.Services.AddControllers(options =>
 {
@@ -295,6 +296,7 @@ builder.Services.AddScoped<IIssueManagerRepository, IssueManagerRepository>();
 builder.Services.AddScoped<IIssueManagerService, IssueManagerService>();
 builder.Services.AddScoped<IMaterialReturnRepository, MaterialReturnRepository>();
 builder.Services.AddScoped<IMaterialReturnService, MaterialReturnService>();
+builder.Services.AddScoped<IAiService, AiService>();
 
 var app = builder.Build();
 

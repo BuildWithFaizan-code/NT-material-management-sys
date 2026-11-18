@@ -9,6 +9,7 @@ class LayoutState extends ChangeNotifier {
   String _selectedMasterSubItem = '';
   String _selectedTransactionSubItem = '';
   bool _isNavbarOpen = false;
+  bool _isAiPanelOpen = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   LayoutState({bool parseUri = true, Uri? initialUri}) {
@@ -22,6 +23,7 @@ class LayoutState extends ChangeNotifier {
   String get selectedMasterSubItem => _selectedMasterSubItem;
   String get selectedTransactionSubItem => _selectedTransactionSubItem;
   bool get isNavbarOpen => _isNavbarOpen;
+  bool get isAiPanelOpen => _isAiPanelOpen;
   GlobalKey<ScaffoldState> get scaffoldKey => _scaffoldKey;
 
   bool get isLarge => _screenSize == ScreenSize.large;
@@ -75,6 +77,18 @@ class LayoutState extends ChangeNotifier {
   void setNavbarOpen(bool open) {
     if (_isNavbarOpen != open) {
       _isNavbarOpen = open;
+      notifyListeners();
+    }
+  }
+
+  void toggleAiPanel() {
+    _isAiPanelOpen = !_isAiPanelOpen;
+    notifyListeners();
+  }
+
+  void setAiPanelOpen(bool open) {
+    if (_isAiPanelOpen != open) {
+      _isAiPanelOpen = open;
       notifyListeners();
     }
   }

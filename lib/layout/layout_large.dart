@@ -43,6 +43,7 @@ import '../pages/user_management_page.dart';
 import '../services/auth_service.dart';
 import 'widgets/master_nav_item.dart';
 import 'widgets/modern_collapsed_rail.dart';
+import 'widgets/gemini_chat_panel.dart';
 
 class LargeScreenLayout extends StatelessWidget {
   final LayoutState layoutState;
@@ -154,6 +155,9 @@ class LargeScreenLayout extends StatelessWidget {
               isOpen: isOpen,
             ),
           ),
+
+          // ── Gemini AI Copilot Animated Panel ─────────────────────────────
+          GeminiChatPanel(layoutState: layoutState),
         ],
       ),
     );

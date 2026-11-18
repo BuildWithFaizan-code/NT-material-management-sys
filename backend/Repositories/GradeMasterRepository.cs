@@ -61,6 +61,11 @@ namespace MMSERP.Api.Repositories
 
         public async Task<bool> InsertAsync(GradeMasterDto item)
         {
+            // ── Duplicate-code guard ─────────────────────────────────────────
+            const string checkSql = @"
+                SELECT COUNT(1) FROM PKGRADE
+                WHERE UPPER(LTRIM(RTRIM(PGRD_CODE))) = UPPER(LTRIM(RTRIM(@GradeCode)));";
+
             const string sqlTry1 = @"
                 INSERT INTO PKGRADE (PGRD_CODE) 
                 VALUES (@GradeCode);";
@@ -72,6 +77,16 @@ namespace MMSERP.Api.Repositories
             try
             {
                 using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                // Check for duplicate before inserting
+                var exists = await connection.ExecuteScalarAsync<int>(checkSql, item);
+                if (exists > 0)
+                {
+                    Console.WriteLine($"[GradeMasterRepository.InsertAsync]: Duplicate grade code '{item.GradeCode}' rejected.");
+                    return false;
+                }
+
                 try
                 {
                     var rows = await connection.ExecuteAsync(sqlTry1, item);
@@ -86,12 +101,18 @@ namespace MMSERP.Api.Repositories
             catch (Exception ex)
             {
                 Console.WriteLine($"[GradeMasterRepository.InsertAsync Error]: {ex.Message}");
-                return true;
+                return false;
             }
         }
 
         public async Task<bool> UpdateAsync(GradeMasterDto item)
         {
+            // ── Duplicate-code guard (exclude the row being updated) ──────────
+            const string checkSql = @"
+                SELECT COUNT(1) FROM PKGRADE
+                WHERE UPPER(LTRIM(RTRIM(PGRD_CODE))) = UPPER(LTRIM(RTRIM(@GradeCode)))
+                  AND PGRD_SRL <> @GradeSrl;";
+
             const string sql = @"
                 UPDATE PKGRADE 
                 SET PGRD_CODE = @GradeCode 
@@ -100,13 +121,23 @@ namespace MMSERP.Api.Repositories
             try
             {
                 using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                // Check for duplicate (another row with same code)
+                var exists = await connection.ExecuteScalarAsync<int>(checkSql, item);
+                if (exists > 0)
+                {
+                    Console.WriteLine($"[GradeMasterRepository.UpdateAsync]: Duplicate grade code '{item.GradeCode}' rejected.");
+                    return false;
+                }
+
                 var rows = await connection.ExecuteAsync(sql, item);
                 return rows > 0;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[GradeMasterRepository.UpdateAsync Error]: {ex.Message}");
-                return true;
+                return false;
             }
         }
 

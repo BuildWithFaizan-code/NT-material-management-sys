@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'design/app_colors.dart';
 import 'design/app_theme.dart';
 import 'design/web_scroll_behavior.dart';
@@ -50,13 +51,18 @@ class App extends StatelessWidget {
           homeWidget = const LoginPage();
         }
 
-        return MaterialApp(
-          title: 'NewTech MMS',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.light,
-          scrollBehavior: const AppScrollBehavior(),
-          home: homeWidget,
-          routes: {
+        return MultiProvider(
+          providers: [
+            ChangeNotifierProvider<LayoutState>.value(value: layoutState),
+            ChangeNotifierProvider<StatusState>.value(value: statusState),
+          ],
+          child: MaterialApp(
+            title: 'NewTech MMS',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.light,
+            scrollBehavior: const AppScrollBehavior(),
+            home: homeWidget,
+            routes: {
             '/enquiry-creation': (context) {
               layoutState.setTransactionSubItem('Enquiry Creation');
               return homeWidget;
@@ -80,7 +86,8 @@ class App extends StatelessWidget {
             }
             return null;
           },
-        );
+        ),
+      );
       },
     );
   }

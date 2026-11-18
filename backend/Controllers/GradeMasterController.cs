@@ -72,7 +72,15 @@ namespace MMSERP.Api.Controllers
             try
             {
                 var ok = await _service.InsertAsync(item);
-                return Ok(new { success = ok, message = ok ? "Grade record inserted successfully." : "Insert failed." });
+                if (!ok)
+                {
+                    return Conflict(new
+                    {
+                        success = false,
+                        message = $"Grade code \"{item.GradeCode.Trim().ToUpper()}\" already exists. Duplicate values are not allowed."
+                    });
+                }
+                return Ok(new { success = true, message = "Grade record inserted successfully." });
             }
             catch (Exception ex)
             {
@@ -91,7 +99,16 @@ namespace MMSERP.Api.Controllers
             try
             {
                 var ok = await _service.UpdateAsync(item);
-                return Ok(new { success = ok, message = ok ? "Grade record updated successfully." : "Update failed." });
+                if (!ok)
+                {
+                    // Could be duplicate or the record simply wasn't found/changed
+                    return Conflict(new
+                    {
+                        success = false,
+                        message = $"Grade code \"{item.GradeCode.Trim().ToUpper()}\" already exists or the record could not be updated."
+                    });
+                }
+                return Ok(new { success = true, message = "Grade record updated successfully." });
             }
             catch (Exception ex)
             {

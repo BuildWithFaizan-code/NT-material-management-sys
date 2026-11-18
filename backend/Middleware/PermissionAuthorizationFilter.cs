@@ -41,7 +41,8 @@ namespace MMSERP.Api.Middleware
             "AuthController",
             "UserManagementController",
             "RolesController",
-            "DashboardController"
+            "DashboardController",
+            "AiController"
         };
 
         public PermissionAuthorizationFilter(

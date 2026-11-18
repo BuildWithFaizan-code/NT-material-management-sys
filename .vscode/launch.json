@@ -1,0 +1,52 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Backend: .NET API",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-backend",
+      "program": "${workspaceFolder}/backend/bin/Debug/net8.0/MMSERP.Api.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/backend",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "name": "Frontend: Flutter Web (Chrome)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "args": ["-d", "chrome", "--web-port", "3000"]
+    },
+    {
+      "name": "Frontend: Flutter Web (Server)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "args": ["-d", "web-server", "--web-port", "3000"]
+    },
+    {
+      "name": "Frontend: Flutter macOS",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "args": ["-d", "macos"]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack: Backend + Flutter Web",
+      "configurations": [
+        "Backend: .NET API",
+        "Frontend: Flutter Web (Server)"
+      ]
+    }
+  ]
+}

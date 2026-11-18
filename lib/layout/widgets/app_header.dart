@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../design/app_dimensions.dart';
 import '../../services/auth_service.dart';
 import '../../pages/mfa_setup_dialog.dart';
+import 'gemini_ai_header_button.dart';
 
 class AppHeader extends StatelessWidget {
   final String title;
@@ -112,8 +113,8 @@ class AppHeader extends StatelessWidget {
                 const Spacer(),
               ],
 
-              // ── Interactive Notification Bell ──────────────────────────────
-              const _InteractiveNotificationBell(count: 3),
+              // ── Gemini AI Copilot Button ──────────────────────────────────
+              const GeminiAiHeaderButton(),
               const SizedBox(width: 10),
 
               // ── Animative Avatar with Written "Admin" ───────────────────────
